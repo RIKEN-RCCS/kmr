@@ -414,5 +414,7 @@ kmr_exscan(void *sbuf, void *rbuf, int cnt, MPI_Datatype dt, MPI_Op op,
 #endif
 
 /*
-NOTICE-NOTICE-NOTICE
+Copyright (C) 2012-2015 RIKEN AICS
+This library is distributed WITHOUT ANY WARRANTY.  This library can be
+redistributed and/or modified under the terms of the BSD 2-Clause License.
 */

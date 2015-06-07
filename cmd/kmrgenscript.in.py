@@ -278,4 +278,6 @@ if __name__ == "__main__" :
                     options.mapper, options.reducer, options.multi,
                     options.sched, options.scrfile)
 
-# NOTICE-NOTICE-NOTICE-SH
+# Copyright (C) 2012-2015 RIKEN AICS
+# This library is distributed WITHOUT ANY WARRANTY.  This library can be
+# redistributed and/or modified under the terms of the BSD 2-Clause License.

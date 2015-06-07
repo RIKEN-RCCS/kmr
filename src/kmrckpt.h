@@ -216,7 +216,9 @@ struct kmr_ckpt_prev_state {
 #define KMR_CKPT_DUMMY_ID 0
 
 /*
-NOTICE-NOTICE-NOTICE
+Copyright (C) 2012-2015 RIKEN AICS
+This library is distributed WITHOUT ANY WARRANTY.  This library can be
+redistributed and/or modified under the terms of the BSD 2-Clause License.
 */
 
 #endif /* _KMRCKPT_H */

@@ -301,5 +301,7 @@ kmr_isort(void *A, const size_t N, const size_t ES, int depth)
 }
 
 /*
-NOTICE-NOTICE-NOTICE
+Copyright (C) 2012-2015 RIKEN AICS
+This library is distributed WITHOUT ANY WARRANTY.  This library can be
+redistributed and/or modified under the terms of the BSD 2-Clause License.
 */

@@ -7,7 +7,7 @@ use File::Find;
 
 print "Replacing LICENSE NOTICE...\n";
 
-open(NOTICE, "< ../notice.txt");
+open(NOTICE, "< ./notice.txt");
 @notice = <NOTICE>;
 close(NOTICE);
 

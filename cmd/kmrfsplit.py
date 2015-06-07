@@ -190,4 +190,6 @@ if __name__ == "__main__":
 
     splitfile(options.nums, options.sep, options.odir, options.opref, inputfile)
 
-# NOTICE-NOTICE-NOTICE-SH
+# Copyright (C) 2012-2015 RIKEN AICS
+# This library is distributed WITHOUT ANY WARRANTY.  This library can be
+# redistributed and/or modified under the terms of the BSD 2-Clause License.

@@ -962,7 +962,9 @@ KMR_BR1
 #undef KMR_BR1
 
 /*
-NOTICE-NOTICE-NOTICE
+Copyright (C) 2012-2015 RIKEN AICS
+This library is distributed WITHOUT ANY WARRANTY.  This library can be
+redistributed and/or modified under the terms of the BSD 2-Clause License.
 */
 
 #endif /*_KMR_H*/

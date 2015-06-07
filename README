@@ -16,11 +16,5 @@ may not contain the materials copyrighted by AKIYAMA Lab.  All others
 are copyrighted by RIKEN AICS, and all rights reserved except for
 grants by the license.
 
-LICENSE TERMS: KMR is free software: you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public License,
-version 2.1 as published by the Free Software Foundation.  KMR is
-distributed WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Lesser General Public License for more details.  You should have
-received a copy of the GNU Lesser General Public License along with
-KMR.  If not, see "http://www.gnu.org/licenses/".
+LICENSE TERMS: KMR is free software licensed under the BSD 2-Clause
+License.
