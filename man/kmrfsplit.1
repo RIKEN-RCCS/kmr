@@ -1,0 +1,77 @@
+'\"
+.\" Copyright (C) 2012-2015 RIKEN AICS
+.\" nroff -u0 -Tlp -man
+.TH kmrfsplit.py 1 "2014-02-04" "KMR" "User Commands"
+.SH NAME
+kmrfsplit.py \- split a file
+.SH SYNOPSIS
+.LP
+.nf
+\fBkmrfsplit.py\fR [-n num] [-s pattern] [-d outdir] [-p prefix] [-f] file
+.fi
+.SH DESCRIPTION
+.sp
+.LP
+kmrfsplit.py splits a file into a number of files (-n) with roughly
+equal sizes.  It assumes an input file consists of many records
+started by a string matching to a given pattern.  When a pattern is
+not found in a certain range in the input file (around the split
+point), an error will be reported.
+.sp
+When outdir (-d) is specified, output files are saved under the
+directory.  By default, output files have names "partX" and saved in
+the current directory, where X is a sequence number starting from 0
+with some leading zeros.
+.SH OPTIONS
+.sp
+.LP
+The following options are supported:
+.sp
+.ne 2
+.na
+-n num
+.ad
+.sp .6
+.RS 4n
+Specifies the number to split.  Default is 1.
+.RE
+.sp
+.ne 2
+.na
+-s pattern
+.ad
+.sp .6
+.RS 4n
+Specifies a pattern string of a record separator.  A line matching to
+this pattern starts a new record.  It accepts regular expressions.
+Default is "\\n".
+.RE
+.sp
+.ne 2
+.na
+-d outdir
+.ad
+.sp .6
+.RS 4n
+Specifies an output directory.  Output files are saved under it.
+Default is the currrent directory.
+.RE
+.sp
+.ne 2
+.na
+-p prefix
+.ad
+.sp .6
+.RS 4n
+Specifies a prefix to output file names.  File names are suffixed by a
+number.  Default is "part".
+.RE
+.sp
+.ne 2
+.na
+-f
+.ad
+.sp .6
+.RS 4n
+Forces to create an output directory if it does not exist.
+.RE

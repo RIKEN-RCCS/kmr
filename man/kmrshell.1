@@ -1,0 +1,54 @@
+'\"
+.\" Copyright (C) 2012-2015 RIKEN AICS
+.\" nroff -u0 -Tlp -man
+.TH kmrshell 1 "2014-02-04" "KMR" "User Commands"
+.SH NAME
+kmrshell \- map-reduce by shell command pipeline
+.SH SYNOPSIS
+.LP
+.nf
+\fBkmrshell\fR -m mapper -r reducer file
+.fi
+.SH DESCRIPTION
+.sp
+.LP
+kmrshell performs map-reduce by pipelining shell commands, also called
+"streaming" in Hadoop.  It forks and execs processes of a mapper, a
+shuffler, and a reducer, and they are joined through pipes.  kmrshell
+reads a file and passes the contents to a mapper.  When a directory
+name is given instead of a file, kmrshell reads all regular files
+under the directory and passes them to a mapper (not recursive).
+Shuffler is written with KMR.
+.SH OPTIONS
+.sp
+.LP
+The following options are supported:
+.sp
+.ne 2
+.na
+-m mapper
+.ad
+.sp .6
+.RS 4n
+Specifies a mapper program.  The program can have arguments, where
+they are separated by a whitespace.
+.sp
+Mapper specification: A mapper reads data from STDIN and outputs
+key-value data to STDOUT.  Output data is a sequence of a line "key
+value\\n", where the fields are separated by a whitespace.
+.RE
+.sp
+.ne 2
+.na
+-r reducer
+.ad
+.sp .6
+.RS 4n
+Specifies a reducer program.  The program can have arguments, where
+they are separated by a whitespace.
+.sp
+Reducer Specification: A reducer reads key-value data from STDIN and
+outputs the result to STDOUT.  Input data is a sequence of a line "key
+value\\n", where the fields are separated by a whitespace.
+Lines with the same keys constitutes consecutive lines.
+.RE

@@ -1,0 +1,15 @@
+# Table file for Test KMR-DP
+    # First non-blank '%' or '#' characters start a comment line.
+# Header part defines the title and the parameter template:
+TITLE=Example Run
+PARAM=aln -i $1 -d $2 -o $3 -a 2 -w 0 -q d -t p -L $4 -S 8 -v 1 -b 1 -s 1 -T 30
+# Table part defines tasks one for each line,
+# whose tab-separated columns replace '$'-variables.
+xaa	genes0.db	out.0	2097152
+xab	genes0.db	out.1	2097152
+xac	genes0.db	out.2	2097152
+xad	genes0.db	out.3	2097152
+xae	genes1.db	out.4	2097152
+xaf	genes1.db	out.5	2097152
+xag	genes1.db	out.6	2097152
+xah	genes1.db	out.7	2097152

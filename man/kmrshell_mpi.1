@@ -1,0 +1,75 @@
+'\"
+.\" Copyright (C) 2012-2015 RIKEN AICS
+.\" nroff -u0 -Tlp -man
+.TH kmrshell_mpi 1 "2014-02-04" "KMR" "User Commands"
+.SH NAME
+kmrshell_mpi \- map-reduce by shell command pipeline
+.SH SYNOPSIS
+.LP
+.nf
+\fBkmrshell_mpi\fR -n m_num[:r_num] -m mapper [-k kvgenerator] [-r reducer] inputfile
+.fi
+.SH DESCRIPTION
+.sp
+.LP
+kmrshell starts map-reduce shell processes (for "streaming").  It runs
+MPI program as mapper and reducer.  The output files of the mapper are
+parsed by a key-value generator program (specified by '-k' option) to
+generate key-value pairs and then they are shuffled and written to
+files on each rank with 'key'-named as a text file whose line
+represents a key-value separated by a space.  The file is passed to
+the reducer as the last parameter.
+.SH OPTIONS
+.sp
+.LP
+The following options are supported:
+.sp
+.ne 2
+.na
+-n m_num[:r_num]
+.ad
+.sp .6
+.RS 4n
+    ......
+.RE
+
+.sp
+.ne 2
+.na
+-m mapper
+.ad
+.sp .6
+.RS 4n
+Specifies a mapper program.  The program can have arguments, where
+they are separated by a whitespace.
+.sp
+Mapper specification: A mapper reads data from STDIN and outputs
+key-value data to STDOUT.  Output data is a sequence of a line "key
+value\\n", where the fields are separated by a whitespace.
+.RE
+
+.sp
+.ne 2
+.na
+-k kvgenerator
+.ad
+.sp .6
+.RS 4n
+    ......
+.RE
+
+.sp
+.ne 2
+.na
+-r reducer
+.ad
+.sp .6
+.RS 4n
+Specifies a reducer program.  The program can have arguments, where
+they are separated by a whitespace.
+.sp
+Reducer Specification: A reducer reads key-value data from STDIN and
+outputs the result to STDOUT.  Input data is a sequence of a line "key
+value\\n", where the fields are separated by a whitespace.
+Lines with the same keys constitutes consecutive lines.
+.RE

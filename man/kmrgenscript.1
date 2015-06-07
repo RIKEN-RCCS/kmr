@@ -1,0 +1,144 @@
+'\"
+.\" Copyright (C) 2012-2015 RIKEN AICS
+.\" nroff -u0 -Tlp -man 
+.TH kmrgenscript.py 1 "2014-02-04" "KMR" "User Commands"
+.SH NAME
+kmrgenscript.py \- generates a job-script
+.SH SYNOPSIS
+.LP
+.nf
+\fBkmrgenscript.py\fR [-e node] [-p prefix] [-o outfile] [-d dir] [-O outdir] [-t rsctime] [-S sched] [-w file] [-M] [-f] -m mapper -r reducer  
+.fi
+.SH DESCRIPTION
+.sp
+.LP
+kmrgenscript.py generates a job-script for job schedulers.  It reads a
+template of a job-script "kmrgenscript.template" either from the
+current directory, "lib" directory next to "bin" where this script is
+found, or installation directory, searching in this order.  Currently,
+it only supports "Parallelnavi" on K as a job scheduler.
+.SH OPTIONS
+.sp
+.LP
+The following options are supported:
+.sp
+.ne 2
+.na
+-e node
+.ad
+.sp .6
+.RS 4n
+Specifies the number of nodes (processes) to execute.  Default is 1.
+.RE
+.sp
+.ne 2
+.na
+-p prefix
+.ad
+.sp .6
+.RS 4n
+Specifies a prefix to the input file names.  Default is "part".
+.RE
+.sp
+.ne 2
+.na
+-o outfile
+.ad
+.sp .6
+.RS 4n
+Specifies a prefix to the output file names.  Default is "output".
+.RE
+.sp
+.ne 2
+.na
+-d indir
+.ad
+.sp .6
+.RS 4n
+Specifies the input directory.  Default is the current directory.
+.RE
+.sp
+.ne 2
+.na
+-O outdir
+.ad
+.sp .6
+.RS 4n
+Specifies the output directory.  The output directory holds the result
+files.  Default is the current directory.
+.RE
+.sp
+.ne 2
+.na
+-t rsctime
+.ad
+.sp .6
+.RS 4n
+Specifies time limit in the job resources.  This is given by
+"00:00:00" format.
+.RE
+.sp
+.ne 2
+.na
+-S sched
+.ad
+.sp .6
+.RS 4n
+Specifies a job scheduler.  Only "K" for Parallelnavi on K is
+supported.
+.RE
+.sp
+.ne 2
+.na
+-w scrfile
+.ad
+.sp .6
+.RS 4n
+Specifies a script output file.  Default is STDOUT.
+.RE
+.sp
+.ne 2
+.na
+-M
+.ad
+.sp .6
+.RS 4n
+Specifies multiple input files are given to a mapper.  In case of the
+number of input files is greater than the number of processes, it
+assigns multiple files to one process.  For using this option, -d
+option is required.
+.RE
+.sp
+.ne 2
+.na
+-f
+.ad
+.sp .6
+.RS 4n
+Forces to create an output directory if it does not exist.
+.RE
+.SH EXAMPLES
+.sp
+.LP
+For example, the following script is generated.
+.sp
+.nf
+.RS
+#!/bin/bash -x
+#
+#PJM --rsc-list "node=2"
+#PJM --rsc-list "elapse=00:10:00"
+#PJM --rsc-list "proc-core=unlimited"
+#PJM --stg-transfiles "all"
+#PJM --mpi "use-rankdir"
+#PJM --stgin "rank=* ./kmrshell     %r:./"
+#PJM --stgin "rank=* ./mapper       %r:./"
+#PJM --stgin "rank=* ./kmrshuffler  %r:./"
+#PJM --stgin "rank=* ./reducer      %r:./"
+#PJM --stgin "rank=* ./part%r       %r:./input"
+#PJM --stgout "rank=* %r:./output.%r ./output.%r"
+#PJM -S
+\&. /work/system/Env_base
+mpiexec -n 2 -of-proc output ./kmrshell ./mapper ./reducer ./input
+.fi
+.RE

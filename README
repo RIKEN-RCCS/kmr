@@ -1,0 +1,26 @@
+Copyright (C) 2012-2015 RIKEN AICS
+
+KMR comes with ABSOLUTELY NO WARRANTY.
+
+This is KMR, a high-performance map-reduce library.  See
+"doc/html/index.html" in the installation directory for an overview
+and API usage.  See "http://mt.aics.riken.jp/kmr" for more
+information.  See "http://mt.aics.riken.jp/" for general project
+information.
+
+COPYRIGHTS: The source code may include the materials copyrighted by
+AKIYAMA Lab., Tokyo Institute of Technology (titec) (code from the
+GHOST Project), and the materials copyrighted by The Regents of the
+University of California (code from NetBSD-5.1.2).  Some distributions
+may not contain the materials copyrighted by AKIYAMA Lab.  All others
+are copyrighted by RIKEN AICS, and all rights reserved except for
+grants by the license.
+
+LICENSE TERMS: KMR is free software: you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public License,
+version 2.1 as published by the Free Software Foundation.  KMR is
+distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.  You should have
+received a copy of the GNU Lesser General Public License along with
+KMR.  If not, see "http://www.gnu.org/licenses/".

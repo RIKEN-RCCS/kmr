@@ -1,0 +1,32 @@
+'\"
+.\" Copyright (C) 2012-2015 RIKEN AICS
+.\" nroff -u0 -Tlp -man
+.TH kmrshuffler 1 "2014-02-04" "KMR" "User Commands"
+.SH NAME
+kmrshuffler \- shuffler for map-reduce by shell command pipeline
+.SH SYNOPSIS
+.LP
+.nf
+\fBkmrshuffler\fR
+.fi
+.SH DESCRIPTION
+.sp
+.LP
+kmrshuffler shuffles key-value pairs for map-reduce by piplining shell
+commands.  It works on stdin and stdout, with one line for one
+key-value pair.  It reads lines of key-value pairs from stdin,
+shuffles the pairs, and writes lines of key-value pairs to stdout.
+The fields of a key-value pair are separated by a whitespace.  Lines
+with the same keys constitutes consecutive lines in the output for
+reduction.  See kmrshell for piplining.  Shuffler is written with KMR.
+.SH OPTIONS
+.sp
+.LP
+The following options are supported:
+.sp
+.ne 2
+.na
+None
+.SH BUGS
+It is a simple application.  Lines are limited to 32K bytes and it has
+no escaping of whitespaces in keys.

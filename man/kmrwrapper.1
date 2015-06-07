@@ -1,0 +1,123 @@
+'\"
+.\" Copyright (C) 2012-2015 RIKEN AICS
+.\" nroff -u0 -Tlp -man
+.TH kmrwrapper.py 1 "2014-02-04" "KMR" "User Commands"
+.SH NAME
+kmrwrapper.py \- combines scripts of file split and job-script generation
+.SH SYNOPSIS
+.LP
+.nf
+\fBkmrwrapper.py\fR [-n num] [-e nodes] [-s pattern] [-p prefix] [-o outfile] [-d dir] [-O outdir] [-t rsctime] [-S sched] [-w file] [-f] -m mapper -r reducer file
+.fi
+.SH DESCRIPTION
+.sp
+.LP
+kmrwrapper.py splits a file and generates a job-script.  It wraps
+programs of "kmrfsplit.py" and "kmrgenscript.py".
+.SH OPTIONS
+.sp
+.LP
+The following options are supported:
+.sp
+.ne 2
+.na
+-n num
+.ad
+.sp .6
+.RS 4n
+Specifies the number of split.  Default is 1.
+.RE
+.sp
+.ne 2
+.na
+-e nodes
+.ad
+.sp .6
+.RS 4n
+Specifies the number of processes to execute the job.  Default is 1.
+.RE
+.sp
+.ne 2
+.na
+-s pattern
+.ad
+.sp .6
+.RS 4n
+Specifies a pattern string to split an input file.  It accepts a
+regular expression.  Default is "\\n".
+.RE
+.sp
+.ne 2
+.na
+-p prefix
+.ad
+.sp .6
+.RS 4n
+Specifies a prefix of input file names.  Default is "part".
+.RE
+.sp
+.ne 2
+.na
+-o outfile
+.ad
+.sp .6
+.RS 4n
+Specifies a prefix of output file names.  Default is "output".
+.RE
+.sp
+.ne 2
+.na
+-d indir
+.ad
+.sp .6
+.RS 4n
+Specifies an input directory.  Default is "./work".
+.RE
+.sp
+.ne 2
+.na
+-O outdir
+.ad
+.sp .6
+.RS 4n
+Specifies an output directory.  It specifies the directory to hold the
+job results.  Default is "./outdir".
+.RE
+.sp
+.ne 2
+.na
+-t rsctime
+.ad
+.sp .6
+.RS 4n
+Specifies time limit in the job resources.  This is given by
+"00:00:00" format.  Default is "00:10:00".
+.RE
+.sp
+.ne 2
+.na
+-S sched
+.ad
+.sp .6
+.RS 4n
+Specifies a scheduler.  Only "K" is supported.
+.RE
+.sp
+.ne 2
+.na
+-w scrfile
+.ad
+.sp .6
+.RS 4n
+Specifies a script output file.  Default is STDOUT.
+.RE
+.sp
+.ne 2
+.na
+-f
+.ad
+.sp .6
+.RS 4n
+Forces to create an output directory if it does not exist.
+.RE
+.sp

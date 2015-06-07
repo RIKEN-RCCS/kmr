@@ -1,0 +1,57 @@
+# doxyfile (2014-02-04)
+# For doxygen-1.7.6.1.
+
+PROJECT_NAME=KMR
+GENERATE_LATEX=NO
+GENERATE_HTML=YES
+HTML_OUTPUT=./html
+JAVADOC_AUTOBRIEF=YES
+SOURCE_BROWSER=YES
+OPTIMIZE_FOR_FORTRAN=YES
+TAB_SIZE=8
+
+ALPHABETICAL_INDEX=YES
+CALL_GRAPH=YES
+
+SORT_BRIEF_DOCS=YES
+SORT_MEMBER_DOCS=NO
+STRIP_CODE_COMMENTS=NO
+EXTRACT_STATIC=YES
+#OPTIMIZE_OUTPUT_JAVA=YES
+#EXTENSION_MAPPING=in=Python
+
+PREDEFINED=__K
+
+EXAMPLE_PATH+=src ex
+INPUT+=src/kmr.h src/kmrimpl.h src/kmrbase.c src/kmrutil.c src/kmrmapms.c
+INPUT+=src/kmrmoreops.c src/kmratoa.c src/kmrisort.c
+INPUT+=src/kmrfefs.h src/kmrfefs.c src/kmrfiles.c src/kmraltkvs.c
+INPUT+=src/kmrckpt.h src/kmrckpt.c
+INPUT+=src/kmriolb.c
+INPUT+=src/kmrwatch0.c
+INPUT+=src/kmrf.F90
+INPUT+=src/test0.c src/testf.f90 src/testcxx.cpp
+INPUT+=src/test1.c src/test2.c src/test3.c src/test4.c src/test5.c
+INPUT+=src/testmisc.c
+INPUT+=src/testckpt1.c src/testckpt2.c src/testckpt3.c src/testckpt4.c
+INPUT+=src/testiolb1.c src/testiolb2.c
+INPUT+=shell/kmrshell.c shell/kmrshell_mpi.c
+INPUT+=shell/kmrshuffler.c
+INPUT+=kmrrun/kmrrun.c
+INPUT+=cmd/kmrfsplit.py cmd/kmrgenscript.in.py cmd/kmrwrapper.py
+INPUT+=cmd/kmrckptdump.c cmd/kmrrungenscript.in.py
+INPUT+=ex/kmeans-kmr.c ex/kmeans-mrmpi.cpp ex/wordcount.c
+INPUT+=ex/phoenix-kmeans.c ex/phoenix-matrix-multiply.c
+INPUT+=ex/mrmpi-wordfreq.c ex/mrmpi-crmat.c
+INPUT+=ex/graysort.c ex/tpch.c
+INPUT+=ex/flexdice.h ex/flexdice.c ex/flexdicemain.c
+INPUT+=ex/kmrdp.cpp ex/testdp.c
+INPUT+=shell/wc.mapper.c shell/wc.reducer.c
+INPUT+=shell/wc.map.pl shell/wc.reduce.pl
+INPUT+=kmrrun/mpi_pi.mapper.c kmrrun/mpi_pi.reducer.c kmrrun/mpi_pi.kvgen.sh
+INPUT+=kmrrun/pi.mapper.c kmrrun/pi.reducer.c kmrrun/pi.kvgen.sh
+INPUT+=kmrrun/wc.mapper.py kmrrun/wc.reducer.py kmrrun/wc.kvgen.sh
+
+EXCLUDE_SYMBOLS=kmr_init_ff kmr_create_context_ff
+EXCLUDE_SYMBOLS+=kmr_map_ff kmr_map_on_rank_zero_ff kmr_map_ms_ff
+EXCLUDE_SYMBOLS+=kmr_reduce_ff

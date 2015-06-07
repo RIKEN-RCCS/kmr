@@ -1,0 +1,149 @@
+<!-- kmrdp-help.html (2014-02-04) -*- Mode: HTML; Coding: utf-8; -*- -->
+
+<h1>Overview of KMR-DP (MPI-DP Compatibility)</h1>
+
+<p>Copyright (C) 2012-2015 RIKEN AICS</p>
+
+<p>(KMR Version $Rev: 216 $)</p>
+
+<p>
+KMR-DP is a (hopefully better) replacement to a tool MPI-DP for
+Ghost/MP, developed by AKIYAMA Lab., Tokyo Institute of Technology
+Institute (titec).
+
+<p>
+KMR-DP is intended to run master-slave tasks with minimal modification
+to the application.  KMR-DP reads tasks in the job-list table and
+distributes them to the ranks.  Arguments to the tasks are prepared by
+substituting the variables in the template with the entries in the
+job-list table.
+
+<h1>Application Changes</h1>
+
+<p>
+An application needs to be changed to make the entry point name as
+"application".  The "main" is provided by MPI-DP, which sets up the
+MPI environment and then calls "application".  The "application" has a
+C-linkage.
+
+<pre class="fragment">
+int main(int argc, char *argv[]) {......}
+==>
+int application(int argc, char *argv[]) {......}
+</pre>
+
+<h1>Runtime Options</h1>
+
+<p>
+Options:
+
+<p>
+<table class=dirtab>
+<tr><td>-tb name
+	<td>: (REQUIRED) File name of jobs-list
+<tr><td>-ot n
+	<td>: Position of output file name in the job-data list
+<tr><td>-pg name
+	<td>: Application name
+<tr><td>-rt _
+	<td>: (not used; it is for fault tolerance)
+<tr><td>-wl _
+	<td>: (not used; it is for fault tolerance)
+<tr><td>-lg name
+	<td>: Log-file name (default as "mpidp.log")
+</table>
+
+<h1>Jobs-List Table</h1>
+
+<p>
+Jobs-list table consists of a title (TITLE), an argument list (PARAM),
+and tab-separated lines of job-data lists.
+
+<p>
+<table class=dirtab>
+<tr><td>TITLE=XXXXXXXXXXXXXXXXX
+	<td>: (OPTIONAL) Title Line (any string) 
+<tr><td>PARAM=arg1 arg2 arg3 ...
+	<td>: (REQUIRED) Argument List to Main Procedure (argc/argv)
+<tr><td>job1-data1 \t job1-data2 \t job1-data3 ...
+	<td>: (REQUIRED) Job-data List (one line corresponds to one job)
+<tr><td>job2-data1 \t job2-data2 \t job2-data3 ...
+	<td>
+<tr><td>job3-data1 \t job3-data2 \t job3-data3 ...
+	<td>
+<tr><td>...
+	<td>
+</table>
+￼
+<p>
+The title line (TITLE) indicates a title, and can be any (short)
+string.
+
+<p>
+The argument list (PARAM) forms a skeleton of arguments to the main
+procedure, where it is appended after the command line arguments.  It
+may include variable references like "$i", where they are substituted
+by the corresponding ones in the job-data list.  Job-data list is a
+tab-separated line of words, and the first word replaces "$1", and so
+on.
+
+<p>
+Each line of job-data lists makes up a task.  Fields in a job-data
+list will replace the variables in the argument list, where the fields
+are separated by tabs.
+
+<h1>Jobs-List Example</h1>
+
+<p>
+An example jobs-list file "testdp.table" be look like the following:
+
+<pre class="fragment">
+TITLE=Example Run
+PARAM=aln -i $1 -d $2 -o $3 -a 2 -w 0 -q d -t p -L 2097152 -S 8 -v 1 -b 1 -s 1 -T 30
+xaa	genes.db	out.0
+xab     genes.db	out.1
+xac     genes.db	out.2
+xad     genes.db	out.3
+</pre>
+
+<p>
+"$1" is substituted by "xaa", "$2" by "genes.db", and "$3" by "out.0",
+and so on, similarly for each following lines.
+
+<h1>Example Run</h1>
+
+<p>
+A run can be started with:
+
+<pre class="fragment">
+mpirun -np n a.out -tb testdp.table
+</pre>
+
+<h1>Installation</h1>
+
+<p>
+KMR-DP is included in KMR.
+
+<h1>Simplest Usage</h1>
+
+<pre class="fragment">
+sed -e 's/main/application/' < app.c > appnew.c
+mpic++ appnew.c libkmr.a
+mpiexec a.out -tb testdp.table
+</pre>
+
+<h1>Logging Output</h1>
+
+<p>
+A logging file ("mpidp.log" by default) dumps run information.  The
+fields of "JOB table" and "Worker table" indicate the result.
+
+<p>
+The "JOB table" lists results one line for each task.  "WID" is
+identical to the task number (in KMR-DP case, with no retry).
+
+<p>
+The "Worker table" lists results one line for each rank.  Fields of
+each line indicate: 1st: rank, 2nd: number of tasks, and the following
+consists two columns for each task result.  Each task result
+indicates: 1st: a task number, and 2nd: a return value.

@@ -1,0 +1,17 @@
+'\"
+.\" Copyright (C) 2012-2015 RIKEN AICS
+.\" nroff -u0 -Tlp -man
+.TH kmrckptdump 1 "2014-06-03" "KMR" "User Commands"
+.SH NAME
+kmrckptdump \- dump checkpoint log and data
+.SH SYNOPSIS
+.LP
+.nf
+\fBkmrckptdump\fR ckpt-filename
+.fi
+.SH DESCRIPTION
+.sp
+.LP
+kmrckptdump shows contents of a checkpoint file.  A checkpoint file can be a
+checkpoint log file or a checkpoint data file of each key-value store
+generated while executing with "ckpt_enable=1".

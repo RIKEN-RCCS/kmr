@@ -1,0 +1,45 @@
+# Makefile (2014-02-04)
+
+include ../config.make
+
+mpicc=$(MPICC) $(OPENMP_CFLAGS) $(CFLAGS)
+mpicxx=$(MPICXX) $(OPENMP_CXXFLAGS) $(CXXFLAGS)
+
+LIBS += ../src/libkmr.a
+INCL=-I ../src/
+
+all::
+	@echo 'make one of wordcount, kmeans, graysort, tpch, mm, wordfreq, rmat, phoenix-kmeans'
+
+wordcount:
+	$(mpicc) $(INCL) -g wordcount.c $(LIBS)
+
+kmeans:
+	$(mpicc) $(INCL) -g kmeans-kmr.c $(LIBS) -lm
+
+graysort:
+	$(mpicc) $(INCL) -g graysort.c $(LIBS)
+
+mm:
+	$(mpicc) $(INCL) -g phoenix-matrix-multiply.c $(LIBS)
+
+wordfreq:
+	$(mpicc) $(INCL) -g mrmpi-wordfreq.c $(LIBS)
+
+rmat:
+	$(mpicc) $(INCL) -g mrmpi-crmat.c $(LIBS)
+
+phoenix-kmeans:
+	$(mpicc) $(INCL) -g phoenix-kmeans.c $(LIBS)
+
+tpch:
+	$(mpicc) $(INCL) -g tpch.c $(LIBS)
+
+flexdice:
+	gcc -fopenmp -m64 -std=gnu99 -Wall -Wextra -pedantic -Wno-long-long -Wno-unused-parameter -Wmissing-prototypes -Wshadow -g flexdice.c flexdicemain.c -lm
+
+distclean:: clean
+
+clean::
+	rm -f matrix_file_A.txt matrix_file_B.txt
+	rm -f *.o a.out core core.*

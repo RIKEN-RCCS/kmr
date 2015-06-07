@@ -1,0 +1,18 @@
+#!/bin/bash -x
+#
+#PJM --rsc-list "node=%(NODE)s"
+#PJM --rsc-list "elapse=%(RSCTIME)s"
+#PJM --rsc-list "proc-core=unlimited"
+#PJM --stg-transfiles "all"
+#PJM --mpi "use-rankdir"
+#PJM --stgin "rank=* %(KMRHOME)s/lib/kmrshell %%r:./"
+#PJM --stgin "rank=* %(MAPPER)s %%r:./"
+#PJM --stgin "rank=* %(KMRHOME)s/lib/kmrshuffler %%r:./"
+%(DATASTGIN)s
+%(DATASTGOUT)s
+#PJM --stgout "./core* ./"
+#PJM -S
+
+. /work/system/Env_base
+
+%(EXEC)s
