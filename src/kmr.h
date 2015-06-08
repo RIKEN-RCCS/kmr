@@ -34,10 +34,7 @@ extern "C" KMR_BR0
 typedef unsigned char _Bool;
 #endif
 
-/* KMR revision number. */
-
-#define KMR_REV "$Rev: 505 $"
-#define KMR_DATE "$Date: 2015-04-02 17:32:21 +0900 (Thu, 02 Apr 2015) $"
+/* KMR version number. */
 
 #define KMR_API_ID0(X) KMR_API_ID1(X)
 #define KMR_API_ID1(X) kmr_api_ ## X
@@ -45,8 +42,6 @@ typedef unsigned char _Bool;
 
 extern int KMR_API_ID;
 extern const int kmr_version;
-extern char * const kmr_rev;
-extern char * const kmr_date;
 
 /* MPI tags used as replies in kmr_map_via_spawn(). */
 

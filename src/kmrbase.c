@@ -26,8 +26,6 @@
 
 int KMR_API_ID = 0;
 const int kmr_version = KMR_H;
-char * const kmr_rev = KMR_REV;
-char * const kmr_date = KMR_DATE;
 
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
