@@ -206,7 +206,7 @@ def select_scheduler(opts, sched):
     if sched == 'K':
         script = k_scheduler(queue, rsctime, node, kmrrun_path,
                              kmrrun_parameter,
-                             template_dir + '/kmrrungenscript.template',
+                             template_dir + '/kmrrungenscript.template.k',
                              opts.shape, opts.proc, mapper, kvgen, reducer,
                              opts.indir, opts.ckpt, opts.restart)
     if sched == 'FOCUS':
