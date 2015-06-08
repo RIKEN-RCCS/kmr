@@ -1,29 +1,60 @@
+KMR
+===
+
 Copyright (C) 2012-2015 RIKEN AICS
 
 KMR comes with ABSOLUTELY NO WARRANTY.
 
 This is KMR, a high-performance map-reduce library.  See
-"doc/html/index.html" in the installation directory for an overview
-and API usage.  See "http://mt.aics.riken.jp/kmr" for more
-information.  See "http://mt.aics.riken.jp/" for general project
-information.
+"http://mt.aics.riken.jp/kmr" for the project information.  See
+"http://mt.aics.riken.jp/kmr/docs/kmr-1.6/html/index.html" for an
+overview and API usage of the current stable release of KMR.
 
-FILES:
+FILES
+-----
 
 The "src" directory contains the source code.  The "cmd" directory
 contains the source code of the commands.  The "kmrrun" directory
 contains the source code for shell command pipelining (or
-"streaming").  The "ex" directory contains a few examples.  The "html"
-and "man" directories contain the Doxygen generated documents and the
-manual pages for commands.  The "shell" directory contains the former
-commands of shell command pipelining.
+"streaming").  The "ex" directory contains a few examples.
+The "shell" directory contains the former commands of shell command
+pipelining.
 
 The file "gensort-1.2.tar.gz" is a 3rd-party software of the data
 generator of TeraSort.  The file "tpch_2_17_0.zip" is also a 3rd-party
 software of the data generator of TPC-H.  These files are not part of
 KMR, but they are needed for running some examples.
 
-COPYRIGHTS:
+INSTALL
+-------
+
+KMR can be installed by just typing 'configure', 'make' and
+'make install'.  To change the installation directory, specify
+'--prefix' option to the configure script.
+
+    $ ./configure --prefix=PATH_TO_INSTALL_DIR
+    $ make
+    $ make install
+
+KMR can work with any kind of C compilers and MPI libraries.  KMR does
+not depend on any other libraries.  KMR is developed and tested mainly
+on the following environments.
+
+* CentOS 6.x Linux x86_64, GCC, OpenMPI
+* K Computer/FX10, Fujitsu Compiler, Fujitsu MPI
+
+To build KMR documents, type 'make htmldoc'. It depends on Doxygen and
+Gnu troff.  The documents are generated under './html' directory.
+
+    $ make htmldoc
+
+To install KMR documents, type 'make install-htmldoc' after installing
+KMR binaries.
+
+    $ make install-htmldoc
+
+COPYRIGHTS
+----------
 
 The files in "src" directory include the materials copyrighted by
 AKIYAMA Lab., Tokyo Institute of Technology (titec) (code from the
@@ -39,7 +70,8 @@ copyrighted by the Transaction Processing Performance Council (TPC).
 All others are copyrighted by RIKEN AICS, and all rights reserved
 except for the grants by the license.
 
-LICENSE TERMS:
+LICENSE TERMS
+-------------
 
 KMR is free software licensed under the BSD 2-Clause License.  See
 LICENSE for more details.
