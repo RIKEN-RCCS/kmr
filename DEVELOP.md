@@ -36,15 +36,19 @@ If you release a new version of KMR, follow the following instructions.
 
        <p>(KMR Version: v1.6(20150401))</p>
 
-5. Commit and push changes to src/kmr.h and src/kmr-overview.html
+5. Modify l.7 in ex/kmrdp-help.html to include the version and date string.
 
-6. Tag the head of the master branch as the version number and push it
+       <p>(KMR Version: v1.6(20150401))</p>
+
+6. Commit and push changes to src/kmr.h and src/kmr-overview.html
+
+7. Tag the head of the master branch as the version number and push it
 
        $ git tag -m 'KMR release v1.6' v1.6
        $ git push origin v1.6
 
-7. Make html documents locally
+8. Make html documents locally
 
        $ make htmldoc
 
-8. Publish the htmldoc on http://pf-aics-riken.github.io/kmr-manual/
+9. Publish the htmldoc on http://pf-aics-riken.github.io/kmr-manual/
