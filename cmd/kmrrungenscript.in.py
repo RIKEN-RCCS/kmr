@@ -24,131 +24,110 @@ def checkexist (path) :
 
 ## Check restart mode.
 #  If node > number of checkpoint file, error.
+#  @param procstr           string that represents process number
+#  @param restart_basename  prefix of checkpoint directory name
 
-def checkrestart (procstr, restart_basenae) :
+def checkrestart (procstr, restart_basename):
     files = os.listdir('./')
     count = 0
     for sfile in files :
-        if sfile.split(".")[0] == os.path.basename(restart_basenae) :
+        if sfile.split(".")[0] == os.path.basename(restart_basename):
             count = count +1
-    fname = os.path.basename(restart_basenae) + '.00000/nprocs'
-    if (not os.path.exists(fname)) :
+    fname = os.path.basename(restart_basename) + '.00000/nprocs'
+    if (not os.path.exists(fname)):
         print >> sys.stderr, \
             'Error: Checkpoint nproc file %s not exit.\n' % fname
         sys.exit()
     preprocstr = open(fname).read()
     preproc = preprocstr.split("=")[1]
-    if count != int(preproc) :
+    if count != int(preproc):
         print >> sys.stderr, \
             'Error: Do not match number of checkpoint file and ' \
             'executed process. ***\n'
         sys.exit()
     proc = k_node_to_int(procstr)
-    if proc > int(preproc) :
+    if proc > int(preproc):
         print >> sys.stderr, \
             'Error: On restart, increasing number of process is ' \
             'not supported. ***\n'
         sys.exit()
-    if count > proc :
+    if count > proc:
         sys.stderr.write("*** Reduction mode. ***\n")
 
 
 ## Update command path.
+#  @param cmd     path to a command
 
-def update_execpath(cmd) :
+def update_execpath(cmd):
     if cmd :
-        m = re.match("^\./.+", cmd)
-        if not m :
+        m = re.match(r"^\./.+", cmd)
+        if not m:
             m = re.match("^/.+", cmd)
-            if m :
+            if m:
                 print >> sys.stderr, \
                     'Error: A program should be specified by a relative ' \
                     'path from the current directory.'
                 sys.exit()
-            else :
+            else:
                 cmd = './' + cmd
     return cmd
 
 
 ## Parse K node declaration into an integer.
+#  @param shape_str       string that represents K node shape
 
-def k_node_to_int(shape_str) :
-    m = re.match("(\d+)x?(\d+)?x?(\d+)?(:strict)?", shape_str)
+def k_node_to_int(shape_str):
+    m = re.match(r"(\d+)x?(\d+)?x?(\d+)?(:strict)?", shape_str)
     prdct = 1
-    for mstr in m.groups()[0:3] :
-        if mstr :
+    for mstr in m.groups()[0:3]:
+        if mstr:
             prdct *= int(mstr)
     return prdct
 
 
 ## Generates job-script for K.
-#  @param node             number of node to execute.
-#  @param shape            mpi process shape
-#  @param proc             number of execute proc
-#  @param indir            directory where inputs are located(staged-in)
-#  @param rsctime          resource time limit
-#  @param taskproc         number of processes to run each mapper/reducer
-#  @param mapper           mapper program
-#  @param kvgen            kv generator program
-#  @param reducer          reducer program
-#  @param ckpt             enable checkpoint
-#  @param restart_basename prefix of checkpoint directory nam
-#  @param scrfile          output job script file name
+#  @param queue              queue to submit job
+#  @param rsctime            resource time limit
+#  @param node               number of node to execute.
+#  @param kmrrun_path        path to kmrrun command
+#  @param kmrrun_parameter   parameter for kmrrun
+#  @param template_path      path for template file
+#  @param shape              mpi process shape
+#  @param proc               number of execute proc
+#  @param mapper             mapper program
+#  @param kvgen              kv generator program
+#  @param reducer            reducer program
+#  @param indir              directory where inputs are located(staged-in)
+#  @param ckpt               enable checkpoint
+#  @param restart_basename   prefix of checkpoint directory name
 
-def k_scheduler(node, shape, proc, indir, rsctime, taskproc, mapper, kvgen,
-                reducer, ckpt, restart_basename, scrfile) :
-    # Read template file.
-    template = ''
-    cmdpath = ''
-    if template == '' :
-        try :
-            template = open('kmrrungenscript.template').read()
-            cmdpath = 'kmrrun'
-        except IOError :
-            pass
-    if template == '' :
-        try :
-            dir0 = os.path.dirname(os.path.realpath(__file__))
-            dir1 = os.path.realpath(dir0 + '/../lib')
-            template = open(dir1 + '/kmrrungenscript.template').read()
-            cmdpath = dir1 + '/kmrrun'
-        except IOError :
-            pass
-    if template == '' :
-        try :
-            dir2 = os.path.realpath(kmrhome + '/lib')
-            template = open(dir2 + '/kmrrungenscript.template').read()
-            cmdpath = dir2 + '/kmrrun'
-        except IOError :
-            pass
-    if template == '' :
-       print >> sys.stderr, 'Error: could not open job-script template.'
-       sys.exit()
-
+def k_scheduler(queue, rsctime, node, kmrrun_path, kmrrun_parameter,
+                template_path, shape, proc, mapper, kvgen, reducer, indir,
+                ckpt, restart_basename):
     # Stage in section
     stginstr = ""
-    if mapper :
+    if mapper:
         mapper_cmd  = mapper.split()[0]
         stginstr += '#PJM --stgin "%s %s"' % (mapper_cmd, mapper_cmd)
-    if kvgen :
-        if len(stginstr) :
+    if kvgen:
+        if len(stginstr):
             stginstr += '\n'
-        kvgen_cmd   = kvgen.split()[0]
+        kvgen_cmd = kvgen.split()[0]
         stginstr += '#PJM --stgin "%s %s"' % (kvgen_cmd, kvgen_cmd)
-    if reducer :
-        if len(stginstr) :
+    if reducer:
+        if len(stginstr):
             stginstr += '\n'
         reducer_cmd = reducer.split()[0]
         stginstr += '#PJM --stgin "%s %s"' % (reducer_cmd, reducer_cmd)
-    if len(stginstr) :
+    if len(stginstr):
         stginstr += '\n'
     indir_stgin = './' + os.path.basename(indir)
     stginstr += '#PJM --stgin "%s/* %s/"' % (indir, indir_stgin)
     # Stage in ckpt files
-    if restart_basename :
+    if restart_basename:
         fname = os.path.basename(restart_basename) + '.00000/nprocs'
         nproc = int(open(fname).read().split("=")[1])
-        for rank in range(nproc) :
+        for rank in range(nproc):
             stginstr += '\n'
             stginstr += '#PJM --stgin "./%s.%05d/* ./ckptdir%05d/"' \
                         % (restart_basename, rank, rank)
@@ -156,74 +135,132 @@ def k_scheduler(node, shape, proc, indir, rsctime, taskproc, mapper, kvgen,
     # Stage out section
     stgoutstr = "#\n# !!WRITE STGOUT HERE!!\n#"
     # Stage out ckpt files
-    if ckpt or restart_basename :
-        for rank in range(k_node_to_int(proc)) :
+    if ckpt or restart_basename:
+        for rank in range(k_node_to_int(proc)):
             stgoutstr += '\n'
             stgoutstr += '#PJM --stgout "./ckptdir%05d/* ' \
                          './ckptdir_%%j.%05d/"' % (rank, rank)
 
-    # program execute section
-    execstr = ''
-    optstring = ''
-    if taskproc :
-        optstring += '-n %s ' % (taskproc)
-    if mapper :
-        optstring += '-m "%s" ' % (mapper)
-    if kvgen :
-        optstring += '-k "%s" ' % (kvgen)
-    if reducer :
-        optstring += '-r "%s" ' % (reducer)
-    if ckpt or restart_basename :
-        optstring += '--ckpt '
-    optstring += indir_stgin
+    execstr = 'mpiexec -n %d ./kmrrun %s' % (k_node_to_int(proc), kmrrun_parameter)
 
-    execstr += 'mpirun -np %d ./kmrrun %s' % (k_node_to_int(proc), optstring)
+    template = open(template_path).read()
+    return template % {'QUEUE': queue, 'NODE': node, 'RSCTIME': rsctime,
+                       'KMRRUN': kmrrun_path, 'SHAPE': shape, 'PROC': proc,
+                       'DATASTGIN': stginstr, 'DATASTGOUT': stgoutstr,
+                       'EXEC': execstr}
 
-    # replace template keyword using parameter.
-    script = template % {'NODE': node, 'RSCTIME': rsctime, 'SHAPE': shape,
-                         'PROC': proc, 'KMRRUN': cmdpath,
-                         'DATASTGIN': stginstr, 'DATASTGOUT': stgoutstr,
-                         'EXEC': execstr, 'KMRHOME': kmrhome}
+
+## Generates job-script for FOCUS supercomputer
+#  @param queue              queue to submit job
+#  @param rsctime            resource time limit
+#  @param node               number of MPI processes to use
+#  @param kmrrun_path        path to kmrrun command
+#  @param kmrrun_parameter   parameter for kmrrun
+#  @param template_path      path for template file
+
+def focus_scheduler(queue, rsctime, node, kmrrun_path, kmrrun_parameter,
+                    template_path):
+    template = open(template_path).read()
+    return template % {'QUEUE': queue, 'NODE': node, 'RSCTIME': rsctime,
+                       'KMRRUN': kmrrun_path, 'KMRRUN_PARAM': kmrrun_parameter}
+
+
+## Selects job-scheduler.
+#  @param opts  Options to the generator
+#  @param sched           scheduler
+
+def select_scheduler(opts, sched):
+    # find kmrrun and its job-scheduler templates
+    template_dir = kmrhome + '/lib'
+    kmrrun_path = template_dir + '/kmrrun'
+    if not os.path.exists(kmrrun_path):
+        # kmrrun does not exist in the install directory.  In this case,
+        # We assume that we are working in KMRSRC/cmd directory.
+        template_dir = '.'
+        kmrrun_path = template_dir + '/../kmrrun/kmrrun'
+        if not os.path.exists(kmrrun_path):
+            # error exit
+            print >> sys.stderr, 'Error: could not find kmrrun utility.'
+            sys.exit()
+
+    # set parameters
+    queue    = opts.queue
+    node     = opts.node
+    rsctime  = options.rsctime
+    mapper   = update_execpath(opts.mapper)
+    kvgen    = update_execpath(opts.kvgen)
+    reducer  = update_execpath(opts.reducer)
+    kmrrun_parameter = ''
+    if opts.taskproc:
+        kmrrun_parameter += '-n %s ' % (opts.taskproc)
+    if opts.mapper:
+        kmrrun_parameter += '-m "%s" ' % (mapper)
+    if opts.kvgen:
+        kmrrun_parameter += '-k "%s" ' % (kvgen)
+    if opts.reducer:
+        kmrrun_parameter += '-r "%s" ' % (reducer)
+    if opts.ckpt or opts.restart:
+        kmrrun_parameter += '--ckpt '
+    kmrrun_parameter += './' + os.path.basename(opts.indir)
+
+    if sched == 'K':
+        script = k_scheduler(queue, rsctime, node, kmrrun_path,
+                             kmrrun_parameter,
+                             template_dir + '/kmrrungenscript.template',
+                             opts.shape, opts.proc, mapper, kvgen, reducer,
+                             opts.indir, opts.ckpt, opts.restart)
+    if sched == 'FOCUS':
+        script = focus_scheduler(queue, rsctime, node, kmrrun_path,
+                                 kmrrun_parameter,
+                                 template_dir + '/kmrrungenscript.template.focus')
+    # for other schedulers...
 
     # output script
-    if scrfile is None :
+    if opts.scrfile is None:
         print script
     else :
-        out = open(scrfile, "w")
+        out = open(opts.scrfile, "w")
         print >> out, script
         out.close()
 
 
-## Selects job-scheduler.
-#  @param node            number of node to execute.
-#  @param shape           mpi process shape
-#  @param proc            number of execute proc
-#  @param indir           directory where inputs are located(staged-in)
-#  @param rsctime         resource time limit
-#  @param taskproc        number of processes to run each mapper/reducer
-#  @param mapper          mapper program
-#  @param kvgen           kv generator program
-#  @param reducer         reducer program
-#  @param ckpt            enable checkpoint
-#  @param restart_basenae prefix of checkpoint directory nam
-#  @param scrfile         output job script file name
-#  @param sched           scheduler
+## Warn to write Stage-out section.
+#  @param opts  Options to the generator
 
-def select_scheduler(node, shape, proc, indir, rsctime, taskproc, mapper,
-                     kvgen, reducer, ckpt, restart_basenae, scrfile, sched) :
-    if sched == 'K' :
-        k_scheduler(node, shape, proc, indir, rsctime, taskproc, mapper,
-                    kvgen, reducer, ckpt, restart_basenae, scrfile)
-    # for other schedulers...
+def warn_stageout(opts):
+    if opts.sched != 'K':
+        return
+
+    message = """
+#########################################################################
+Don't forget to write stage-out directives for MapReduce output files.
+"""[1:-1]
+    if opts.ckpt or opts.restart:
+        message += """
+A job script generated by this program stages-out only checkpoint files.
+"""[0:-1]
+
+    message += """
+#########################################################################
+"""
+    print >> sys.stderr, message
 
 
 ## kmrgenscript main routine.
 #  It works on Python 2.4 or later.
 
-if __name__ == "__main__" :
+if __name__ == "__main__":
 
     usage = "usage: %prog [options] -m mapper [-k keygener -r reducer]"
     parser = OptionParser(usage)
+
+    parser.add_option("-q",
+                      "--queue",
+                      dest="queue",
+                      type="string",
+                      help="queue to submit your job",
+                      metavar="'string'",
+                      default='None')
 
     parser.add_option("-t",
                       "--resource-time",
@@ -245,7 +282,8 @@ if __name__ == "__main__" :
                       "--shape",
                       dest="shape",
                       type="string",
-                      help="mpi process shape (default is '1')",
+                      help="mpi process shape. "
+                      "Valid only on K scheduler. (default is '1')",
                       metavar="'string'",
                       default='1')
 
@@ -253,7 +291,8 @@ if __name__ == "__main__" :
                       "--proc",
                       dest="proc",
                       type="string",
-                      help="number of mpi processes (default is '8')",
+                      help="number of mpi processes. "
+                      "Valid only on K scheduler. (default is '8')",
                       metavar="'string'",
                       default='8')
 
@@ -261,8 +300,10 @@ if __name__ == "__main__" :
                       "--inputdir",
                       dest="indir",
                       type="string",
-                      help="input directory on K global storage that is "
-                      "staged-in (default is './input')",
+                      help="input file directory. "
+                      "When used on K computer, this directory should be one "
+                      "located in K global storage that is staged-in. "
+                      "(default is './input')",
                       metavar="'string'",
                       default='./input')
 
@@ -318,46 +359,37 @@ if __name__ == "__main__" :
                       help="output job script filename",
                       metavar="'string'")
 
+    parser.add_option("-S",
+                      "--scheduler",
+                      dest="sched",
+                      type="string",
+                      help="scheduler type. "
+                      "Specify Scheduler 'K' or 'FOCUS'. "
+                      "'K' supports K computer/FX10 and 'FOCUS' supports "
+                      "Focus supercomputer.",
+                      metavar="'string'",
+                      default='K')
 
     (options, args) = parser.parse_args()
 
     # check parameters.
-    if len(args) <> 0 :
+    if len(args) <> 0:
         parser.error("Error: Missing parameter")
         sys.exit()
-    if not options.mapper :
+    if not options.mapper:
         print >> sys.stderr, "Error: Mapper is not specified\n"
         sys.exit()
-    if options.reducer and not options.kvgen :
+    if options.reducer and not options.kvgen:
         print >> sys.stderr, \
             "Error: Specify kv generator when reducer is specified\n"
         sys.exit()
 
     checkexist(options.indir)
-    if options.restart :
+    if options.restart:
         checkrestart(options.proc, options.restart)
 
-    select_scheduler(options.node, options.shape, options.proc,
-                     options.indir, options.rsctime, options.taskproc,
-                     update_execpath(options.mapper),
-                     update_execpath(options.kvgen),
-                     update_execpath(options.reducer),
-                     options.ckpt, options.restart,
-                     options.scrfile, 'K')
-
-    message = """
-#########################################################################
-Don't forget to write stage-out directives for MapReduce output files.
-"""[1:-1]
-    if options.ckpt or options.restart :
-        message += """
-A job script generated by this program stages-out only checkpoint files.
-"""[0:-1]
-
-    message += """
-#########################################################################
-"""
-    print >> sys.stderr, message
+    select_scheduler(options, options.sched)
+    warn_stageout(options)
 
 
 # Copyright (C) 2012-2015 RIKEN AICS

@@ -1,0 +1,12 @@
+#!/bin/bash -x
+#
+#SBATCH -p %(QUEUE)s
+#SBATCH -t %(RSCTIME)s
+#SBATCH -n %(NODE)s
+#SBATCH -J job_kmrrun
+#SBATCH -o job_kmrrun.%%J.out
+#SBATCH -e job_kmrrun.%%J.err
+
+module load gnu/openmpi165
+
+mpiexec -n %(NODE)s %(KMRRUN)s %(KMRRUN_PARAM)s
