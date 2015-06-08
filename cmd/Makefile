@@ -34,7 +34,8 @@ install::
 	$(INSTALL) -m 755 kmrwrapper.py $(BINDIR)
 	$(INSTALL) -m 755 kmrrungenscript.py $(BINDIR)
 	$(INSTALL) -m 644 kmrgenscript.template $(LIBDIR)
-	$(INSTALL) -m 644 kmrrungenscript.template $(LIBDIR)
+	$(INSTALL) -m 644 kmrrungenscript.template.k $(LIBDIR)
+	$(INSTALL) -m 644 kmrrungenscript.template.focus $(LIBDIR)
 
 distclean:: clean
 
