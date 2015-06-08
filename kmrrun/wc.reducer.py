@@ -26,7 +26,7 @@ if __name__ == "__main__":
     argv = sys.argv
     if (len(argv) != 2):
         sys.stderr.write("Specify an input file.\n")
-        sys.exit(1);
+        sys.exit(1)
 
     key = None
     count = 0
@@ -39,7 +39,7 @@ if __name__ == "__main__":
         n = int(ns)
         count += n
         line = rf.readline()
-    rf.close
+    rf.close()
 
     os.remove(argv[1])
     print "%s %d" % (key, count)
