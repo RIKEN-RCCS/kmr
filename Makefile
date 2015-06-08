@@ -17,6 +17,9 @@ install:
 	cd cmd; make install
 	cd man; make install
 
+install-htmldoc: install htmldoc
+	cd src; make install-htmldoc
+
 configure: configure.ac ax_openmp.m4 ax_mpi.m4
 	cat ax_openmp.m4 ax_mpi.m4 > aclocal.m4
 	autoconf

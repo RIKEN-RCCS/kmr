@@ -42,7 +42,6 @@ install::
 	$(INSTALL) -d $(LIBDIR)
 	$(INSTALL) -d $(INCDIR)
 	$(INSTALL) -d $(ETCDIR)
-	$(INSTALL) -d $(DOCDIR)
 	$(INSTALL) -m 644 kmr.h $(INCDIR)
 	if [ -f kmrf.mod ]; then $(INSTALL) -m 644 kmrf.mod $(INCDIR); fi
 	$(INSTALL) -m 644 libkmr.a $(LIBDIR)
@@ -51,6 +50,9 @@ install::
 	$(INSTALL) -m 644 ../LICENSE $(ETCDIR)
 	$(INSTALL) -m 644 ../config.log $(ETCDIR)
 	$(INSTALL) -m 644 ../config.make $(ETCDIR)
+
+install-htmldoc::
+	$(INSTALL) -d $(DOCDIR)
 	cp -rp ../html $(DOCDIR)/
 
 check::
