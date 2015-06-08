@@ -1,5 +1,5 @@
 /* kmrckptdump.c */
-/* Copyright (C) 2014-2015 RIKEN AICS */
+/* Copyright (C) 2012-2015 RIKEN AICS */
 
 #include <mpi.h>
 #include <stdio.h>

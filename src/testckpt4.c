@@ -1,3 +1,5 @@
+/* testckpt4 (2015-03-24) */
+
 /* spawn test program for testing checkpoint restart in 'selective' mode.
 
    Run this program like this.

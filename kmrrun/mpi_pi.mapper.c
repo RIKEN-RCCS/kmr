@@ -1,3 +1,5 @@
+/* mpi_pi.mapper.c (2014-01-10) */
+
 /** \file mpi_pi.mapper.c
     \brief Example for KMRRUN.  It is a mapper for PI calculation
     implemented using MPI.

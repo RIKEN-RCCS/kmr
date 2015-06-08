@@ -1,4 +1,4 @@
-/* K-Means in KMR */
+/* K-Means in KMR (2013-09-19) */
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -1,4 +1,4 @@
-/** \file kmrshell_mpi.c */
+/* kmrshell_mpi.c (2013-12-22) */
 /* Copyright (C) 2012-2015 RIKEN AICS */
 
 /** \file kmrshell_mpi.c

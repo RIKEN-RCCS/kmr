@@ -1,5 +1,7 @@
 #! /bin/sh
 #
+# wc.kvgen.sh (2014-10-31)
+#
 # The combination of wc.mapper.py, wc.kvgen.sh and wc.reducer.py performs
 # word counting of files in a specified directory.
 #

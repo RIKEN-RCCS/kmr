@@ -1,3 +1,5 @@
+/* testckpt3 (2015-03-14) */
+
 /* K-Means program for testing checkpoint restart in 'selective' mode.
 
    This program can be run like the following.

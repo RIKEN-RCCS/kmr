@@ -1,3 +1,5 @@
+/*testiolb2 (2014-08-20) */
+
 /* A file read benchmark for testing locality-aware file assignment.
 
    This program reads files in a specified directory and measures the average

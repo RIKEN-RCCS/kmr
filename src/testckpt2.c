@@ -1,3 +1,5 @@
+/* testckpt2.c (2014-05-28) */
+
 /* spawn test program for testing checkpoint restart.
 
    Run this program like this.

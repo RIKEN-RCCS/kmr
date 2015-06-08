@@ -1,3 +1,5 @@
+/* pi.reducer.c (2014-04-04) */
+
 /** \file pi.reducer.c
     \brief Example for KMRRUN.  It is a reducer for PI calculation.
 

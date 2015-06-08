@@ -1,3 +1,5 @@
+/* pi.mapper.c (2014-04-04) */
+
 /** \file pi.mapper.c
     \brief Example for KMRRUN.  It is a mapper for PI calculation.
 

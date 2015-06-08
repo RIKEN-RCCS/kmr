@@ -1,3 +1,5 @@
+/* testckpt1.c (2014-04-09) */
+
 /* K-Means program for testing checkpoint restart.
 
    This program can be run like the following.

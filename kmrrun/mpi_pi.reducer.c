@@ -1,3 +1,5 @@
+/* mpi_pi.reducer.c (2014-01-10) */
+
 /** \file mpi_pi.reducer.c
     \brief Example for KMRRUN.  It is a reducer for PI calculation
     implemented using MPI.

@@ -1,4 +1,4 @@
-/* K-Means in MR-MPI */
+/* K-Means in MR-MPI (2013-09-19) */
 
 #include <stdio.h>
 #include <stdlib.h>
