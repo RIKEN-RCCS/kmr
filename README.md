@@ -7,8 +7,8 @@ KMR comes with ABSOLUTELY NO WARRANTY.
 
 This is KMR, a high-performance map-reduce library.  See
 "http://mt.aics.riken.jp/kmr" for the project information.  See
-"http://mt.aics.riken.jp/kmr/docs/kmr-1.6/html/index.html" for an
-overview and API usage of the current stable release of KMR.
+"http://pf-aics-riken.github.io/kmr-manual/" for an overview and
+API usage of the current stable release of KMR.
 
 FILES
 -----
