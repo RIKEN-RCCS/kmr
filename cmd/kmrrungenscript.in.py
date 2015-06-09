@@ -16,8 +16,8 @@ kmrhome = '@KMRHOME@'
 #  If file does not exist, it prints an error message and exit.
 #  @param path  file path for check.
 
-def checkexist (path) :
-    if not os.path.exists(path) :
+def checkexist(path):
+    if not os.path.exists(path):
         print >> sys.stderr, 'Error: file or dir "%s" is not exist.' % path
         sys.exit()
 
@@ -27,14 +27,14 @@ def checkexist (path) :
 #  @param procstr           string that represents process number
 #  @param restart_basename  prefix of checkpoint directory name
 
-def checkrestart (procstr, restart_basename):
+def checkrestart(procstr, restart_basename):
     files = os.listdir('./')
     count = 0
-    for sfile in files :
+    for sfile in files:
         if sfile.split(".")[0] == os.path.basename(restart_basename):
             count = count +1
     fname = os.path.basename(restart_basename) + '.00000/nprocs'
-    if (not os.path.exists(fname)):
+    if not os.path.exists(fname):
         print >> sys.stderr, \
             'Error: Checkpoint nproc file %s not exit.\n' % fname
         sys.exit()
@@ -59,7 +59,7 @@ def checkrestart (procstr, restart_basename):
 #  @param cmd     path to a command
 
 def update_execpath(cmd):
-    if cmd :
+    if cmd:
         m = re.match(r"^\./.+", cmd)
         if not m:
             m = re.match("^/.+", cmd)
@@ -107,7 +107,7 @@ def k_scheduler(queue, rsctime, node, kmrrun_path, kmrrun_parameter,
     # Stage in section
     stginstr = ""
     if mapper:
-        mapper_cmd  = mapper.split()[0]
+        mapper_cmd = mapper.split()[0]
         stginstr += '#PJM --stgin "%s %s"' % (mapper_cmd, mapper_cmd)
     if kvgen:
         if len(stginstr):
@@ -221,7 +221,7 @@ def select_scheduler(opts, sched):
     # output script
     if opts.scrfile is None:
         print script
-    else :
+    else:
         out = open(opts.scrfile, "w")
         print >> out, script
         out.close()
