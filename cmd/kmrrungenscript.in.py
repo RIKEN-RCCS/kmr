@@ -203,13 +203,13 @@ def select_scheduler(opts, sched):
         kmrrun_parameter += '--ckpt '
     kmrrun_parameter += './' + os.path.basename(opts.indir)
 
-    if sched == 'K':
+    if sched.upper() == 'K':
         script = k_scheduler(queue, rsctime, node, kmrrun_path,
                              kmrrun_parameter,
                              template_dir + '/kmrrungenscript.template.k',
                              opts.shape, opts.proc, mapper, kvgen, reducer,
                              opts.indir, opts.ckpt, opts.restart)
-    elif sched == 'FOCUS':
+    elif sched.upper() == 'FOCUS':
         script = focus_scheduler(queue, rsctime, node, kmrrun_path,
                                  kmrrun_parameter,
                                  template_dir + '/kmrrungenscript.template.focus')
@@ -355,13 +355,6 @@ if __name__ == "__main__":
                       "Specify prefix of checkpoint directory",
                       metavar="'string'")
 
-    parser.add_option("-w",
-                      "--write-scriptfile",
-                      dest="scrfile",
-                      type="string",
-                      help="output job script filename",
-                      metavar="'string'")
-
     parser.add_option("-S",
                       "--scheduler",
                       dest="sched",
@@ -369,9 +362,16 @@ if __name__ == "__main__":
                       help="scheduler type. "
                       "Specify Scheduler 'K' or 'FOCUS'. "
                       "'K' supports K computer/FX10 and 'FOCUS' supports "
-                      "Focus supercomputer.",
+                      "Focus supercomputer. (default is 'K')",
                       metavar="'string'",
                       default='K')
+
+    parser.add_option("-w",
+                      "--write-scriptfile",
+                      dest="scrfile",
+                      type="string",
+                      help="output job script filename",
+                      metavar="'string'")
 
     (options, args) = parser.parse_args()
 

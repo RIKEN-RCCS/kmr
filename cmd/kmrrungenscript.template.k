@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 #
 #PJM --rsc-list "rscgrp=%(QUEUE)s"
 #PJM --rsc-list "elapse=%(RSCTIME)s"
@@ -9,6 +9,7 @@
 #PJM --stgin "%(KMRRUN)s ./kmrrun"
 %(DATASTGIN)s
 %(DATASTGOUT)s
+# !!PJM --stgout "./core* ./"
 #PJM -S
 
 . /work/system/Env_base

@@ -3,27 +3,35 @@
 .\" nroff -u0 -Tlp -man
 .TH kmrrungenscript.py 1 "2014-06-03" "KMR" "User Commands"
 .SH NAME
-kmrrungenscript.py \- generates a job-script
+kmrrungenscript.py \- generates a job-script for kmrrun
 .SH SYNOPSIS
 .LP
 .nf
-\fBkmrrungenscript.py\fR [-t rsctime] [-e node] [-s shape] [-p proc]
-                   [-o outfile] [-d dir] [-O outdir] [-n task_proc]
+\fBkmrrungenscript.py\fR [-q queue] [-t rsctime] [-e node] [-s shape]
+                   [-p proc] [-d dir] [-n task_proc]
                    -m mapper [-k kvgenerator] [-r reducer]
-                   [-C] [-R ckptdir] [-S sched] [-w file] [-f]
+                   [-C] [-R ckptdir] [-S sched] [-w file]
 .fi
 .SH DESCRIPTION
 .sp
 .LP
-kmrrungenscript.py generates a job-script for job schedulers.  It reads a
-template of a job-script "kmrrungenscript.template" either from the
-current directory, "lib" directory next to "bin" where this script is
-found, or installation directory, searching in this order.  Currently,
-it only supports "Parallelnavi" on K as a job scheduler.
+kmrrungenscript.py generates a job-script that executes kmrrun once
+for a specified job scheduler.  Currently, it supports "Parallelnavi"
+on K computer and SLURM on FOCUS supercomputer as job schedulers.
 .SH OPTIONS
 .sp
 .LP
 The following options are supported:
+
+.sp
+.ne 2
+.na
+-q queue, --queue=queue
+.ad
+.sp .6
+.RS 4n
+Specifies a queue to submit the generated job-script.
+.RE
 
 .sp
 .ne 2
@@ -33,7 +41,7 @@ The following options are supported:
 .sp .6
 .RS 4n
 Specifies time limit in the job resources.  This is given by
-"00:00:00" format.
+"00:00:00" format.  Default is "00:10:00".
 .RE
 
 .sp
@@ -43,7 +51,7 @@ Specifies time limit in the job resources.  This is given by
 .ad
 .sp .6
 .RS 4n
-Specifies the number of nodes (processes) to execute.  Default is 1.
+Specifies the number of nodes (processes) to execute.  Default is 12.
 .RE
 
 .sp
@@ -53,7 +61,8 @@ Specifies the number of nodes (processes) to execute.  Default is 1.
 .ad
 .sp .6
 .RS 4n
-Specifies the MPI process shape.  Default is 1.
+Specifies the MPI process shape.  Valid only on K scheduler.
+Default is 1.
 .RE
 
 .sp
@@ -63,17 +72,8 @@ Specifies the MPI process shape.  Default is 1.
 .ad
 .sp .6
 .RS 4n
-Specifies the number of MPI processes.  Default is 1.
-.RE
-
-.sp
-.ne 2
-.na
--o outfile, --outputfile=outfile
-.ad
-.sp .6
-.RS 4n
-Specifies the output file names.  Default is "output".
+Specifies the number of MPI processes.  Valid only on K scheduler.
+Default is 8.
 .RE
 
 .sp
@@ -83,18 +83,9 @@ Specifies the output file names.  Default is "output".
 .ad
 .sp .6
 .RS 4n
-Specifies the input directory.  Default is "./input".
-.RE
-
-.sp
-.ne 2
-.na
--O outdir, --outputdir=outdir
-.ad
-.sp .6
-.RS 4n
-Specifies the output directory.  The output directory holds the result
-files.  Default is the current directory.
+Specifies the input directory.  When used on K computer, this directory
+should be one located in K global storage that is staged-in.
+Default is "./input".
 .RE
 
 .sp
@@ -115,7 +106,7 @@ Default is 1.
 .ad
 .sp .6
 .RS 4n
-Specifies mapper program.
+Specifies mapper program and its arguments.
 A mapper program can be a serial or an MPI program.
 .RE
 
@@ -126,7 +117,7 @@ A mapper program can be a serial or an MPI program.
 .ad
 .sp .6
 .RS 4n
-Specifies key-value generator program.
+Specifies key-value generator program and its arguments.
 A key-value generator program should be a serial program.
 .RE
 
@@ -137,7 +128,7 @@ A key-value generator program should be a serial program.
 .ad
 .sp .6
 .RS 4n
-Specifies reducer program.
+Specifies reducer program and its arguments.
 A reducer program can be a serial or an MPI program.
 .RE
 
@@ -168,8 +159,9 @@ Specifies prefix of directories where checkpoint files are located.
 .ad
 .sp .6
 .RS 4n
-Specifies a job scheduler.  Only "K" for Parallelnavi on K is
-supported.
+Specifies a job scheduler.  Specify Scheduler 'K' or 'FOCUS'. 'K'
+supports K computer/FX10 and 'FOCUS' supports Focus supercomputer.
+Default is 'K'.
 .RE
 
 .sp
@@ -182,17 +174,6 @@ supported.
 Specifies a script output file.  Default is STDOUT.
 .RE
 
-.sp
-.ne 2
-.na
--f, --force
-.ad
-.sp .6
-.RS 4n
-Forces to create an output directory if it does not exist.
-.RE
-
-
 .SH EXAMPLES
 .sp
 .LP
@@ -200,8 +181,8 @@ For example, the following script is generated.
 .sp
 .nf
 .RS
-$ kmrrungenscript.py -e 10 -s 2 -p 2 -m pi.mapper -k pi.kvgen.sh \\
--r pi.reducer -f -C -R ckptdir_12345 -o 0.out
+$ kmrrungenscript.py -q small -e 10 -s 2 -p 2 -d input \\
+-m pi.mapper -k pi.kvgen.sh -r pi.reducer -C -R ckptdir_12345
 .sp
 .nf
 .RS -7
@@ -211,6 +192,7 @@ It will generate the following job script.
 .RS
 #!/bin/bash -x
 #
+#PJM --rsc-list "rscgrp=small"
 #PJM --rsc-list "elapse=00:10:00"
 #PJM --rsc-list "node=10"
 #PJM --mpi "shape=2"
@@ -221,20 +203,22 @@ It will generate the following job script.
 #PJM --stgin "./pi.mapper ./pi.mapper"
 #PJM --stgin "./pi.kvgen.sh ./pi.kvgen.sh"
 #PJM --stgin "./pi.reducer ./pi.reducer"
-#PJM --stgin "./work/* ./work/"
+#PJM --stgin "./input/* ./input/"
 #PJM --stgin "./ckptdir_12345.00000/* ./ckptdir00000/"
 #PJM --stgin "./ckptdir_12345.00001/* ./ckptdir00001/"
 #PJM --stgin "./ckptdir_12345.00002/* ./ckptdir00002/"
 #PJM --stgin "./ckptdir_12345.00003/* ./ckptdir00003/"
-#PJM --stgout "./0.out ./"
+#
+# !!WRITE STGOUT HERE!!
+#
 #PJM --stgout "./ckptdir00000/* ./ckptdir_%j.00000/"
 #PJM --stgout "./ckptdir00001/* ./ckptdir_%j.00001/"
-#PJM --stgout "./core* ./"
+# !!PJM --stgout "./core* ./"
 #PJM -S
 
 \&. /work/system/Env_base
 
-mpirun -np 2 ./kmrrun -n 1 -m "./pi.mapper" -k "./pi.kvgen.sh" \\
--r "./pi.reducer" --ckpt ./work
+mpiexec -n 2 ./kmrrun -n 1 -m "./pi.mapper" -k "./pi.kvgen.sh" \\
+-r "./pi.reducer" --ckpt ./input
 .fi
 .RE
