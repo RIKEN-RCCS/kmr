@@ -9,4 +9,4 @@
 
 module load gnu/openmpi165
 
-mpiexec -n %(NODE)s %(KMRRUN)s %(KMRRUN_PARAM)s
+mpiexec -n 1 %(KMRRUN)s %(KMRRUN_PARAM)s

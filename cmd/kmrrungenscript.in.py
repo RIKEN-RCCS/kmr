@@ -18,7 +18,7 @@ kmrhome = '@KMRHOME@'
 
 def checkexist (path) :
     if not os.path.exists(path) :
-        print 'Error: file or dir "%s" is not exist.' % path
+        print >> sys.stderr, 'Error: file or dir "%s" is not exist.' % path
         sys.exit()
 
 
@@ -209,11 +209,14 @@ def select_scheduler(opts, sched):
                              template_dir + '/kmrrungenscript.template.k',
                              opts.shape, opts.proc, mapper, kvgen, reducer,
                              opts.indir, opts.ckpt, opts.restart)
-    if sched == 'FOCUS':
+    elif sched == 'FOCUS':
         script = focus_scheduler(queue, rsctime, node, kmrrun_path,
                                  kmrrun_parameter,
                                  template_dir + '/kmrrungenscript.template.focus')
     # for other schedulers...
+    else:
+        print >> sys.stderr, 'Unknown scheduler'
+        sys.exit()
 
     # output script
     if opts.scrfile is None:
