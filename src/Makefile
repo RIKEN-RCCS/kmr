@@ -12,9 +12,11 @@ mpicxx = $(MPICXX) $(OPENMP_CXXFLAGS) $(CXXFLAGS)
 mpif90 = $(MPIFC) $(OPENMP_FFLAGS) $(FCFLAGS)
 
 SRCS_C = kmrbase.c kmrutil.c kmrmapms.c kmrmoreops.c kmrisort.c kmratoa.c \
-	kmrckpt.c kmrfefs.c kmrfiles.c kmraltkvs.c kmriolb.c kmrtrace.c
+	 kmrckpt.c kmrfefs.c kmrfiles.c kmraltkvs.c kmriolb.c kmrtrace.c  \
+	 kmrmapmp.c
 OBJS_C = kmrbase.o kmrutil.o kmrmapms.o kmrmoreops.o kmrisort.o kmratoa.o \
-	kmrckpt.o kmrfefs.o kmrfiles.o  kmraltkvs.o kmriolb.o kmrtrace.o
+	 kmrckpt.o kmrfefs.o kmrfiles.o kmraltkvs.o kmriolb.o kmrtrace.o  \
+	 kmrmapmp.o
 SRCS_F = kmrf.F90
 OBJS_F = kmrf.o
 
@@ -117,6 +119,9 @@ testiolb1: libkmr.a
 
 testiolb2: libkmr.a
 	$(mpicc) -g testiolb2.c libkmr.a $(LIBS)
+
+testmapmp: libkmr.a
+	$(mpicc) -g testmapmp.c libkmr.a $(LIBS)
 
 testcxx: libkmr.a testcxx.cpp
 	$(mpicxx) -std=gnu++0x -g testcxx.cpp libkmr.a $(LIBS)

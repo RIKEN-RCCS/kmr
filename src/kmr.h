@@ -951,6 +951,9 @@ extern void kmr_fin_pushoff_fast_notice_(void);
 extern void kmr_check_pushoff_fast_notice_(KMR *mr);
 
 extern int kmr_assign_file(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt);
+extern int kmr_map_multiprocess(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
+                                struct kmr_option opt, int max_nprocs,
+                                kmr_mapfn_t m);
 
 /* Suppresses warnings of unused constants (for icc). */
 
