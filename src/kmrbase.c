@@ -1952,8 +1952,8 @@ kmr_count_entries(KMR_KVS *kvs, _Bool bound_in_block)
     exchanges pairs with all-to-all communication.  It converts
     pointer keys and values to opaque ones for sending during the
     sorting stage.  Note that the key-value pairs are sorted by the
-    hash-values prior to exchange.  Effective-options: KEY_AS_RANK,
-    TAKE_CKPT.  See struct kmr_option. */
+    hash-values prior to exchange.  Effective-options: INSPECT,
+    KEY_AS_RANK, TAKE_CKPT.  See struct kmr_option. */
 
 int
 kmr_shuffle(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
