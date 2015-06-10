@@ -42,12 +42,13 @@ multiplykey0(const struct kmr_kv_box kv0,
     int val = -1;
     if (rank == 0) {
 		val = (int)kv0.k.i;
-    } else {
-		assert(kv0.klen == 0 && kv0.vlen == 0);
     }
     cc = MPI_Bcast(&val, 1, MPI_INT, 0, comm);
     assert(cc == MPI_SUCCESS);
-    if (rank != 0) {assert(val != -1);}
+    if (rank != 0) {
+		assert(val != -1);
+		assert(val == (int)kv0.k.i);
+	}
 
     struct kmr_kv_box kv = {
 		.klen = sizeof(long), .k.i = val,
@@ -75,7 +76,7 @@ verify0(const struct kmr_kv_box kv0,
 }
 
 static void
-test_map_multiprocess0(int nprocs, int rank)
+test_map_multiprocess0(int rank)
 {
     MPI_Barrier(MPI_COMM_WORLD);
     usleep(50 * 1000);
@@ -144,7 +145,7 @@ main(int argc, char **argv)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     kmr_init();
 
-    test_map_multiprocess0(nprocs, rank);
+    test_map_multiprocess0(rank);
 
     MPI_Barrier(MPI_COMM_WORLD);
     usleep(50 * 1000);
