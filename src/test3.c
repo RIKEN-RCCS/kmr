@@ -869,7 +869,7 @@ simple3(KMR *mr)
 	KMR_KVS *kvs1 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_OPAQUE);
 	cc = kmr_map_getline(mr, f, 0, 1, kvs1, 0, opt, kmr_add_identity_fn);
 	assert(cc == MPI_SUCCESS);
-	assert(kvs1->c.element_count == 502);
+	assert(kvs1->c.element_count == 25);
 
 	rewind(f);
 
@@ -901,7 +901,7 @@ simple3(KMR *mr)
 	free(line);
 	line = 0;
 	kmr_add_kv_done(kvs0);
-	assert(kvs0->c.element_count == 502);
+	assert(kvs0->c.element_count == 25);
 
 	cc = fclose(f);
 	assert(cc == 0);
