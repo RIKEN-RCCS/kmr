@@ -36,7 +36,9 @@ kmr_add_on_rank_zero_fn(const struct kmr_kv_box kv, const KMR_KVS *kvi,
     be called by specifying the sub-communicator to process the given
     key-value pair using multiple processes.
 
-    This is a collective operation.
+    It is a collective operation.  It supports checkpoint/restart,
+    but whole resultant KVO is taken as a checkpoint file once when
+    all key-value pairs are completely processed.
 
     It consumes the input key-value stream KVI unless INSPECT option
     is marked.  The output key-value stream KVO can be null, but in
@@ -45,7 +47,6 @@ kmr_add_on_rank_zero_fn(const struct kmr_kv_box kv, const KMR_KVS *kvi,
     argument.  M is the map-function.  See the description on
     the type ::kmr_mapfn_t.
     Effective-options:  INSPECT, TAKE_CKPT.  See struct kmr_option.
-    TODO support ckpt(whole)
 */
 
 int
@@ -55,6 +56,16 @@ kmr_map_multiprocess(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
     kmr_assert_kvs_ok(kvi, kvo, 1, 0);
     KMR *mr = kvi->c.mr;
     int cc;
+
+    if (kmr_ckpt_enabled(mr)) {
+        if (kmr_ckpt_progress_init(kvi, kvo, opt)) {
+            if (!opt.inspect) {
+                kmr_free_kvs(kvi);
+            }
+            return MPI_SUCCESS;
+        }
+    }
+    int kcdc = kmr_ckpt_disable_ckpt(mr);
 
     /* split communicator */
     int rem = mr->nprocs % max_nprocs;
@@ -121,6 +132,11 @@ kmr_map_multiprocess(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
     cc = kmr_free_context(task_mr);
     assert(cc == MPI_SUCCESS);
     MPI_Comm_free(&task_comm);
+
+    kmr_ckpt_enable_ckpt(mr, kcdc);
+    if (kmr_ckpt_enabled(mr)) {
+        kmr_ckpt_save_kvo_whole(mr, kvo);
+    }
     if (!opt.inspect) {
         kmr_free_kvs(kvi);
     }
