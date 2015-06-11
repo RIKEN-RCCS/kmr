@@ -142,18 +142,46 @@ kmr_map_multiprocess(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
     if (!opt.inspect) {
         kmr_free_kvs(kvi);
     }
-
     return MPI_SUCCESS;
 }
 
-#if 0
+/*
+   Group processes by key and run a mapper to consume key-value pairs
+   which has the key in parallel using processes in the group.
+*/
+
 int
 kmr_map_multiprocess_by_key(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
                             struct kmr_option opt, int rank_key, kmr_mapfn_t m)
 {
+    kmr_assert_kvs_ok(kvi, kvo, 1, 0);
+    KMR *mr = kvi->c.mr;
+    struct kmr_option opt_supported = {.inspect = 1, .take_ckpt = 1};
+    kmr_check_fn_options(mr, opt_supported, opt, __func__);
+    int cc;
+
+    if (kmr_ckpt_enabled(mr)) {
+        if (kmr_ckpt_progress_init(kvi, kvo, opt)) {
+            if (!opt.inspect) {
+                kmr_free_kvs(kvi);
+            }
+            return MPI_SUCCESS;
+        }
+    }
+    int kcdc = kmr_ckpt_disable_ckpt(mr);
+
+    // Do main
+    fprintf(stderr, "%s is not implemented yet.\n", __func__);
+
+    kmr_ckpt_enable_ckpt(mr, kcdc);
+    if (kmr_ckpt_enabled(mr)) {
+        kmr_ckpt_save_kvo_whole(mr, kvo);
+    }
+    if (!opt.inspect) {
+        kmr_free_kvs(kvi);
+    }
     return MPI_SUCCESS;
 }
-#endif
 
 /*
 Copyright (C) 2012-2015 RIKEN AICS
