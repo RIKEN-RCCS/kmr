@@ -55,6 +55,8 @@ kmr_map_multiprocess(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
 {
     kmr_assert_kvs_ok(kvi, kvo, 1, 0);
     KMR *mr = kvi->c.mr;
+    struct kmr_option opt_supported = {.inspect = 1, .take_ckpt = 1};
+    kmr_check_fn_options(mr, opt_supported, opt, __func__);
     int cc;
 
     if (kmr_ckpt_enabled(mr)) {
