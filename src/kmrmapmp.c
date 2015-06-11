@@ -147,8 +147,14 @@ kmr_map_multiprocess(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
 #if 0
 int
 kmr_map_multiprocess_by_key(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
-			    struct kmr_option opt, int rank_key, kmr_mapfn_t m)
+                            struct kmr_option opt, int rank_key, kmr_mapfn_t m)
 {
     return MPI_SUCCESS;
 }
 #endif
+
+/*
+Copyright (C) 2012-2015 RIKEN AICS
+This library is distributed WITHOUT ANY WARRANTY.  This library can be
+redistributed and/or modified under the terms of the BSD 2-Clause License.
+*/
