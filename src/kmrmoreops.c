@@ -888,9 +888,9 @@ kmr_choose_first_part(KMR_KVS *kvi, KMR_KVS *kvo, long n,
     return MPI_SUCCESS;
 }
 
-/** Maps until some key-value are added.  It stops processing, when the
-    output is non-empty.  Existence/emptiness be checked by
-    kmr_get_element_count(). */
+/** Maps until some key-value are added.  It stops processing, when
+    the output is non-empty.  It does not guarantee singleness.
+    Existence/emptiness be checked by kmr_get_element_count(). */
 
 int
 kmr_map_for_some(KMR_KVS *kvi, KMR_KVS *kvo,
@@ -900,6 +900,10 @@ kmr_map_for_some(KMR_KVS *kvi, KMR_KVS *kvo,
     cc = kmr_map9(1, kvi, kvo, arg, opt, m, __FILE__, __LINE__, __func__);
     return cc;
 }
+
+/** Reduces until some key-value are added.  It stops processing, when
+    the output is non-empty.  It does not guarantee singleness.
+    Existence/emptiness be checked by kmr_get_element_count(). */
 
 int
 kmr_reduce_for_some(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
