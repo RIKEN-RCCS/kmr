@@ -292,9 +292,9 @@ fi
 # KMRTARGET is a target of makefile.
 AC_SUBST(KMRTARGET)
 if test "$enable_fortran" = "yes"; then
-  KMRTARGET=kmr_f.a
+  KMRTARGET=kmr_f
 else
-  KMRTARGET=kmr_c.a
+  KMRTARGET=kmr_c
 fi
 
 # Check if TOFU support files are available.

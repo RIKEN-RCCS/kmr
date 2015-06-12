@@ -293,6 +293,13 @@ kmr_create_context(const MPI_Comm comm, const MPI_Info conf,
 }
 
 KMR *
+kmr_create_context_world()
+{
+    KMR *mr = kmr_create_context(MPI_COMM_WORLD, MPI_INFO_NULL, "");
+    return mr;
+}
+
+KMR *
 kmr_create_context_ff(const int fcomm, const int finfo,
 		      const char *identifying_name)
 {
@@ -1078,7 +1085,7 @@ kmr_map_parked(struct kmr_kv_box *ev, long evcnt, long mapcount,
 		if (ccx != MPI_SUCCESS) {
 		    char ee[80];
 		    snprintf(ee, sizeof(ee),
-			     "Map-fn returned with error cc=%d", cc);
+			     "Map-fn returned with error cc=%d", ccx);
 		    kmr_error(mr, ee);
 		}
 		if (mr->log_traces != 0) {
@@ -2380,7 +2387,7 @@ kmr_reduce_threading(_Bool stop_when_some_added,
 		    if (ccx != MPI_SUCCESS) {
 			char ee[80];
 			snprintf(ee, sizeof(ee),
-				 "Reduce-fn returned with error cc=%d", cc);
+				 "Reduce-fn returned with error cc=%d", ccx);
 			kmr_error(mr, ee);
 		    }
 		    if (mr->log_traces != 0) {

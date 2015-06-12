@@ -939,6 +939,14 @@ kmr_ntuple_insertion_point(struct kmr_ntuple *u)
     return (void *)(p + off);
 }
 
+extern int kmr_kv_field_bad;
+extern int kmr_kv_field_opaque;
+extern int kmr_kv_field_cstring;
+extern int kmr_kv_field_integer;
+extern int kmr_kv_field_float8;
+extern int kmr_kv_field_pointer_owned;
+extern int kmr_kv_field_pointer_unmanaged;
+
 extern int kmr_k_node(KMR *mr, kmr_k_position_t p);
 
 extern char *kmr_strptr_ff(char *s);
@@ -952,8 +960,10 @@ extern int kmr_intstr_ff(long p, char *s, int n);
 
 extern unsigned long kmr_fix_bits_endian_ff(unsigned long b);
 
-extern int kmr_get_rank_ff(const KMR_KVS *kvs);
+extern int kmr_get_nprocs(const KMR *mr);
+extern int kmr_get_rank(const KMR *mr);
 extern int kmr_get_nprocs_ff(const KMR_KVS *kvs);
+extern int kmr_get_rank_ff(const KMR_KVS *kvs);
 extern int kmr_get_key_type_ff(const KMR_KVS *kvs);
 extern int kmr_get_value_type_ff(const KMR_KVS *kvs);
 
@@ -965,6 +975,10 @@ extern int kmr_map_via_spawn_ff(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
 				int finfo, struct kmr_spawn_option opt,
 				kmr_mapfn_t m);
 extern int kmr_get_spawner_communicator_ff(KMR *mr, long i, int *comm);
+extern int kmr_map_processes_null_info(_Bool nonmpi, KMR_KVS *kvi,
+				       KMR_KVS *kvo, void *arg,
+				       struct kmr_spawn_option opt,
+				       kmr_mapfn_t mapfn);
 
 extern void kmr_init_kvs_oncore(KMR_KVS *kvs, KMR *mr);
 extern int kmr_free_kvs_pushoff(KMR_KVS *kvs, _Bool deallocate);
@@ -1027,6 +1041,10 @@ extern int kmr_install_watch_program(KMR *mr, char *msg);
 
 extern int kmr_check_options(KMR *mr, MPI_Info conf);
 extern int kmr_load_preference(KMR *mr, MPI_Info info);
+extern int kmr_set_option_by_strings(KMR *mr, char *k, char *v);
+extern char *kmr_stringify_options(struct kmr_option o);
+extern char *kmr_stringify_file_options(struct kmr_file_option o);
+extern char *kmr_stringify_spawn_options(struct kmr_spawn_option o);
 extern void kmr_print_options(struct kmr_option opt);
 extern void kmr_print_file_options(struct kmr_file_option opt);
 extern void kmr_print_spawn_options(struct kmr_spawn_option opt);

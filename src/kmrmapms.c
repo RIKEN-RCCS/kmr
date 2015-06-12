@@ -1982,6 +1982,17 @@ kmr_map_processes(_Bool nonmpi, KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
     }
 }
 
+int
+kmr_map_processes_null_info(_Bool nonmpi, KMR_KVS *kvi, KMR_KVS *kvo,
+			    void *arg,
+			    struct kmr_spawn_option opt,
+			    kmr_mapfn_t mapfn)
+{
+    int cc = kmr_map_processes(nonmpi, kvi, kvo, arg,
+			       MPI_INFO_NULL, opt, mapfn);
+    return cc;
+}
+
 /* Creates a dummy context in spawned processes.  It only be used to
    make KVS for adding elements. */
 

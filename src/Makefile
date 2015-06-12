@@ -4,27 +4,37 @@ include ../config.make
 
 .PHONY : kmr_c kmr_f
 
-INSTALL=install
+INSTALL = install
 
-mpicc=$(MPICC) $(OPENMP_CFLAGS) $(CFLAGS)
-mpicxx=$(MPICXX) $(OPENMP_CXXFLAGS) $(CXXFLAGS)
-mpif90=$(MPIFC) $(OPENMP_FFLAGS) $(FCFLAGS)
+mpicc = $(MPICC) $(OPENMP_CFLAGS) $(CFLAGS)
+mpicxx = $(MPICXX) $(OPENMP_CXXFLAGS) $(CXXFLAGS)
+mpif90 = $(MPIFC) $(OPENMP_FFLAGS) $(FCFLAGS)
 
-SRCS_C=kmrbase.c kmrutil.c kmrmapms.c kmrmoreops.c kmrisort.c kmratoa.c \
+SRCS_C = kmrbase.c kmrutil.c kmrmapms.c kmrmoreops.c kmrisort.c kmratoa.c \
 	kmrckpt.c kmrfefs.c kmrfiles.c kmraltkvs.c kmriolb.c
-OBJS_C=kmrbase.o kmrutil.o kmrmapms.o kmrmoreops.o kmrisort.o kmratoa.o \
+OBJS_C = kmrbase.o kmrutil.o kmrmapms.o kmrmoreops.o kmrisort.o kmratoa.o \
 	kmrckpt.o kmrfefs.o kmrfiles.o  kmraltkvs.o kmriolb.o
-SRCS_F=kmrf.F90
-OBJS_F=kmrf.o
+SRCS_F = kmrf.F90
+OBJS_F = kmrf.o
 
 all:: libkmr.a
 
 libkmr.a: $(KMRTARGET)
 
+kmr_c: kmr_c.a kmr_c.so
+
 kmr_c.a: kmr.h kmrimpl.h kmrckpt.h $(SRCS_C) $(KMRWATCH)
 	$(mpicc) -c $(SRCS_C)
 	ar csr kmr_c.a $(OBJS_C) $(KMRWATCH)
 	cp kmr_c.a libkmr.a
+
+kmr_c.so: kmr.h kmrimpl.h kmrckpt.h $(SRCS_C) $(KMRWATCH)
+	$(mpicc) $(SO_CCFLAGS) -c $(SRCS_C)
+	$(mpicc) $(SO_LDFLAGS) -Wl,-soname,libkmr.so.$(KMRVER) \
+		-o kmr_c.so $(OBJS_C) $(KMRWATCH)
+	cp kmr_c.so libkmr.so.$(KMRVER)
+
+kmr_f: kmr_f.a kmr_c.so
 
 kmr_f.a: kmr.h kmrimpl.h kmrckpt.h $(SRCS_C) $(SRCS_F) $(KMRWATCH)
 	$(mpicc) -c $(SRCS_C)
@@ -45,6 +55,7 @@ install::
 	$(INSTALL) -m 644 kmr.h $(INCDIR)
 	if [ -f kmrf.mod ]; then $(INSTALL) -m 644 kmrf.mod $(INCDIR); fi
 	$(INSTALL) -m 644 libkmr.a $(LIBDIR)
+	$(INSTALL) -m 755 libkmr.so.$(KMRVER) $(LIBDIR)
 	$(INSTALL) -m 755 kmrwatch0 $(LIBDIR)
 	$(INSTALL) -m 644 ../README $(ETCDIR)
 	$(INSTALL) -m 644 ../LICENSE $(ETCDIR)
@@ -106,7 +117,8 @@ testmisc:
 distclean:: clean
 
 clean::
-	rm -f kmr_c.a kmr_f.a *.o libkmr.a *.mod kmrwatch0 kmrwatch0.bin.c
+	rm -f *.o *.mod kmr_c.a kmr_f.a kmr_c.so kmr_f.so \
+		libkmr.a libkmr.so.$(KMRVER) kmrwatch0 kmrwatch0.bin.c
 	rm -f properties option mpidp.log out.* dat.*
 	rm -rf dir.*
 	rm -f a.out core core.*

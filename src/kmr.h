@@ -299,19 +299,22 @@ struct kmr_ctx {
 };
 
 /** Datatypes of Keys or Values.  It indicates the field data of keys
-    or values.  KMR_KV_OPAQUE is a variable-sized byte vector.
-    KMR_KV_INTEGER is a long integer, and KMR_KV_FLOAT8 is a double.
-    The datatypes are mostly uninterpreted in mapping/reducing, except
-    for in sorting.  There are two other types for pointers.  Pointers
-    can be stored as they are (unlike opaque data, which are embedded
-    in the field), but converted to opaque ones before communication.
-    KMR_KV_POINTER_OWNED is an allocated pointer, and the data will be
-    freed on consuming a key-value stream.  KMR_KV_POINTER_UNMANAGED
-    is a pointer to a possibly shared data. */
+    or values.  KMR_KV_OPAQUE is a variable-sized byte vector, and
+    KMR_KV_CSTRING is a non-wide string, and they are dealt with in
+    the same way.  KMR_KV_INTEGER is a long integer, and KMR_KV_FLOAT8
+    is a double.  The datatypes are mostly uninterpreted in
+    mapping/reducing, except for in sorting.  There are two other
+    types for pointers.  Pointers can be stored as they are (unlike
+    opaque data, which are embedded in the field), but converted to
+    opaque ones before communication.  KMR_KV_POINTER_OWNED is an
+    allocated pointer, and the data will be freed on consuming a
+    key-value stream.  KMR_KV_POINTER_UNMANAGED is a pointer to a
+    possibly shared data. */
 
 enum kmr_kv_field {
     KMR_KV_BAD,
     KMR_KV_OPAQUE,
+    KMR_KV_CSTRING,
     KMR_KV_INTEGER,
     KMR_KV_FLOAT8,
     KMR_KV_POINTER_OWNED,
@@ -800,6 +803,7 @@ extern int kmr_map_serial_processes(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
 				    struct kmr_spawn_option opt,
 				    kmr_mapfn_t mapfn);
 
+extern KMR *kmr_create_context_world(void);
 extern KMR *kmr_create_dummy_context(void);
 extern int kmr_send_kvs_to_spawner(KMR *mr, KMR_KVS *kvs);
 extern int kmr_receive_kvs_from_spawned_fn(const struct kmr_kv_box kv,
