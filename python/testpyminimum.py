@@ -7,7 +7,7 @@
 ## reduce(), reduce_as_one(), replicate(), distribute(),
 ## sort_locally(), sort(), concatenate(), map_rank_by_rank()
 
-## UNTESTED: map_for_some(), map_ms(), map_ms_commands(),
+## NOT TESTED: map_for_some(), map_ms(), map_ms_commands(),
 ## map_via_spawn(), map_processes(), reduce_for_some(),
 ## read_files_reassemble(), read_file_by_segments(), save(), restore()
 
@@ -26,8 +26,9 @@ kmr0.set_option("single_thread", ("0" if THREADS else "1"))
 NPROCS = kmr0.nprocs
 RANK = kmr0.rank
 
-if (RANK == 0): print "CHECK options..."
+if (RANK == 0): print "CHECK configurations..."
 
+kmr4py._check_ctypes_values()
 kmr4py._check_passing_options()
 
 # SAMPLE LIST; IT SHOULD BE SORTED LIST:
@@ -76,7 +77,7 @@ NN = NPROCS
 
 if (RANK == 0): print "RUN map_once()..."
 
-def k10add(kv, kvi, kvo, data, i):
+def k10add(kv, kvi, kvo, i, _data):
     for (k, v) in XX:
         kvo.add(k, v)
     return 0
@@ -95,7 +96,7 @@ assert (s11 == YY)
 
 if (RANK == 0): print "RUN map()..."
 
-def k12add((k, v), kvi, kvo, data, i):
+def k12add((k, v), kvi, kvo, i, _data):
     kvo.add(k, v)
     return 0
 
@@ -116,7 +117,7 @@ assert (k14.get_element_count() == NN * LL * NPROCS)
 
 if (RANK == 0): print "RUN reduce()..."
 
-def k15add(kvvec, n, kvi, kvo, data):
+def k15add(kvvec, n, kvi, kvo, _data):
     assert (n == (NN * NPROCS))
     for v in kvvec:
         assert (v == kvvec[0])
@@ -129,7 +130,7 @@ assert (k15.get_element_count() == NN * LL * NPROCS)
 
 if (RANK == 0): print "RUN shuffle()..."
 
-def k16add(kvvec, n, kvi, kvo, data):
+def k16add(kvvec, n, kvi, kvo, _data):
     (k, v) = kvvec[0]
     kvo.add(k, v)
     return 0
@@ -154,7 +155,7 @@ assert (s20 == XX)
 
 if (RANK == 0): print "RUN reduce_as_one()..."
 
-def k21add(kvvec, n, kvi, kvo, data):
+def k21add(kvvec, n, kvi, kvo, _data):
     assert (n == LL)
     for (k, v) in kvvec:
         kvo.add(k, v)

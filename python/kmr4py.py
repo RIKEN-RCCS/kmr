@@ -3,10 +3,13 @@
 
 """KMR Python Binding"""
 
-## NOTES: MPI_COMM_WORLD and MPI_INFO_NULLa re used for MPI arguments,
+## NOTE: Importing mpi4py initializes for MPI execution.  It is not
+## imported here, applications shell import it.
+
+## NOTE: MPI_COMM_WORLD and MPI_INFO_NULL are used for MPI arguments,
 ## currently.
 
-from mpi4py import MPI
+#from mpi4py import MPI
 import warnings
 import struct
 import ctypes
@@ -15,7 +18,12 @@ import cPickle
 import inspect
 #import sys
 
+## NOTE: Importing mpi4py initializes for MPI excution.
+
 __version__ = "20150401"
+
+## NOTE: The highest protocol of cpickle is avoided becauase it fails
+## to encode/decode integer zero in python-2.7.10, gcc-4.8.2, x86-64.
 
 #_cpickle_protocol = cPickle.HIGHEST_PROTOCOL
 _cpickle_protocol = 0
@@ -31,7 +39,7 @@ if (__version__ != str(_kmrso_version)):
 kmrso.kmr_init_2.argtypes = [ctypes.c_int]
 kmrso.kmr_init_2.restype = ctypes.c_int
 
-## Initializes KMR (Never finalizes).
+## Initializes KMR at this point.
 
 kmrso.kmr_init_2(0)
 
@@ -55,14 +63,15 @@ _c_string = ctypes.c_char_p
 
 ## Null return values for ctypes.restype.
 
-_c_null_void_p_value = _c_void_p()
+#_c_null_void_p_value = _c_void_p()
 _c_null_pointer_value = _c_pointer()
 
-def _null_c_pointer(p):
+def _c_null_pointer(p):
+    ## Returns true if ctypes pointer is null.
     return (not bool(p))
 
 class _c_option(ctypes.Structure):
-    """@brief kmr_option."""
+    """kmr_option."""
 
     _fields_ = [
         ("nothreading", _c_uint, 1),
@@ -78,8 +87,8 @@ class _c_option(ctypes.Structure):
     def __init__(self, opts={}, enabledlist=[]):
         ## Sets the options as dictionary passed.
 	for o, v in opts.iteritems():
-            if (o == "key" or o == "output"):
-                ## "key" and "output" are python binding only.
+            if (o in ["key", "value", "output"]):
+                ## "key", "value", and "output" are python binding only.
                 pass
             elif (enabledlist != [] and (o not in enabledlist)):
                 raise Exception("Bad option: %s" % o)
@@ -102,7 +111,7 @@ class _c_option(ctypes.Structure):
         return
 
 class _c_file_option (ctypes.Structure):
-    """@brief kmr_file_option."""
+    """kmr_file_option."""
 
     _fields_ = [
         ("each_rank", _c_uint, 1),
@@ -133,7 +142,7 @@ class _c_file_option (ctypes.Structure):
             return
 
 class _c_spawn_option(ctypes.Structure):
-    """@brief kmr_spawn_option."""
+    """kmr_spawn_option."""
 
     _fields_ = [
         ("separator_space", _c_uint, 1),
@@ -164,7 +173,7 @@ class _c_spawn_option(ctypes.Structure):
             return
 
 class _c_unitsized(ctypes.Union):
-    """@brief kmr_unit_sized {const char *p; long i; double d;}."""
+    """kmr_unit_sized {const char *p; long i; double d;}."""
 
     _fields_ = [
         ("p", _c_string),
@@ -172,7 +181,7 @@ class _c_unitsized(ctypes.Union):
         ("d", _c_double)]
 
 class _c_kvbox(ctypes.Structure):
-    """@brief kmr_kv_box {int klen, vlen; kmr_unit_sized k, v;}."""
+    """kmr_kv_box {int klen, vlen; kmr_unit_sized k, v;}."""
 
     _fields_ = [
         ("klen", _c_int),
@@ -376,7 +385,7 @@ def _wrap_mapfn(pyfn):
             kvo = KVS(ckvo)
             key = kvi._decode_content(cbox.klen, cbox.k, "key")
             val = kvi._decode_content(cbox.vlen, cbox.v, "value")
-            pyfn((key, val), kvi, kvo, carg, cindex)
+            pyfn((key, val), kvi, kvo, cindex, carg)
             return 0
         return _MKMAPFN(applyfn)
 
@@ -401,22 +410,13 @@ def _wrap_redfn(pyfn):
             return 0
         return _MKREDFN(applyfn)
 
-def _get_options(opts, ikeyty="opaque"):
-    opt_keyty = _get_key_type_option(opts, ikeyty)
-    opt_mkkvs = _get_output_option(opts)
-    return (opt_keyty, opt_mkkvs)
-
-def _get_key_type_option(opts, ikeyty):
-    if ("key" in opts):
-        return opts["key"]
-    else:
-        return ikeyty
-
-def _get_output_option(opts):
-    if ("output" in opts):
-        return opts["output"]
-    else:
-        return True
+def _get_options(opts, keyty="opaque"):
+    ## Returns a triple of the options: a key field type, a value
+    ## field type, and a flag of needs of output generation.
+    keyty = opts.get("key", keyty)
+    valty = opts.get("value", "opaque")
+    mkkvo = opts.get("output", True)
+    return (keyty, valty, mkkvo)
 
 def _make_frame_info(frame):
     sp = frame
@@ -437,41 +437,42 @@ def _filter_spawn_options(opts):
     return (sopts, mopts)
 
 class KMR():
-    """@brief KMR context."""
+    """KMR context."""
 
-    ## @attribute nprocs holds an nprocs of MPI.
+    ## @var nprocs holds an nprocs of MPI.
 
     nprocs = -1
 
-    ## @attribute rank holds a rank of MPI.
+    ## @var rank holds a rank of MPI.
 
     rank = -1
 
-    ## @attribute emptykvs holds an empty KVS needed by map_once,
+    ## @var emptykvs holds an empty KVS needed by map_once,
     ## map_on_rank_zero, read_files_reassemble, and
     ## read_file_by_segments.
 
     emptykvs = None
 
-    ## @attribute dismissed disables freeing KVSes (by memory
-    ## management) after dismissing KMR, because it frees KVSes which
-    ## remain unconsumed.
+    ## @var dismissed disables freeing KVSes (by memory management)
+    ## after dismissing KMR, because it frees KVSes which remain
+    ## unconsumed.
 
     dismissed = False
 
     def __init__(self, comm):
-        """@brief Makes a KMR context with a given comm."""
+        """Makes a KMR context with a given comm."""
         if (comm is None):
             self.ckmr = kmrso.kmr_create_dummy_context()
         else:
-            warnings.warn("(kmr4py) mpi-comm ignored in KMR() constructor.")
             self.ckmr = kmrso.kmr_create_context_world()
-        if (self.ckmr == _c_null_pointer_value):
+        if (_c_null_pointer(self.ckmr)):
             raise Exception("kmr_create_context: failed")
         self.dismissed = False
         self.emptykvs = KVS(self).free()
         self.nprocs = kmrso.kmr_get_nprocs(self.ckmr)
         self.rank = kmrso.kmr_get_rank(self.ckmr)
+        if ((comm is not None) and (self.rank == 0)):
+            warnings.warn("(kmr4py) mpi-comm ignored in KMR() constructor.")
         return
 
     def __del__(self):
@@ -479,8 +480,8 @@ class KMR():
         return
 
     def dismiss(self):
-        """@breif Dismisses KMR."""
-        if (self.ckmr != _c_null_pointer_value):
+        """Dismisses KMR."""
+        if (not _c_null_pointer(self.ckmr)):
             kmrso.kmr_free_context(self.ckmr)
         self.ckmr = _c_null_pointer_value
         self.dismissed = True
@@ -490,25 +491,25 @@ class KMR():
         return
 
     def make_kvs(self, **opts):
-        """@breif Makes a new KVS."""
-        opt_keyty = _get_key_type_option(opts, "opaque")
-        return KVS(self, opt_keyty)
+        """Makes a new KVS."""
+        (keyty, valty, _2) = _get_options(opts, "opaque")
+        return KVS(self, keyty, valty)
 
     def reply_to_spawner(self):
-        """@breif Sends a reply message from a spawned process."""
+        """Sends a reply message from a spawned process."""
         kmrso.kmr_reply_to_spawner(self.ckmr)
         return
 
     def get_spawner_communicator(self, index):
-        """@breif Obtains a parent communicator of a spawned process."""
+        """Obtains a parent communicator of a spawned process."""
         return kmrso.kmr_get_spawner_communicator(self.ckmr, index)
 
     def send_kvs_to_spawner(self, kvs):
-        """@breif Sends the KVS from a spawned process to the spawner."""
+        """Sends the KVS from a spawned process to the spawner."""
         return kmrso.kmr_send_kvs_to_spawner(self.ckmr, kvs.ckvs)
 
     def set_option(self, k, v):
-        """@breif Set KMR option, taking both arguments by strings."""
+        """Set KMR option, taking both arguments by strings."""
         kmrso.kmr_set_option_by_strings(self.ckmr, k, v)
         return
 
@@ -540,7 +541,7 @@ _enabled_options_of_sort = [
     "inspect"]
 
 class KVS():
-    """@brief KVS."""
+    """KVS."""
 
     ## Dummy KVS is a one temporarily created in mapper/reduceer, to
     ## hold C-KVS passed to mapper/reducer functions.  A KVS is dummy
@@ -548,38 +549,38 @@ class KVS():
 
     cpickle_protocol = _cpickle_protocol
 
-    ## self.kmr
+    ## self.mr
     ## self.ckvs
 
-    def __init__(self, kmr_or_ckvs, opt_keyty="opaque", opt_valty="opaque"):
-        """@brief Makes a KVS for a given KMR."""
+    def __init__(self, kmr_or_ckvs, keyty="opaque", valty="opaque"):
+        """Makes a KVS for a given KMR."""
         if isinstance(kmr_or_ckvs, KMR):
-            kf = _field_name_type_map[opt_keyty]
-            vf = _field_name_type_map[opt_valty]
+            kf = _field_name_type_map[keyty]
+            vf = _field_name_type_map[valty]
             top = inspect.currentframe().f_back
-            self.kmr = kmr_or_ckvs
+            self.mr = kmr_or_ckvs
             (f, l, n) = _make_frame_info(top)
             self.ckvs = kmrso.kmr_create_kvs7(
-                self.kmr.ckmr, kf, vf, _c_option(), f, l, n)
+                self.mr.ckmr, kf, vf, _c_option(), f, l, n)
         elif isinstance(kmr_or_ckvs, _c_pointer):
             ## Return a dummy KVS.
-            self.kmr = None
+            self.mr = None
             self.ckvs = kmr_or_ckvs
         else:
             raise Exception("Bad call to kvs constructor")
 
     def __del__(self):
-        if ((not self._is_dummy()) and self.ckvs != _c_null_pointer_value):
+        if ((not self._is_dummy()) and (not _c_null_pointer(self.ckvs))):
             self.free()
         return
 
     def free(self):
-        """@breif Finishes the C part of a KVS."""
+        """Finishes the C part of a KVS."""
         if (self._is_dummy()):
             raise Exception("Bad call to free_kvs on dummy KVS")
-        elif (self.ckvs == _c_null_pointer_value):
+        elif (_c_null_pointer(self.ckvs)):
             raise Exception("Bad call to free_kvs on freed KVS")
-        elif ((not self.kmr is None) and self.kmr.dismissed):
+        elif ((not self.mr is None) and self.mr.dismissed):
             ## Do not free when KMR object is dismissed.
             pass
         else:
@@ -588,7 +589,7 @@ class KVS():
             return self
 
     def _is_dummy(self):
-        return (self.kmr is None)
+        return (self.mr is None)
 
     def _consume(self):
         ## Releases a now dangling C pointer.
@@ -605,15 +606,13 @@ class KVS():
             u.p = s
             return (len(s), u, s)
         elif (kvty == "cstring"):
-            s = struct.pack('@p', o)
-            u.p = s
-            return (len(s), u, s)
+            ##s = struct.pack('@s', o)
+            u.p = o
+            return (len(o), u, None)
         elif (kvty == "integer"):
-            ##struct.pack('@l', o)
             u.i = o
             return (ctypes.sizeof(_c_long), u, None)
         elif (kvty == "float8"):
-            ##struct.pack('@d', o)
             u.d = o
             return (ctypes.sizeof(_c_double), u, None)
         else:
@@ -633,8 +632,8 @@ class KVS():
                 return o
             elif (kvty == "cstring"):
                 s = ctypes.string_at(u.p, siz)
-                o = struct.unpack('@s', s)
-                return o
+                ##o = struct.unpack('@s', s)
+                return s
             elif (kvty == "integer"):
                 return u.i
             elif (kvty == "float8"):
@@ -643,8 +642,8 @@ class KVS():
                 raise Exception("Bad field type: %s" % kvky)
 
     def get_field_type(self, key_or_value):
-        """@breif Get a field type of a KVS."""
-        if (_null_c_pointer(self.ckvs)):
+        """Get a field type of a KVS."""
+        if (_c_null_pointer(self.ckvs)):
             raise Exception("Bad KVS (null C-object)")
         if (key_or_value == "key"):
             kvty = kmrso.kmr_get_key_type_ff(self.ckvs)
@@ -658,12 +657,12 @@ class KVS():
             return _field_type_name_map[kvty]
 
     def add(self, key, val):
-        """@breif Adds a key-value pair."""
+        """Adds a key-value pair."""
         self.add_kv(key, val)
         return
 
     def add_kv(self, key, val):
-        """@breif Adds a key-value pair."""
+        """Adds a key-value pair."""
         ## Note it keeps the created string until kmr_add_kv(),
         ## because kvbox does not hold the references.
         (klen, k, ks) = self._encode_content(key, "key")
@@ -673,262 +672,267 @@ class KVS():
         return
 
     def add_kv_done(self):
-        """@breif Finishes adding key-value pairs."""
+        """Finishes adding key-value pairs."""
         kmrso.kmr_add_kv_done(self.ckvs)
         return
 
     def get_element_count(self):
-        """@breif Gets the total number of key-value pairs."""
+        """Gets the total number of key-value pairs."""
         c = _c_long(0)
         kmrso.kmr_get_element_count(self.ckvs, ctypes.byref(c))
         return c.value
 
     def local_element_count(self):
-        """@breif Gets the number of key-value pairs locally."""
+        """Gets the number of key-value pairs locally."""
         c = _c_long(0)
         kmrso.kmr_local_element_count(self.ckvs, ctypes.byref(c))
         return c.value
 
-    def map(self, fn, **opts):
-        """@brief Maps simply."""
-        (opt_keyty, opt_mkkvs) = _get_options(opts)
-        copts = _c_option(opts, _enabled_options_of_map)
+    def map(self, fn, **mopts):
+        """Maps simply."""
+        (keyty, valty, mkkvo) = _get_options(mopts)
+        cmopts = _c_option(mopts, _enabled_options_of_map)
         cfn = _wrap_mapfn(fn)
         ckvi = self.ckvs
-        kvo = (KVS(self.kmr, opt_keyty) if opt_mkkvs else None)
+        kvo = (KVS(self.mr, keyty, valty) if mkkvo else None)
         ckvo = (kvo.ckvs if (kvo is not None) else None)
         (f, l, n) = _make_frame_info(inspect.currentframe().f_back)
-        kmrso.kmr_map9(0, ckvi, ckvo, 0, copts, cfn, *(f, l, n))
-        if (copts.inspect == 0): self._consume()
+        kmrso.kmr_map9(0, ckvi, ckvo, 0, cmopts, cfn, *(f, l, n))
+        if (cmopts.inspect == 0): self._consume()
         return kvo
 
-    def map_once(self, rank_zero_only, fn, **opts):
-        """@breif Maps once with a dummy key-value pair."""
+    def map_once(self, rank_zero_only, fn, **mopts):
+        """Maps once with a dummy key-value pair."""
         ## It needs dummy input; Never inspects.
-        (opt_keyty, opt_mkkvs) = _get_options(opts)
-        copts = _c_option(opts, _enabled_options_of_map_once)
+        (keyty, valty, mkkvo) = _get_options(mopts)
+        cmopts = _c_option(mopts, _enabled_options_of_map_once)
         cfn = _wrap_mapfn(fn)
-        ##ckvi = self.ckvs
-        kvo = (KVS(self.kmr, opt_keyty) if opt_mkkvs else None)
+        kvo = (KVS(self.mr, keyty, valty) if mkkvo else None)
         ckvo = (kvo.ckvs if (kvo is not None) else None)
-        kmrso.kmr_map_once(ckvo, 0, copts, rank_zero_only, cfn)
+        kmrso.kmr_map_once(ckvo, 0, cmopts, rank_zero_only, cfn)
         return kvo
 
-    def map_on_rank_zero(self, fn, **opts):
-        """@breif Maps on rank0 only."""
+    def map_on_rank_zero(self, fn, **mopts):
+        """Maps on rank0 only."""
         ## It needs dummy input.
-        return map_once(self, opt, True, fn, **opts)
+        return self.map_once(True, fn, *mopts)
 
-    def map_rank_by_rank(self, fn, **opts):
-        """@breif Maps sequentially with rank by rank for debugging."""
-        (opt_keyty, opt_mkkvs) = _get_options(opts)
-        copts = _c_option(opts, _enabled_options_of_map)
+    def map_rank_by_rank(self, fn, **mopts):
+        """Maps sequentially with rank by rank for debugging."""
+        (keyty, valty, mkkvo) = _get_options(mopts)
+        cmopts = _c_option(mopts, _enabled_options_of_map)
         cfn = _wrap_mapfn(fn)
         ckvi = self.ckvs
-        kvo = (KVS(self.kmr, opt_keyty) if opt_mkkvs else None)
+        kvo = (KVS(self.mr, keyty, valty) if mkkvo else None)
         ckvo = (kvo.ckvs if (kvo is not None) else None)
-        kmrso.kmr_map_rank_by_rank(ckvi, ckvo, 0, copts, cfn)
-        if (copts.inspect == 0): self._consume()
+        kmrso.kmr_map_rank_by_rank(ckvi, ckvo, 0, cmopts, cfn)
+        if (cmopts.inspect == 0): self._consume()
         return kvo
 
-    def reverse(self, **opts):
-        """@breif Makes a new pair by swapping the key and the value."""
-        (opt_keyty, opt_mkkvs) = _get_options(opts)
-        copts = _c_option(opts, _enabled_options_of_map)
-        assert (opt_mkkvs is True)
-        keyty = self.get_field_type("key")
-        valty = self.get_field_type("value")
-        ckvi = self.ckvs
-        kvo = (KVS(self.kmr, valty, keyty) if opt_mkkvs else None)
-        ckvo = (kvo.ckvs if (kvo is not None) else None)
-        kmrso.kmr_reverse(ckvi, ckvo, copts)
-        if (copts.inspect == 0): self._consume()
-        return kvo
-
-    def map_for_some(self, fn, **opts):
-        """@breif Maps until some key-value are added."""
-        (opt_keyty, opt_mkkvs) = _get_options(opts)
-        copts = _c_option(opts, _enabled_options_of_map)
+    def map_for_some(self, fn, **mopts):
+        """Maps until some key-value are added."""
+        (keyty, valty, mkkvo) = _get_options(mopts)
+        cmopts = _c_option(mopts, _enabled_options_of_map)
         ckvi = self.ckvs
         cfn = _wrap_mapfn(fn)
-        kvo = (KVS(self.kmr, opt_keyty) if opt_mkkvs else None)
+        kvo = (KVS(self.mr, keyty, valty) if mkkvo else None)
         ckvo = (kvo.ckvs if (kvo is not None) else None)
-        kmrso.kmr_map_for_some(ckvi, ckvo, 0, copt, cfn)
-        if (copts.inspect == 0): self._consume()
+        kmrso.kmr_map_for_some(ckvi, ckvo, 0, cmopt, cfn)
+        if (cmopts.inspect == 0): self._consume()
         return kvo
 
-    def map_ms(self, kvi, fn, **opts):
-        """@breif Maps in master-slave mode."""
+    def map_ms(self, kvi, fn, **mopts):
+        """Maps in master-slave mode."""
         ## Its call is repeated until True (assuming MPI_SUCCESS==0).
-        (opt_keyty, opt_mkkvs) = _get_options(opts)
-        copts = _c_option(opts, _enabled_options_of_map_ms)
+        (keyty, valty, mkkvo) = _get_options(mopts)
+        cmopts = _c_option(mopts, _enabled_options_of_map_ms)
         cfn = _wrap_mapfn(fn)
         ckvi = self.ckvs
-        kvo = (KVS(self.kmr, opt_keyty) if opt_mkkvs else None)
+        kvo = (KVS(self.mr, keyty, valty) if mkkvo else None)
         ckvo = (kvo.ckvs if (kvo is not None) else None)
         rr = 1
         while (rr != 0):
-            rr = kmrso.kmr_map_ms(ckvi, ckvo, 0, copts, cfn)
+            rr = kmrso.kmr_map_ms(ckvi, ckvo, 0, cmopts, cfn)
         self._consume()
         return kvo
 
-    def map_ms_commands(self, kvi, fn, **opts):
-        """@breif Maps in master-slave mode, and runs serial commands."""
-        (sopts, mopts) = filter_spawn_options(opts)
-        (opt_keyty, opt_mkkvs) = _get_options(mopts)
+    def map_ms_commands(self, kvi, fn, **xopts):
+        """Maps in master-slave mode, and runs serial commands."""
+        (sopts, mopts) = _filter_spawn_options(xopts)
+        (keyty, valty, mkkvo) = _get_options(mopts)
         cmopts = _c_option(mopts, _enabled_options_of_map)
         csopts = _c_spawn_option(sopts)
         cfn = _wrap_mapfn(fn)
         ckvi = self.ckvs
-        kvo = (KVS(self.kmr, opt_keyty) if opt_mkkvs else None)
+        kvo = (KVS(self.mr, keyty, valty) if mkkvo else None)
         ckvo = (kvo.ckvs if (kvo is not None) else None)
         kmrso.kmr_map_ms_commands(ckvi, ckvo, 0, cmopts, csopts, cfn)
         self._consume()
         return kvo
 
-    def map_via_spawn(self, fn, **opts):
-        """@breif Maps on processes started by MPI_Comm_spawn()."""
-        (sopts, mopts) = filter_spawn_options(opts)
-        (opt_keyty, opt_mkkvs) = _get_options(mopts)
+    def map_via_spawn(self, fn, **xopts):
+        """Maps on processes started by MPI_Comm_spawn()."""
+        (sopts, mopts) = _filter_spawn_options(xopts)
+        (keyty, valty, mkkvo) = _get_options(mopts)
         cmopts = _c_option(mopts, _enabled_options_of_map)
         csopts = _c_spawn_option(sopts)
         cfn = _wrap_mapfn(fn)
         ckvi = self.ckvs
-        kvo = (KVS(self.kmr, opt_keyty) if opt_mkkvs else None)
+        kvo = (KVS(self.mr, keyty, valty) if mkkvo else None)
         ckvo = (kvo.ckvs if (kvo is not None) else None)
-        kmrso.kmr_map_via_spawn(ckvi, ckvo, 0, copts, cfn)
+        kmrso.kmr_map_via_spawn(ckvi, ckvo, 0, csopts, cfn)
         self._consume()
         return kvo
 
-    def map_processes(self, nonmpi, fn, **opts):
-        """@breif Maps on processes started by MPI_Comm_spawn()."""
-        (opt_keyty, opt_mkkvs) = _get_options(opts)
-        copts = _c_spawn_option(opts)
+    def map_processes(self, nonmpi, fn, **sopts):
+        """Maps on processes started by MPI_Comm_spawn()."""
+        (keyty, valty, mkkvo) = _get_options(sopts)
+        csopts = _c_spawn_option(sopts)
         cfn = _wrap_mapfn(fn)
         ckvi = self.ckvs
-        kvo = (KVS(self.kmr, opt_keyty) if opt_mkkvs else None)
+        kvo = (KVS(self.mr, keyty, valty) if mkkvo else None)
         ckvo = (kvo.ckvs if (kvo is not None) else None)
-        kmrso.kmr_map_processes_null_info(nonmpi, ckvi, ckvo, 0, sopt, cfn)
+        kmrso.kmr_map_processes_null_info(nonmpi, ckvi, ckvo, 0, csopts, cfn)
         self._consume()
         return kvo
 
-    def map_parallel_processes(self, fn, **opts):
-        """@breif Maps on processes started by MPI_Comm_spawn()."""
-        return map_processes(self, False, fn, **opts)
+    def map_parallel_processes(self, fn, **sopts):
+        """Maps on processes started by MPI_Comm_spawn()."""
+        return map_processes(self, False, fn, **sopts)
 
-    def map_serial_processes(self, fn, **opts):
-        """@breif Maps on processes started by MPI_Comm_spawn()."""
-        return map_processes(self, True, fn, **opts)
+    def map_serial_processes(self, fn, **sopts):
+        """Maps on processes started by MPI_Comm_spawn()."""
+        return map_processes(self, True, fn, **sopts)
 
-    def reduce(self, fn, **opts):
-        """@breif Reduces key-value pairs."""
-        (opt_keyty, opt_mkkvs) = _get_options(opts)
-        copts = _c_option(opts, _enabled_options_of_reduce)
+    def reduce(self, fn, **mopts):
+        """Reduces key-value pairs."""
+        (keyty, valty, mkkvo) = _get_options(mopts)
+        cmopts = _c_option(mopts, _enabled_options_of_reduce)
         cfn = _wrap_redfn(fn)
         ckvi = self.ckvs
-        kvo = (KVS(self.kmr, opt_keyty) if opt_mkkvs else None)
+        kvo = (KVS(self.mr, keyty, valty) if mkkvo else None)
         ckvo = (kvo.ckvs if (kvo is not None) else None)
         (f, l, n) = _make_frame_info(inspect.currentframe().f_back)
-        kmrso.kmr_reduce9(0, ckvi, ckvo, 0, copts, cfn, *(f, l, n))
-        if (copts.inspect == 0): self._consume()
+        kmrso.kmr_reduce9(0, ckvi, ckvo, 0, cmopts, cfn, *(f, l, n))
+        if (cmopts.inspect == 0): self._consume()
         return kvo
 
-    def reduce_as_one(self, fn, **opts):
-        """ @breif Reduces once as if all pairs had the same key."""
-        (opt_keyty, opt_mkkvs) = _get_options(opts)
-        copts = _c_option(opts, _enabled_options_of_reduce_as_one)
+    def reduce_as_one(self, fn, **mopts):
+        """ Reduces once as if all pairs had the same key."""
+        (keyty, valty, mkkvo) = _get_options(mopts)
+        cmopts = _c_option(mopts, _enabled_options_of_reduce_as_one)
         cfn = _wrap_redfn(fn)
         ckvi = self.ckvs
-        kvo = (KVS(self.kmr, opt_keyty) if opt_mkkvs else None)
+        kvo = (KVS(self.mr, keyty, valty) if mkkvo else None)
         ckvo = (kvo.ckvs if (kvo is not None) else None)
-        kmrso.kmr_reduce_as_one(ckvi, ckvo, 0, copts, cfn)
-        if (copts.inspect == 0): self._consume()
+        kmrso.kmr_reduce_as_one(ckvi, ckvo, 0, cmopts, cfn)
+        if (cmopts.inspect == 0): self._consume()
         return kvo
 
-    def reduce_for_some(self, fn, **opts):
-        """@breif Reduces until some key-value are added."""
-        (opt_keyty, opt_mkkvs) = _get_options(opts)
-        copts = _c_option(opts, _enabled_options_of_reduce)
+    def reduce_for_some(self, fn, **mopts):
+        """Reduces until some key-value are added."""
+        (keyty, valty, mkkvo) = _get_options(mopts)
+        cmopts = _c_option(mopts, _enabled_options_of_reduce)
         cfn = _wrap_redfn(fn)
         ckvi = self.ckvs
-        kvo = (KVS(self.kmr, opt_keyty) if opt_mkkvs else None)
+        kvo = (KVS(self.mr, keyty, valty) if mkkvo else None)
         ckvo = (kvo.ckvs if (kvo is not None) else None)
         ## (NOTE: It passes a frame of reduce_for_some.)
         (f, l, n) = _make_frame_info(inspect.currentframe())
-        kmrso.kmr_reduce9(1, ckvi, ckvo, 0, copts, cfn, *(f, l, n))
-        if (copts.inspect == 0): self._consume()
+        kmrso.kmr_reduce9(1, ckvi, ckvo, 0, cmopts, cfn, *(f, l, n))
+        if (cmopts.inspect == 0): self._consume()
         return kvo
 
-    def shuffle(self, **opts):
-        """@breif Shuffles key-value pairs."""
-        ikeyty = self.get_field_type("key")
-        (opt_keyty, opt_mkkvs) = _get_options(opts, ikeyty)
-        copts = _c_option(opts, _enabled_options_of_reduce)
+    def reverse(self, **mopts):
+        """Makes a new pair by swapping the key and the value."""
+        keyty = self.get_field_type("key")
+        valty = self.get_field_type("value")
+        (_0, _1, mkkvo) = _get_options(mopts)
+        cmopts = _c_option(mopts, _enabled_options_of_map)
+        assert (mkkvo is True)
         ckvi = self.ckvs
-        kvo = (KVS(self.kmr, opt_keyty) if opt_mkkvs else None)
+        kvo = (KVS(self.mr, valty, keyty) if mkkvo else None)
         ckvo = (kvo.ckvs if (kvo is not None) else None)
-        kmrso.kmr_shuffle(ckvi, ckvo, copts)
-        if (copts.inspect == 0): self._consume()
+        kmrso.kmr_reverse(ckvi, ckvo, cmopts)
+        if (cmopts.inspect == 0): self._consume()
         return kvo
 
-    def replicate(self, **opts):
-        """@breif Replicates key-value pairs to be visible on all ranks."""
-        ikeyty = self.get_field_type("key")
-        (opt_keyty, opt_mkkvs) = _get_options(opts, ikeyty)
-        copts = _c_option(opts, _enabled_options_of_shuffle)
+    def shuffle(self, **mopts):
+        """Shuffles key-value pairs."""
+        keyty = self.get_field_type("key")
+        valty = self.get_field_type("value")
+        (_0, _1, mkkvo) = _get_options(mopts)
+        cmopts = _c_option(mopts, _enabled_options_of_reduce)
         ckvi = self.ckvs
-        kvo = (KVS(self.kmr, opt_keyty) if opt_mkkvs else None)
+        kvo = (KVS(self.mr, keyty, valty) if mkkvo else None)
         ckvo = (kvo.ckvs if (kvo is not None) else None)
-        kmrso.kmr_replicate(ckvi, ckvo, copts)
-        if (copts.inspect == 0): self._consume()
+        kmrso.kmr_shuffle(ckvi, ckvo, cmopts)
+        if (cmopts.inspect == 0): self._consume()
         return kvo
 
-    def distribute(self, cyclic, **opts):
-        """@breif Distributes pairs approximately evenly to ranks."""
-        ikeyty = self.get_field_type("key")
-        (opt_keyty, opt_mkkvs) = _get_options(opts, ikeyty)
-        copts = _c_option(opts, _enabled_options_of_distribute)
+    def replicate(self, **mopts):
+        """Replicates key-value pairs to be visible on all ranks."""
+        keyty = self.get_field_type("key")
+        valty = self.get_field_type("value")
+        (_0, _1, mkkvo) = _get_options(mopts)
+        cmopts = _c_option(mopts, _enabled_options_of_shuffle)
         ckvi = self.ckvs
-        kvo = (KVS(self.kmr, opt_keyty) if opt_mkkvs else None)
+        kvo = (KVS(self.mr, keyty, valty) if mkkvo else None)
         ckvo = (kvo.ckvs if (kvo is not None) else None)
-        kmrso.kmr_distribute(ckvi, ckvo, cyclic, copts)
-        if (copts.inspect == 0): self._consume()
+        kmrso.kmr_replicate(ckvi, ckvo, cmopts)
+        if (cmopts.inspect == 0): self._consume()
         return kvo
 
-    def sort_locally(self, shuffling, **opts):
-        """@breif Reorders key-value pairs in a single rank."""
-        ikeyty = self.get_field_type("key")
-        (opt_keyty, opt_mkkvs) = _get_options(opts, ikeyty)
-        copts = _c_option(opts, _enabled_options_of_sort_locally)
+    def distribute(self, cyclic, **mopts):
+        """Distributes pairs approximately evenly to ranks."""
+        keyty = self.get_field_type("key")
+        valty = self.get_field_type("value")
+        (_0, _1, mkkvo) = _get_options(mopts)
+        cmopts = _c_option(mopts, _enabled_options_of_distribute)
         ckvi = self.ckvs
-        kvo = (KVS(self.kmr, opt_keyty) if opt_mkkvs else None)
+        kvo = (KVS(self.mr, keyty, valty) if mkkvo else None)
         ckvo = (kvo.ckvs if (kvo is not None) else None)
-        kmrso.kmr_sort_locally(ckvi, ckvo, shuffling, copts)
-        if (copts.inspect == 0): self._consume()
+        kmrso.kmr_distribute(ckvi, ckvo, cyclic, cmopts)
+        if (cmopts.inspect == 0): self._consume()
         return kvo
 
-    def sort(self, **opts):
-        """@breif Sorts a KVS globally."""
-        ikeyty = self.get_field_type("key")
-        (opt_keyty, opt_mkkvs) = _get_options(opts, ikeyty)
-        copts = _c_option(opts, _enabled_options_of_sort)
+    def sort_locally(self, shuffling, **mopts):
+        """Reorders key-value pairs in a single rank."""
+        keyty = self.get_field_type("key")
+        valty = self.get_field_type("value")
+        (_0, _1, mkkvo) = _get_options(mopts)
+        cmopts = _c_option(mopts, _enabled_options_of_sort_locally)
         ckvi = self.ckvs
-        kvo = (KVS(self.kmr, opt_keyty) if opt_mkkvs else None)
+        kvo = (KVS(self.mr, keyty, valty) if mkkvo else None)
         ckvo = (kvo.ckvs if (kvo is not None) else None)
-        kmrso.kmr_sort(ckvi, ckvo, copts)
-        if (copts.inspect == 0): self._consume()
+        kmrso.kmr_sort_locally(ckvi, ckvo, shuffling, cmopts)
+        if (cmopts.inspect == 0): self._consume()
+        return kvo
+
+    def sort(self, **mopts):
+        """Sorts a KVS globally."""
+        keyty = self.get_field_type("key")
+        valty = self.get_field_type("value")
+        (_0, _1, mkkvo) = _get_options(mopts)
+        cmopts = _c_option(mopts, _enabled_options_of_sort)
+        ckvi = self.ckvs
+        kvo = (KVS(self.mr, keyty, valty) if mkkvo else None)
+        ckvo = (kvo.ckvs if (kvo is not None) else None)
+        kmrso.kmr_sort(ckvi, ckvo, cmopts)
+        if (cmopts.inspect == 0): self._consume()
         return kvo
 
     def concatenate(self, *morekvs):
-        """@breif Concatenates a number of KVSes to one."""
-        ikeyty = self.get_field_type("key")
+        """Concatenates a number of KVSes to one."""
+        keyty = self.get_field_type("key")
+        valty = self.get_field_type("value")
         siz = (len(morekvs) + 1)
         ckvsvec = (_c_kvs * siz)()
         ckvsvec[0] = self.ckvs
         for i in range(0, len(morekvs)):
             ckvsvec[i + 1] = morekvs[i].ckvs
         cn = _c_int(siz)
-        kvo = KVS(self.kmr, ikeyty)
+        kvo = KVS(self.mr, keyty, valty)
         ckvo = kvo.ckvs
         kmrso.kmr_concatenate_kvs(ckvsvec, cn, ckvo, _c_option())
         for i in morekvs:
@@ -937,7 +941,7 @@ class KVS():
         return kvo
 
     def read_files_reassemble(self, filename, color, offset, bytes):
-        """@breif Reassembles files reading by ranks."""
+        """Reassembles files reading by ranks."""
         buf = _c_void_p()
         size = _c_uint64(0)
         kmrso.kmr_read_files_reassemble(
@@ -951,7 +955,7 @@ class KVS():
         return copy
 
     def read_file_by_segments(self, filename, color):
-        """@breif Reads one file by segments and reassembles."""
+        """Reads one file by segments and reassembles."""
         buf = _c_void_p()
         size = _c_uint64(0)
         kmrso.kmr_read_file_by_segments(
@@ -965,7 +969,7 @@ class KVS():
         return copy
 
     def save(self):
-        """@breif Packs locally the contents of a KVS to a byte array."""
+        """Packs locally the contents of a KVS to a byte array."""
         ckvs = self.ckvs
         buf= _c_void_p(0)
         size = _c_size_t(0)
@@ -979,27 +983,32 @@ class KVS():
         return copy
 
     def restore(self, data):
-        """@breif Unpacks locally the contents of a KVS from a byte array."""
-        kvo = KVS(self.kmr, "opaque")
+        """Unpacks locally the contents of a KVS from a byte array."""
+        kvo = KVS(self.mr, "opaque", "opaque")
         size = len(data)
         buf = (_c_ubyte * size)(data)
         kmrso.kmr_restore_kvs(kvo.ckvs, buf, size, _c_option())
         return kvo
 
-def fin(self):
-    """@breif Finishes using KMR4PY."""
+def fin():
+    """Finishes using KMR4PY."""
     kmrso.kmr_fin()
     return
 
 def listify(kvs):
-    """@brief Returns an array of LOCAL contents."""
+    """Returns an array of LOCAL contents."""
     a = kvs.local_element_count() * [None]
-    def f (kv, kvi, kvo, data, i):
+    def f (kv, kvi, kvo, i, _data):
         a[i] = kv
         return 0
     kvo = kvs.map(f, output=False, inspect=True)
     assert (kvo is None)
     return a
+
+def _check_ctypes_values():
+    ## Checks if ctypes values are properly used.
+    if (not _c_null_pointer(_c_null_pointer_value)):
+        raise Exception("BAD: c null pointer has a wrong value.")
 
 def _check_passing_options():
     ## Checks if the options are passed properly from Python to C.

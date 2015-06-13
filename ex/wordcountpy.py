@@ -1,50 +1,47 @@
-# Word Count (2014-11-17)
+# Word Count (2015-06-13)
 
-# It ranks the words by their occurrence count in the "LICENSE" file.
-# This program can be run as follow.
-#   $ mpiexec -n 4 python ./wordcount.py
+## This ranks the words by their occurrence count in the "../LICENSE"
+## file.  It can be run under MPI as follows:
+##   $ mpiexec -n 4 python wordcountpy.py
 
-import re
 from mpi4py import MPI
-import kmr4py as KMR
+import kmr4py
+import sys
+import re
 
-#### define mapper and reducer functions
-def read_words_from_a_file(kv, kvi, kvo, filename, i):
-    rfile = open(filename, 'r')
-    for line in rfile:
-        words = re.split(r'\W+', line.strip())
+file_name = "../LICENSE"
+
+kmr = kmr4py.KMR(1)
+
+def read_words_from_a_file(kv, kvi, kvo, i, _data):
+    file = open(file_name, "r")
+    for line in file:
+        words = re.split(r"\W+", line.strip())
         for w in words:
-            if w == '':
-                continue
-            kvo.add_kv((w, 1))
+            if (w != ""):
+                kvo.add(w, 1)
     file.close()
 
-def sum_counts_for_a_word(kves, n, kvi, kvo, data):
+def print_top_five((k, v), kvi, kvo, i, _data):
+    ## (NO FIELD VALUE IN KMR.MR BECAUSE IT IS A DUMMY).
+    if (kmr.rank == 0 and i < 5):
+        print "#%s=%d" % (v, int(0 - k))
+
+def sum_counts_for_a_word(kvvec, n, kvi, kvo, _data):
     count = 0
-    for i in range(0, n):
-        kv_i = kves[i]
-        count -= kv_i[1]
-    kvo.add_kv((kv_i[0], count))
+    (k0, _1) = kvvec[0]
+    for (k, v) in kvvec:
+        count += v
+    kvo.add(k0, -count)
 
-def print_top_five(kv, kvi, kvo, data, i):
-    if kvi.mr.comm.rank == 0 and i < 5:
-        print '#%s=%d' % (kv[1], int(0 - kv[0]))
+if (kmr.rank == 0): print "Ranking words..."
 
-
-#### main
-file_reader = lambda a,b,c,d : read_words_from_a_file(a,b,c,'../LICENSE',d)
-
-mr = KMR.MapReduce(MPI.COMM_WORLD)
-# In short
-#   mr.map_once(file_reader).shuffle().reduce(sum_counts_for_a_word) \
-#     .reverse(kvo_key_type=KMR.integer).sort().map(print_top_five)
-kvs0 = mr.map_once(file_reader)
+kvs0 = kmr.emptykvs.map_once(False, read_words_from_a_file, key="cstring")
 kvs1 = kvs0.shuffle()
-kvs2 = kvs1.reduce(sum_counts_for_a_word)
-kvs3 = kvs2.reverse(kvo_key_type=KMR.integer)
+kvs2 = kvs1.reduce(sum_counts_for_a_word, key="cstring", value="integer")
+kvs3 = kvs2.reverse()
 kvs4 = kvs3.sort()
-kvo = kvs4.map(print_top_five)
+kvs4.map(print_top_five, output=False, nothreading=True)
 
-kvo.free()
-
-mr.fin()
+kmr.dismiss()
+kmr4py.fin()
