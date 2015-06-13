@@ -1442,7 +1442,8 @@ kmr_map_spawned_processes(enum kmr_spawn_mode mode, char *name,
 			  struct kmr_spawn_option opt, kmr_mapfn_t mapfn)
 {
     kmr_assert_kvs_ok(kvi, kvo, 1, 0);
-    assert(kvi->c.value_data == KMR_KV_OPAQUE);
+    assert(kvi->c.value_data == KMR_KV_OPAQUE
+	   || kvi->c.value_data == KMR_KV_CSTRING);
     assert(kvi->c.element_count <= INT_MAX);
     _Bool use_reply = (mode == KMR_SPAWN_INTERACT || mode == KMR_SPAWN_SERIAL);
     _Bool use_watch = (mode != KMR_SPAWN_INTERACT);

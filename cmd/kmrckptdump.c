@@ -25,6 +25,8 @@ kv_field_str(enum kmr_kv_field v)
 	return "BAD";
     case KMR_KV_OPAQUE:
 	return "OPAQUE";
+    case KMR_KV_CSTRING:
+	return "CSTRING";
     case KMR_KV_INTEGER:
 	return "INTEGER";
     case KMR_KV_FLOAT8:
@@ -43,7 +45,8 @@ static void
 dump_value(union kmr_unit_sized e, int len, enum kmr_kv_field data,
 	   char *buf, int buflen)
 {
-    if ( (data == KMR_KV_OPAQUE) && (strncmp("maxprocs", e.p, 8) == 0) ) {
+    if ( (data == KMR_KV_OPAQUE || data == KMR_KV_CSTRING)
+	 && (strncmp("maxprocs", e.p, 8) == 0) ) {
 	int clen = (len < buflen) ? len : buflen;
 	memcpy(buf, e.p, (size_t)clen);
 	buf[clen - 1] = '\0';

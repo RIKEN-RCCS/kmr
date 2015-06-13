@@ -1482,6 +1482,7 @@ kmr_dump_slot(union kmr_unit_sized e, int len, enum kmr_kv_field data,
 	snprintf(buf, (size_t)buflen, "%e", e.d);
 	break;
     case KMR_KV_OPAQUE:
+    case KMR_KV_CSTRING:
     case KMR_KV_POINTER_OWNED:
     case KMR_KV_POINTER_UNMANAGED:
 	kmr_dump_opaque(e.p, len, buf, buflen);
@@ -1554,7 +1555,8 @@ static int
 kmr_dump_kvs_pair_value(KMR_KVS *kvs, int flag)
 {
     assert(kvs->c.magic != KMR_KVS_BAD);
-    assert(kvs->c.value_data == KMR_KV_OPAQUE);
+    assert(kvs->c.value_data == KMR_KV_OPAQUE
+	   || kvs->c.value_data == KMR_KV_CSTRING);
     int rank = kvs->c.mr->rank;
     printf("[%05d] element_count=%ld\n", rank, kvs->c.element_count);
     struct kmr_option opt = {.inspect = 1};

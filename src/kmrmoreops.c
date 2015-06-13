@@ -72,7 +72,8 @@ int
 kmr_find_string(KMR_KVS *kvi, const char *k, const char **vq)
 {
     assert(k != 0 && vq != 0);
-    assert(kvi->c.key_data == KMR_KV_OPAQUE);
+    assert(kvi->c.key_data == KMR_KV_OPAQUE
+	   || kvi->c.key_data == KMR_KV_CSTRING);
     int klen = ((int)strlen(k) + 1);
     struct kmr_kv_box ki = {.klen = klen, .k.p = k, .vlen = 0, .v.p = 0};
     struct kmr_kv_box vo;
@@ -167,7 +168,8 @@ kmr_add_pairing_under_key(KMR_KVS *kvo, int klen, union kmr_unit_sized k,
 			  const struct kmr_kv_box kv,
 			  enum kmr_kv_field keyf, enum kmr_kv_field valf)
 {
-    assert(kvo->c.value_data == KMR_KV_OPAQUE);
+    assert(kvo->c.value_data == KMR_KV_OPAQUE
+	   || kvo->c.value_data == KMR_KV_CSTRING);
     size_t sz = kmr_kvs_entry_netsize_of_box(kv);
     assert(kmr_check_alignment(sz));
     char buf[10 * 1024];
@@ -1021,7 +1023,8 @@ int
 kmr_add_ntuple(KMR_KVS *kvo, void *k, int klen, struct kmr_ntuple *u)
 {
     assert(u->index == u->n);
-    assert(kvo->c.value_data == KMR_KV_OPAQUE);
+    assert(kvo->c.value_data == KMR_KV_OPAQUE
+	   || kvo->c.value_data == KMR_KV_CSTRING);
     struct kmr_kv_box kv = {
 	.klen = klen,
 	.vlen = kmr_size_ntuple(u),

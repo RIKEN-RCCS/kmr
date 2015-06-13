@@ -300,10 +300,10 @@ struct kmr_ctx {
 
 /** Datatypes of Keys or Values.  It indicates the field data of keys
     or values.  KMR_KV_OPAQUE is a variable-sized byte vector, and
-    KMR_KV_CSTRING is a non-wide string, and they are dealt with in
-    the same way.  KMR_KV_INTEGER is a long integer, and KMR_KV_FLOAT8
-    is a double.  The datatypes are mostly uninterpreted in
-    mapping/reducing, except for in sorting.  There are two other
+    KMR_KV_CSTRING is a non-wide C string, and they are dealt with in
+    exactly the same way.  KMR_KV_INTEGER is a long integer, and
+    KMR_KV_FLOAT8 is a double.  The datatypes are mostly uninterpreted
+    in mapping/reducing, except for in sorting.  There are two other
     types for pointers.  Pointers can be stored as they are (unlike
     opaque data, which are embedded in the field), but converted to
     opaque ones before communication.  KMR_KV_POINTER_OWNED is an

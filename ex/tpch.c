@@ -751,6 +751,7 @@ add_record(KMR_KVS *kvo, struct kmr_ntuple *k, struct kmr_ntuple *v)
 	    k1.d = *(double *)e.p;
 	    break;
 	case KMR_KV_OPAQUE:
+	case KMR_KV_CSTRING:
 	case KMR_KV_POINTER_OWNED:
 	case KMR_KV_POINTER_UNMANAGED:
 	    k1.p = e.p;

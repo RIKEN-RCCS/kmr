@@ -234,6 +234,7 @@ kmr_unit_sized_p(enum kmr_kv_field data)
 	assert(data != KMR_KV_BAD);
 	return 0;
     case KMR_KV_OPAQUE:
+    case KMR_KV_CSTRING:
 	return 0;
     case KMR_KV_INTEGER:
     case KMR_KV_FLOAT8:
@@ -674,6 +675,7 @@ kmr_key_pointer_p(KMR_KVS *kvs)
 	xassert(kvs->c.key_data != KMR_KV_BAD);
 	return 0;
     case KMR_KV_OPAQUE:
+    case KMR_KV_CSTRING:
     case KMR_KV_INTEGER:
     case KMR_KV_FLOAT8:
 	return 0;
@@ -696,6 +698,7 @@ kmr_value_pointer_p(KMR_KVS *kvs)
 	xassert(kvs->c.value_data != KMR_KV_BAD);
 	return 0;
     case KMR_KV_OPAQUE:
+    case KMR_KV_CSTRING:
     case KMR_KV_INTEGER:
     case KMR_KV_FLOAT8:
 	return 0;
@@ -738,6 +741,7 @@ kmr_assert_kv_sizes(KMR_KVS *kvs, const struct kmr_kv_box kv)
 	}
 	break;
     case KMR_KV_OPAQUE:
+    case KMR_KV_CSTRING:
     case KMR_KV_POINTER_OWNED:
     case KMR_KV_POINTER_UNMANAGED:
 	break;
@@ -760,6 +764,7 @@ kmr_assert_kv_sizes(KMR_KVS *kvs, const struct kmr_kv_box kv)
 	}
 	break;
     case KMR_KV_OPAQUE:
+    case KMR_KV_CSTRING:
     case KMR_KV_POINTER_OWNED:
     case KMR_KV_POINTER_UNMANAGED:
 	break;
@@ -781,6 +786,7 @@ kmr_unit_sized_or_opaque(enum kmr_kv_field data)
 	xassert(data != KMR_KV_BAD);
 	return KMR_KV_BAD;
     case KMR_KV_OPAQUE:
+    case KMR_KV_CSTRING:
     case KMR_KV_INTEGER:
     case KMR_KV_FLOAT8:
 	return data;
@@ -807,6 +813,7 @@ kmr_unit_sized_with_unmanaged(enum kmr_kv_field data)
     case KMR_KV_FLOAT8:
 	return data;
     case KMR_KV_OPAQUE:
+    case KMR_KV_CSTRING:
     case KMR_KV_POINTER_OWNED:
     case KMR_KV_POINTER_UNMANAGED:
 	return KMR_KV_POINTER_UNMANAGED;
