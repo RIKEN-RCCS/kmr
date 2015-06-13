@@ -309,6 +309,8 @@ kmr_map_ms(KMR_KVS *kvi, KMR_KVS *kvo,
 {
     kmr_assert_kvs_ok(kvi, kvo, 1, 0);
     KMR *mr = kvi->c.mr;
+    struct kmr_option kmr_supported = {.nothreading = 1, .keep_open = 1};
+    kmr_check_fn_options(mr, kmr_supported, opt, __func__);
     int kcdc = kmr_ckpt_disable_ckpt(mr);
     int rank = mr->rank;
     long cnt = kvi->c.element_count;

@@ -530,6 +530,8 @@ kmr_move_kvs(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
     assert(kvi->c.key_data == kvo->c.key_data
 	   && kvi->c.value_data == kvo->c.value_data);
     assert(kvi->c.stowed && !kvo->c.stowed);
+    // struct kmr_option kmr_supported = {.take_ckpt = 1};
+    // kmr_check_fn_options(kvo->c.mr, kmr_supported, opt, __func__);
 
     if (kmr_ckpt_enabled(kvo->c.mr)) {
 	if (kmr_ckpt_progress_init(kvi, kvo, opt)) {
@@ -962,6 +964,7 @@ kmr_save_kvs(KMR_KVS *kvs, void **dataq, size_t *szq,
 	kmr_error_at_site(0, "Bad input kvs (freed or corrupted)", 0);
     }
     assert(kvs->c.magic == KMR_KVS_ONCORE);
+    kmr_check_fn_options(kvs->c.mr, kmr_noopt, opt, __func__);
     /*assert(kvs->c.current_block == 0 && kvs->c.adding_point == 0);*/
     if (kvs->c.ms != 0 || kvs->c.temporary_data != 0) {
 	kmr_warning(kvs->c.mr, 5,
@@ -1022,6 +1025,7 @@ kmr_restore_kvs(KMR_KVS *kvo, void *data, size_t sz_,
 		struct kmr_option opt)
 {
     assert(kvo != 0 && kvo->c.magic == KMR_KVS_ONCORE);
+    kmr_check_fn_options(kvo->c.mr, kmr_noopt, opt, __func__);
     int cc;
     unsigned char *b = data;
     KMR_KVS *h = (void *)b;
@@ -1268,7 +1272,8 @@ kmr_map_skipping(long from, long stride, long limit,
     map-function is null.  During processing, it first makes an array
     pointing to the key-value entries in each data block, and works on
     it for ease threading/parallelization.  Effective-options:
-    NOTHREADING, INSPECT, KEEP_OPEN, TAKE_CKPT.  See struct kmr_option. */
+    NOTHREADING, INSPECT, KEEP_OPEN, COLLAPSE, TAKE_CKPT.
+    See struct kmr_option. */
 
 int
 kmr_map9(_Bool stop_when_some_added,
@@ -1279,6 +1284,10 @@ kmr_map9(_Bool stop_when_some_added,
     int cc;
     kmr_assert_kvs_ok(kvi, kvo, 1, 0);
     KMR *mr = kvi->c.mr;
+    struct kmr_option kmr_supported = {.nothreading = 1, .inspect = 1,
+                                       .keep_open = 1, .collapse = 1,
+                                       .take_ckpt = 1};
+    kmr_check_fn_options(mr, kmr_supported, opt, __func__);
     struct kmr_code_line info;
     if (mr->atwork == 0) {
 	info.file = file;
@@ -1359,7 +1368,8 @@ kmr_take_one(KMR_KVS *kvi, struct kmr_kv_box *kv)
 }
 
 /** Maps once.  It calls a map-function once with a dummy key-value
-    stream and a dummy key-value pair.  See kmr_map(). */
+    stream and a dummy key-value pair.  See kmr_map().
+    Effective-options: KEEP_OPEN, TAKE_CKPT.  See struct kmr_option. */
 
 int
 kmr_map_once(KMR_KVS *kvo, void *arg, struct kmr_option opt,
@@ -1367,6 +1377,8 @@ kmr_map_once(KMR_KVS *kvo, void *arg, struct kmr_option opt,
 {
     kmr_assert_kvs_ok(0, kvo, 0, 1);
     KMR *mr = kvo->c.mr;
+    struct kmr_option kmr_supported = {.keep_open = 1, .take_ckpt = 1};
+    kmr_check_fn_options(mr, kmr_supported, opt, __func__);
     int rank = mr->rank;
     int cc;
 
@@ -1387,8 +1399,10 @@ kmr_map_once(KMR_KVS *kvo, void *arg, struct kmr_option opt,
 	    kmr_error(mr, ee);
 	}
     }
-    cc = kmr_add_kv_done(kvo);
-    assert(cc == MPI_SUCCESS);
+    if (!opt.keep_open) {
+	cc = kmr_add_kv_done(kvo);
+	assert(cc == MPI_SUCCESS);
+    }
 
     if (kmr_ckpt_enabled(mr)) {
 	kmr_ckpt_save_kvo_whole(mr, kvo);
@@ -1400,7 +1414,8 @@ kmr_map_once(KMR_KVS *kvo, void *arg, struct kmr_option opt,
 
 /** Maps on rank0 only.  It calls a map-function once with a dummy
     key-value stream and a dummy key-value pair.  It is used to avoid
-    low-level conditionals like (myrank==0).  See kmr_map(). */
+    low-level conditionals like (myrank==0).  See kmr_map().
+    Effective-options: KEEP_OPEN, TAKE_CKPT.  See struct kmr_option. */
 
 int
 kmr_map_on_rank_zero(KMR_KVS *kvo, void *arg, struct kmr_option opt,
@@ -1935,7 +1950,9 @@ kmr_sort_locally(KMR_KVS *kvi, KMR_KVS *kvo, _Bool shuffling,
 {
     kmr_assert_kvs_ok(kvi, kvo, 1, 1);
     assert(kmr_shuffle_compatible_p(kvo, kvi));
-    assert(!opt.keep_open);
+    struct kmr_option kmr_supported = {.nothreading = 1, .inspect = 1,
+                                       .key_as_rank = 1};
+    kmr_check_fn_options(kvi->c.mr, kmr_supported, opt, __func__);
     _Bool ranking = opt.key_as_rank;
     kmr_sort_locally_lo(kvi, kvo, shuffling, ranking, opt);
     return MPI_SUCCESS;
@@ -1975,8 +1992,10 @@ kmr_shuffle(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
 {
     kmr_assert_kvs_ok(kvi, kvo, 1, 1);
     assert(kmr_shuffle_compatible_p(kvo, kvi));
-    assert(!opt.keep_open);
     KMR *mr = kvi->c.mr;
+    struct kmr_option kmr_supported = {.inspect = 1, .key_as_rank = 1,
+                                       .take_ckpt = 1};
+    kmr_check_fn_options(mr, kmr_supported, opt, __func__);
     _Bool ranking = opt.key_as_rank;
 
     /* SKIP SHUFFLING IF MARKED AS SHUFFLED. */
@@ -1992,9 +2011,7 @@ kmr_shuffle(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
 
     if (kmr_ckpt_enabled(mr)) {
 	if (kmr_ckpt_progress_init(kvi, kvo, opt)) {
-	    if (!opt.keep_open) {
-		kmr_add_kv_done(kvo);
-	    }
+	    kmr_add_kv_done(kvo);
 	    if (!opt.inspect) {
 		kmr_free_kvs(kvi);
 	    }
@@ -2075,9 +2092,7 @@ kmr_shuffle(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
 	rb->fill_size = (size_t)recvsz;
     }
     kmr_kvs_adjust_adding_point(kvo);
-    if (!opt.keep_open) {
-	kmr_add_kv_done(kvo);
-    }
+    kmr_add_kv_done(kvo);
 
     kmr_ckpt_enable_ckpt(mr, kcdc);
     if (kmr_ckpt_enabled(mr)) {
@@ -2112,6 +2127,9 @@ kmr_replicate(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
 {
     kmr_assert_kvs_ok(kvi, kvo, 1, 1);
     KMR *mr = kvi->c.mr;
+    struct kmr_option kmr_supported = {.inspect = 1, .rank_zero = 1,
+                                       .take_ckpt = 1};
+    kmr_check_fn_options(mr, kmr_supported, opt, __func__);
     int nprocs = mr->nprocs;
     int rank = mr->rank;
     int cc;
@@ -2241,7 +2259,7 @@ kmr_reduce_nothreading(KMR_KVS *kvi, KMR_KVS *kvo,
 
     if (kmr_ckpt_enabled(mr)) {
 	if (kmr_ckpt_progress_init(kvi, kvo, opt)) {
-	    if (kvo != 0 && !opt.keep_open) {
+	    if (kvo != 0) {
 		kmr_add_kv_done(kvo);
 	    }
 	    return MPI_SUCCESS;
@@ -2314,7 +2332,7 @@ kmr_reduce_nothreading(KMR_KVS *kvi, KMR_KVS *kvo,
     if (kmr_ckpt_enabled(mr)) {
 	kmr_ckpt_save_kvo_block_fin(mr, kvo);
     }
-    if (kvo != 0 && !opt.keep_open) {
+    if (kvo != 0) {
 	kmr_add_kv_done(kvo);
     }
     if (ev != 0) {
@@ -2331,7 +2349,7 @@ kmr_reduce_threading(_Bool stop_when_some_added,
     int cc;
     if (kmr_ckpt_enabled(kvi->c.mr)) {
 	if (kmr_ckpt_progress_init(kvi, kvo, opt)) {
-	    if (kvo != 0 && !opt.keep_open) {
+	    if (kvo != 0) {
 		kmr_add_kv_done(kvo);
 	    }
 	    return MPI_SUCCESS;
@@ -2435,7 +2453,7 @@ kmr_reduce_threading(_Bool stop_when_some_added,
 #endif
 	kmr_ckpt_save_kvo_whole(kvi->c.mr, kvo);
     }
-    if (kvo != 0 && !opt.keep_open) {
+    if (kvo != 0) {
 	kmr_add_kv_done(kvo);
     }
     kmr_free(runs, (sizeof(long) * (size_t)cnt));
@@ -2466,8 +2484,10 @@ kmr_reduce9(_Bool stop_when_some_added,
 	    const char *file, const int line, const char *func)
 {
     kmr_assert_kvs_ok(kvi, kvo, 1, 0);
-    assert(!opt.keep_open);
     KMR *mr = kvi->c.mr;
+    struct kmr_option kmr_supported = {.nothreading = 1, .inspect = 1,
+                                       .take_ckpt = 1};
+    kmr_check_fn_options(mr, kmr_supported, opt, __func__);
     struct kmr_option i_opt = kmr_copy_options_i_part(opt);
     struct kmr_option o_opt = kmr_copy_options_o_part(opt);
 
@@ -2527,13 +2547,14 @@ kmr_reduce_as_one(KMR_KVS *kvi, KMR_KVS *kvo,
 		  void *arg, struct kmr_option opt, kmr_redfn_t r)
 {
     kmr_assert_kvs_ok(kvi, kvo, 1, 0);
-    assert(!opt.keep_open);
     KMR *mr = kvi->c.mr;
     assert(kvi->c.current_block == 0);
+    struct kmr_option kmr_supported = {.inspect = 1, .take_ckpt = 1};
+    kmr_check_fn_options(mr, kmr_supported, opt, __func__);
 
     if (kmr_ckpt_enabled(mr)) {
 	if (kmr_ckpt_progress_init(kvi, kvo, opt)) {
-	    if (kvo != 0 && !opt.keep_open) {
+	    if (kvo != 0) {
 		kmr_add_kv_done(kvo);
 	    }
 	    if (!opt.inspect) {
@@ -2569,7 +2590,7 @@ kmr_reduce_as_one(KMR_KVS *kvi, KMR_KVS *kvo,
 	kmr_ckpt_save_kvo_whole(mr, kvo);
     }
 
-    if (kvo != 0 && !opt.keep_open) {
+    if (kvo != 0) {
 	kmr_add_kv_done(kvo);
     }
     kmr_free(ev, (sizeof(struct kmr_kv_box) * (size_t)cnt));
@@ -2604,6 +2625,7 @@ kmr_concatenate_kvs(KMR_KVS *kvs[], int nkvs, KMR_KVS *kvo,
 	KMR *mr = kvo->c.mr;
 	kmr_error(mr, "kmr_concatenate_kvs: Output kvs has entries");
     }
+    kmr_check_fn_options(kvo->c.mr, kmr_noopt, opt, __func__);
 
     struct kmr_kvs_block *storage = 0;
     long elements = 0;
