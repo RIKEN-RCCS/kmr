@@ -4,6 +4,7 @@ include ../config.make
 
 mpicc=$(MPICC) $(OPENMP_CFLAGS) $(CFLAGS)
 mpicxx=$(MPICXX) $(OPENMP_CXXFLAGS) $(CXXFLAGS)
+mpif90=$(MPIFC) $(OPENMP_FFLAGS) $(FCFLAGS)
 
 LIBS += ../src/libkmr.a
 INCL=-I ../src/
@@ -31,6 +32,9 @@ rmat:
 
 phoenix-kmeans:
 	$(mpicc) $(INCL) -g phoenix-kmeans.c $(LIBS)
+
+wordcountf:
+	$(mpif90) $(INCL) -cpp -g wordcountf.f90 $(LIBS)
 
 tpch:
 	$(mpicc) $(INCL) -g tpch.c $(LIBS)
