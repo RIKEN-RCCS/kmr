@@ -1,12 +1,12 @@
-# K-Means (2014-11-19)
+# K-Means (2015-06-15)
 
-# An example of K-Means implementation.
-# This program can be run as follow.
-#   $ mpiexec -n 4 python ./kmeans.py
+## An example of K-Means implementation.
+## It can be run under MPI as follows:
+##   $ mpiexec -n 4 python kmeans.py
 
 import random
 from mpi4py import MPI
-import kmr4py as KMR
+import kmr4py
 
 class K_Means:
     def __init__(self):
@@ -44,61 +44,54 @@ class K_Means:
                 lst.append(random.randint(0, self.grid_size - 1))
             tlst.append(lst)
 
-
-#### Function
 def calc_sq_dist(v1, v2):
     sum = 0
     for (x, y) in zip(v1, v2):
         sum += (x - y) * (x - y)
     return sum
 
-
 #### Mapper
 
-# Emit Key:id of point(integer), Value:point(list of integer)
-def load_points(kv, kvi, kvo, kmeans, i):
+# Emit Key:id of point(integer), Value:a point(list of integer)
+def load_points(kv, kvi, kvo, i):
     for (idp, point) in enumerate(kmeans.points):
-        kvo.add_kv((idp, point))
+        kvo.add(idp, point)
 
-
-# Emit Key:id of nearest group, Value:point(list of integer)
-def calc_cluster(kv, kvi, kvo, kmeans, i):
+# Emit Key:id of nearest group, Value:a point(list of integer)
+def calc_cluster((k, v), kvi, kvo, i):
     min_id = 0
     min_dst = kmeans.grid_size * kmeans.grid_size
     for (idm, mean) in enumerate(kmeans.means):
-        dst = calc_sq_dist(kv.val, mean)  # val is point
+        dst = calc_sq_dist(v, mean)
         if dst < min_dst:
             min_id = idm
             min_dst = dst
-    kvo.add_kv((min_id, kv.val))
-
+    kvo.add(min_id, v)
 
 # Emit nothing
-def copy_center(kv, kvi, kvo, kmeans, i):
-    kmeans.means[kv[0]] = kv[1]
-
+def copy_center((k, v), kvi, kvo, i):
+    kmeans.means[k] = v
 
 #### Reducer
 
-# Emit Key:id of mean(integer),
-#      Value:coordinates of center of the mean(list of integer)
-def update_cluster(kves, n, kvi, kvo, data):
+# Emit Key:id of group(integer),
+#      Value:coordinates of center of the group(list of integer)
+def update_cluster(kvvec, n, kvi, kvo):
     sum = []
     for d in range(0, kmeans.dim):
         sum.append(0)
-    for kv in kves:
-        point = kv[1]
+    for (k, v) in kvvec:
         for d in range(0, kmeans.dim):
-            sum[d] += point[d]
-    avg = [x / (len(kves)) for x in sum]
-    kvo.add_kv(kves[0][0], avg)
+            sum[d] += v[d]
+    avg = [x / (len(kvvec)) for x in sum]
+    kvo.add_kv(kvvec[0][0], avg)
 
 
 #### main
 comm = MPI.COMM_WORLD
-mr = KMR.MapReduce(comm)
+kmr = kmr4py.KMR(comm)
 kmeans = K_Means()
-random.seed()
+random.seed(1)
 
 if comm.rank == 0:
     print 'Number of processes = %d' % (comm.size)
@@ -107,32 +100,18 @@ if comm.rank == 0:
 kmeans.means = comm.bcast(kmeans.means, root=0)
 kmeans.init_points()
 
-# TODO: consider if 'kvo_key_type' can be removed
 for _ in range(0, kmeans.n_iteration):
-    # Map: load points to KVS
-    kvs0 = mr.map_once(lambda a,b,c,d : load_points(a,b,c,kmeans,d),
-                       kvo_key_type=KMR.integer)
-
-    # Map: calculate cluster of each point
-    kvs1 = kvs0.map(lambda a,b,c,d : calc_cluster(a,b,c,kmeans,d),
-                    kvo_key_type=KMR.integer)
-
-    # Shuffle
-    kvs2 = kvs1.shuffle(kvo_key_type=KMR.integer)
-
-    # Reduce: update cluster centers
-    kvs3 = kvs2.reduce(lambda a,b,c,d : update_cluster(a,b,c,d,kmeans),
-                       kvo_key_type=KMR.integer)
-
-    # Share result
-    kvs4 = kvs3.replicate(kvo_key_type=KMR.integer)
-
-    # Copy cluster centers to kmeans class
-    kvs4.map(lambda a,b,c,d : copy_center(a,b,c,kmeans,d))
+    kvs0 = kmr.emptykvs.map_once(False, load_points, key="integer")
+    kvs1 = kvs0.map(calc_cluster, key="integer")
+    kvs2 = kvs1.shuffle()
+    kvs3 = kvs2.reduce(update_cluster, key="integer")
+    kvs4 = kvs3.replicate()
+    kvs4.map(copy_center)
 
     if comm.rank == 0:
         print 'Cluster coordinates'
-        for mean in kmeans.means:
-            print mean
+        for m in kmeans.means:
+            print m
 
-mr.fin()
+kmr.dismiss()
+kmr4py.fin()
