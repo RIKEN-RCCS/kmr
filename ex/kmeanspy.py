@@ -2,7 +2,7 @@
 
 ## An example of K-Means implementation.
 ## It can be run under MPI as follows:
-##   $ mpiexec -n 4 python kmeans.py
+##   $ mpiexec -n 4 python kmeanspy.py
 
 import random
 from mpi4py import MPI
@@ -50,8 +50,6 @@ def calc_sq_dist(v1, v2):
         sum += (x - y) * (x - y)
     return sum
 
-#### Mapper
-
 # Emit Key:id of point(integer), Value:a point(list of integer)
 def load_points(kv, kvi, kvo, i):
     for (idp, point) in enumerate(kmeans.points):
@@ -71,8 +69,6 @@ def calc_cluster((k, v), kvi, kvo, i):
 # Emit nothing
 def copy_center((k, v), kvi, kvo, i):
     kmeans.means[k] = v
-
-#### Reducer
 
 # Emit Key:id of group(integer),
 #      Value:coordinates of center of the group(list of integer)
