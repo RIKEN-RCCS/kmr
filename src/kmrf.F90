@@ -384,6 +384,19 @@ module kmrf
      end function kmr_map_on_rank_zero_ff
   end interface kmr_map_on_rank_zero_ff
 
+  interface kmr_map_once_ff
+     integer(c_int) function kmr_map_once_ff(kvo, p, opt, rankzeroonly, m) &
+          bind(c, name='kmr_map_once')
+       use iso_c_binding
+       implicit none
+       type(c_ptr), value, intent(in) :: kvo
+       type(c_ptr), value, intent(in) :: p
+       integer(c_long), value, intent(in) :: opt
+       logical(c_bool), value, intent(in) :: rankzeroonly
+       type(c_funptr), value, intent(in) :: m
+     end function kmr_map_once_ff
+  end interface kmr_map_once_ff
+
   interface kmr_map_ms_ff
      integer(c_int) function kmr_map_ms_ff(kvi, kvo, p, opt, m) &
           bind(c, name='kmr_map_ms')
@@ -502,6 +515,16 @@ module kmrf
      end function kmr_sort_ff
   end interface kmr_sort_ff
 
+  interface kmr_reverse_ff
+     integer(c_int) function kmr_reverse_ff(kvi, kvo, opt) &
+          bind(c, name='kmr_reverse')
+       use iso_c_binding
+       implicit none
+       type(c_ptr), value, intent(in) :: kvi, kvo
+       integer(c_long), value, intent(in) :: opt
+     end function kmr_reverse_ff
+  end interface kmr_reverse_ff
+
 contains
 
   !> Asserts the expression to be true.
@@ -606,6 +629,24 @@ contains
     zz = kmr_map_on_rank_zero_ff(kvo, p, kmr_fixopt(opt), c_funloc(m))
   end function kmr_map_on_rank_zero
 
+  !> (See ::kmr_map_once() in C).
+
+  integer(c_int) function kmr_map_once(kvo, p, opt, rankzeroonly, m) result(zz)
+    type(c_ptr), value, intent(in) :: kvo
+    type(c_ptr), value, intent(in) :: p
+    integer(c_int), value, intent(in) :: opt
+    logical, value, intent(in) :: rankzeroonly
+    procedure(kmr_mapfn), bind(c) :: m
+    logical(c_bool) :: bb
+    call kmr_assert(c_associated(kvo), 'c_associated(kvo)')
+    if (rankzeroonly) then
+       bb = .true.
+    else
+       bb = .false.
+    end if
+    zz = kmr_map_once_ff(kvo, p, kmr_fixopt(opt), bb, c_funloc(m))
+  end function kmr_map_once
+
   !> (See ::kmr_map_ms() in C).
 
   integer(c_int) function kmr_map_ms(kvi, kvo, p, opt, m) result(zz)
@@ -702,6 +743,44 @@ contains
     call kmr_assert(c_associated(kvo), 'c_associated(kvo)')
     zz = kmr_sort_ff(kvi, kvo, kmr_fixopt(opt))
   end function kmr_sort
+
+  !> (See ::kmr_reverse() in C).
+
+  integer(c_int) function kmr_reverse(kvi, kvo, opt) result(zz)
+    type(c_ptr), value, intent(in) :: kvi, kvo
+    integer(c_int), value, intent(in) :: opt
+    call kmr_assert(c_associated(kvi), 'c_associated(kvi)')
+    call kmr_assert(c_associated(kvo), 'c_associated(kvo)')
+    zz = kmr_reverse_ff(kvi, kvo, kmr_fixopt(opt))
+  end function kmr_reverse
+
+  !! BELOWS ARE TO BE ADDED SOON
+
+  !!kmr_add_string
+
+  !!kmr_concatenate_kvs
+  !!kmr_local_element_count
+  !!kmr_dump_kvs_stats
+  !!kmr_save_kvs
+  !!kmr_restore_kvs
+  !!kmr_retrieve_kvs_entries
+
+  !!kmr_map_rank_by_rank
+  !!kmr_map_for_some
+  !!kmr_map_ms_commands
+
+  !!kmr_reply_to_spawner
+  !!kmr_map_processes
+  !!kmr_send_kvs_to_spawner
+  !!kmr_receive_kvs_from_spawned_fn
+
+  !!kmr_reduce_as_one
+  !!kmr_reduce_for_some
+
+  !!kmr_distribute
+
+  !!kmr_read_files_reassemble
+  !!kmr_read_file_by_segments
 
 end module kmrf
 
