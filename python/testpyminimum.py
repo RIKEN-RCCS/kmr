@@ -5,20 +5,21 @@
 ## TESTED: add(), add_kv_done(), get_element_count(),
 ## local_element_count(), map(), map_once(), reverse(), shuffle(),
 ## reduce(), reduce_as_one(), replicate(), distribute(),
-## sort_locally(), sort(), concatenate(), map_rank_by_rank()
+## sort_locally(), sort(), concatenate(), map_rank_by_rank(),
+## map_for_some(), reduce_for_some(), save(), restore()
 
-## NOT TESTED: map_for_some(), map_ms(), map_ms_commands(),
-## map_via_spawn(), map_processes(), reduce_for_some(),
-## read_files_reassemble(), read_file_by_segments(), save(), restore()
+## NOT TESTED HERE: map_ms(), map_ms_commands(), map_via_spawn(),
+## map_processes(), read_files_reassemble(), read_file_by_segments()
 
 from mpi4py import MPI
 import kmr4py
 import time
 import sys
+import ctypes
 
 ### SETTINGS
 
-THREADS = True
+THREADS = False
 
 kmr0 = kmr4py.KMR(1)
 kmr0.set_option("single_thread", ("0" if THREADS else "1"))
@@ -77,12 +78,12 @@ NN = NPROCS
 
 if (RANK == 0): print "RUN map_once()..."
 
-def k10add(kv, kvi, kvo, i, _data):
+def putXXlist(kv, kvi, kvo, i, _data):
     for (k, v) in XX:
         kvo.add(k, v)
     return 0
 
-k10 = kmr1.make_kvs().map_once(False, k10add, key="integer")
+k10 = kmr1.make_kvs().map_once(False, putXXlist, key="integer")
 s10 = kmr4py.listify(k10)
 assert (s10 == XX)
 assert (k10.local_element_count() == LL)
@@ -96,11 +97,11 @@ assert (s11 == YY)
 
 if (RANK == 0): print "RUN map()..."
 
-def k12add((k, v), kvi, kvo, i, _data):
+def identitymap((k, v), kvi, kvo, i, _data):
     kvo.add(k, v)
     return 0
 
-k12 = k11.map(k12add, key="integer")
+k12 = k11.map(identitymap, key="integer")
 assert (k12.local_element_count() == NN * LL)
 
 # (NOTE: Order in k12 can change.)
@@ -117,27 +118,30 @@ assert (k14.get_element_count() == NN * LL * NPROCS)
 
 if (RANK == 0): print "RUN reduce()..."
 
-def k15add(kvvec, n, kvi, kvo, _data):
-    assert (n == (NN * NPROCS))
-    for v in kvvec:
-        assert (v == kvvec[0])
-    for (k, v) in kvvec:
-        kvo.add(k, v)
-    return 0
+def identityred(keycheck, countn):
+    def identity_reduce_with_check_count(kvvec, n, kvi, kvo, _data):
+        assert (n == countn)
+        if (keycheck):
+            (k0, _0) = kvvec[0]
+            for (k, _1) in kvvec:
+                assert (k == k0)
+        for (k, v) in kvvec:
+            kvo.add(k, v)
+        return 0
+    return identity_reduce_with_check_count
 
-k15 = k14.reduce(k15add, key="integer")
+k15 = k14.reduce(identityred(True, (NN * NPROCS)), key="integer")
 assert (k15.get_element_count() == NN * LL * NPROCS)
 
 if (RANK == 0): print "RUN shuffle()..."
 
-def k16add(kvvec, n, kvi, kvo, _data):
+def addonered(kvvec, n, kvi, kvo, _data):
     (k, v) = kvvec[0]
     kvo.add(k, v)
     return 0
 
-k16 = k15.shuffle().reduce(k16add, key="integer")
+k16 = k15.shuffle().reduce(addonered, key="integer")
 k17 = k16.replicate().sort_locally(False)
-
 s17 = kmr4py.listify(k17)
 assert (s17 == XX)
 
@@ -149,19 +153,13 @@ kmr1.dismiss()
 kmr2 = kmr4py.KMR(1)
 kmr2.set_option("single_thread", ("0" if THREADS else "1"))
 
-k20 = kmr2.emptykvs.map_once(False, k10add, key="integer")
+k20 = kmr2.emptykvs.map_once(False, putXXlist, key="integer")
 s20 = kmr4py.listify(k20)
 assert (s20 == XX)
 
 if (RANK == 0): print "RUN reduce_as_one()..."
 
-def k21add(kvvec, n, kvi, kvo, _data):
-    assert (n == LL)
-    for (k, v) in kvvec:
-        kvo.add(k, v)
-    return 0
-
-k21 = k20.reduce_as_one(k21add, key="integer")
+k21 = k20.reduce_as_one(identityred(False, LL), key="integer")
 s21 = kmr4py.listify(k21)
 assert (s21 == XX)
 
@@ -191,7 +189,7 @@ if (RANK == 0): print "RUN concatenate()..."
 
 k31 = []
 for i in range(0, NPROCS):
-    k31.append(kmr3.emptykvs.map_once(False, k10add, key="integer"))
+    k31.append(kmr3.emptykvs.map_once(False, putXXlist, key="integer"))
     s31 = kmr4py.listify(k31[i])
     assert (s31 == XX)
 
@@ -207,7 +205,7 @@ kmr3.dismiss()
 kmr4 = kmr4py.KMR(1)
 kmr4.set_option("single_thread", ("0" if THREADS else "1"))
 
-k40 = kmr4.emptykvs.map_once(False, k10add, key="integer")
+k40 = kmr4.emptykvs.map_once(False, putXXlist, key="integer")
 s40 = kmr4py.listify(k40)
 assert (s40 == XX)
 
@@ -220,19 +218,66 @@ s43 = kmr4py.listify(k43)
 assert (s43 == XX)
 k43.free()
 
-k44 = kmr4.make_kvs().map_once(False, k10add, key="integer")
+k44 = kmr4.make_kvs().map_once(False, putXXlist, key="integer")
 s44 = kmr4py.listify(k44)
 assert (s44 == XX)
 
 if (RANK == 0): print "RUN map_rank_by_rank()..."
 
-k45 = k44.map_rank_by_rank(k12add, key="integer")
+k45 = k44.map_rank_by_rank(identitymap, key="integer")
 k46 = k45.sort_locally(False)
 s46 = kmr4py.listify(k46)
 assert (s46 == XX)
 
+if (RANK == 0): print "RUN map_for_some()..."
+
+c46 = k46.get_element_count()
+k47 = k46.map_for_some(identitymap, inspect=True)
+c47 = k47.get_element_count()
+assert (c47 > 0 and c47 <= c46)
+k47.free()
+
+if (RANK == 0): print "RUN reduce_for_some()..."
+
+k48 = k46.reduce_for_some(identityred(True, 1), inspect=True)
+c48 = k48.get_element_count()
+assert (c48 > 0 and c48 <= c46)
+k48.free()
+
 k46.free()
 kmr4.dismiss()
+
+### SAVE/RESTORE
+
+kmr5 = kmr4py.KMR(1)
+kmr5.set_option("single_thread", ("0" if THREADS else "1"))
+
+k50 = kmr5.emptykvs.map_once(False, putXXlist, key="integer")
+s50 = kmr4py.listify(k50)
+assert (s50 == XX)
+
+if (RANK == 0): print "RUN map() with c-function..."
+
+k51 = k50.map(kmr4py.kmrso.kmr_reverse_fn, inspect=True,
+              key="opaque", value="integer")
+k52 = k50.reverse(inspect=True)
+s51 = kmr4py.listify(k51)
+s52 = kmr4py.listify(k52)
+assert (s51 == s52)
+k51.free()
+k52.free()
+
+if (RANK == 0): print "RUN save() and restore()..."
+
+b50 = k50.save()
+
+k53 = kmr5.emptykvs.restore(b50)
+s53 = kmr4py.listify(k53)
+assert (s53 == XX)
+
+k50.free()
+k53.free()
+kmr5.dismiss()
 
 sys.stdout.flush()
 sys.stderr.flush()
