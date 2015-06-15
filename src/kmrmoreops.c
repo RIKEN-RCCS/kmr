@@ -386,8 +386,9 @@ kmr_sort_small(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
 {
     kmr_assert_kvs_ok(kvi, kvo, 1, 1);
     assert(kmr_shuffle_compatible_p(kvo, kvi));
-    assert(!opt.keep_open);
     KMR *mr = kvi->c.mr;
+    struct kmr_option kmr_supported = {.nothreading = 1, .inspect = 1};
+    kmr_check_fn_options(mr, kmr_supported, opt, __func__);
     int cc;
     //int nprocs = mr->nprocs;
     int rank = mr->rank;
@@ -466,9 +467,10 @@ kmr_sort_large(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
 {
     kmr_assert_kvs_ok(kvi, kvo, 1, 1);
     assert(kmr_shuffle_compatible_p(kvo, kvi));
-    assert(!opt.keep_open);
     int cc;
     KMR *mr = kvi->c.mr;
+    struct kmr_option kmr_supported = {.nothreading = 1, .inspect = 1};
+    kmr_check_fn_options(mr, kmr_supported, opt, __func__);
     int nprocs = mr->nprocs;
     struct kmr_option i_opt = kmr_copy_options_i_part(opt);
     struct kmr_option o_opt = kmr_copy_options_o_part(opt);
@@ -540,9 +542,10 @@ kmr_sort_by_one(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
 {
     kmr_assert_kvs_ok(kvi, kvo, 1, 1);
     assert(kmr_shuffle_compatible_p(kvo, kvi));
-    assert(!opt.keep_open);
     int cc;
     KMR *mr = kvi->c.mr;
+    struct kmr_option kmr_supported = {.inspect = 1};
+    kmr_check_fn_options(mr, kmr_supported, opt, __func__);
     struct kmr_option i_opt = kmr_copy_options_i_part(opt);
     i_opt.rank_zero = 1;
     struct kmr_option o_opt = kmr_copy_options_o_part(opt);
@@ -569,7 +572,8 @@ int
 kmr_sort(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
 {
     kmr_assert_kvs_ok(kvi, kvo, 1, 1);
-    assert(!opt.keep_open);
+    struct kmr_option kmr_supported = {.inspect = 1};
+    kmr_check_fn_options(kvi->c.mr, kmr_supported, opt, __func__);
     const long lb = kvi->c.mr->sort_trivial;
     const long threshold = kvi->c.mr->sort_threshold;
     int cc;
@@ -690,7 +694,8 @@ kmr_match(KMR_KVS *kvi0, KMR_KVS *kvi1, KMR_KVS *kvo, struct kmr_option opt)
 {
     kmr_assert_kvs_ok(kvi0, kvo, 1, 1);
     kmr_assert_kvs_ok(kvi1, kvo, 1, 1);
-    assert(!opt.keep_open);
+    struct kmr_option kmr_supported = {.nothreading = 1};
+    kmr_check_fn_options(kvi0->c.mr, kmr_supported, opt, __func__);
     assert(kvi0->c.key_data == kvi1->c.key_data
 	   && kvo->c.key_data == kvi0->c.value_data
 	   && kvo->c.value_data == kvi1->c.value_data);
@@ -758,6 +763,9 @@ kmr_ranking(KMR_KVS *kvi, KMR_KVS *kvo, long *count, struct kmr_option opt)
     /* Do the first part of kmr_get_element_count(). */
     kmr_assert_kvs_ok(kvi, 0, 1, 0);
     KMR *mr = kvi->c.mr;
+    struct kmr_option kmr_supported = {.nothreading = 1, .inspect = 1,
+                                       .keep_open = 1};
+    kmr_check_fn_options(mr, kmr_supported, opt, __func__);
     const int nprocs = mr->nprocs;
     const int rank = mr->rank;
     struct kmr_option m_opt = kmr_copy_options_m_part(opt);
@@ -824,6 +832,9 @@ int
 kmr_distribute(KMR_KVS *kvi, KMR_KVS *kvo, _Bool cyclic, struct kmr_option opt)
 {
     kmr_assert_kvs_ok(kvi, 0, 1, 0);
+    struct kmr_option kmr_supported = {.nothreading = 1, .inspect = 1,
+                                       .keep_open = 1};
+    kmr_check_fn_options(kvi->c.mr, kmr_supported, opt, __func__);
     struct kmr_option i_opt = kmr_copy_options_i_part(opt);
     struct kmr_option o_opt = kmr_copy_options_o_part(opt);
     struct kmr_option m_opt = kmr_copy_options_m_part(opt);
@@ -875,6 +886,8 @@ kmr_choose_first_part(KMR_KVS *kvi, KMR_KVS *kvo, long n,
 {
     kmr_assert_kvs_ok(kvi, kvo, 1, 1);
     KMR *mr = kvi->c.mr;
+    struct kmr_option kmr_supported = {.inspect = 1, .keep_open = 1};
+    kmr_check_fn_options(mr, kmr_supported, opt, __func__);
     struct kmr_option i_opt = kmr_copy_options_i_part(opt);
     int cc;
     KMR_KVS *kvs0 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_OPAQUE);

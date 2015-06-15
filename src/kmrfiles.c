@@ -1373,6 +1373,8 @@ kmr_map_file_names(KMR *mr, char **names, int n, struct kmr_file_option fopt,
 		   KMR_KVS *kvo, void *arg,
 		   struct kmr_option opt, kmr_mapfn_t m)
 {
+    struct kmr_option kmr_supported = {.nothreading = 1, .keep_open = 1};
+    kmr_check_fn_options(mr, kmr_supported, opt, __func__);
     //const int nprocs = mr->nprocs;
     const int rank = mr->rank;
     int cc;
@@ -1395,7 +1397,6 @@ kmr_map_file_names(KMR *mr, char **names, int n, struct kmr_file_option fopt,
     } else {
 	kvs1 = kvs0;
     }
-    assert(!opt.inspect);
     cc = kmr_map(kvs1, kvo, arg, opt, m);
     assert(cc == MPI_SUCCESS);
     return MPI_SUCCESS;
@@ -1562,6 +1563,9 @@ kmr_map_getline(KMR *mr, FILE *f, long limit, _Bool largebuffering,
 		struct kmr_option opt, kmr_mapfn_t m)
 {
     kmr_assert_kvs_ok(0, kvo, 0, 1);
+    struct kmr_option kmr_supported = {.nothreading = 1, .keep_open = 1,
+                                       .take_ckpt = 1};
+    kmr_check_fn_options(mr, kmr_supported, opt, __func__);
 
     if (kmr_ckpt_enabled(mr)) {
 	if (kmr_ckpt_progress_init(0, kvo, opt)) {
@@ -1642,6 +1646,9 @@ kmr_map_getline_in_memory_(KMR *mr, void *b, size_t sz, long limit,
 			   struct kmr_option opt, kmr_mapfn_t m)
 {
     kmr_assert_kvs_ok(0, kvo, 0, 1);
+    struct kmr_option kmr_supported = {.nothreading = 1, .keep_open = 1,
+                                       .take_ckpt = 1};
+    kmr_check_fn_options(mr, kmr_supported, opt, __func__);
     int cc;
 
     if (kmr_ckpt_enabled(mr)) {

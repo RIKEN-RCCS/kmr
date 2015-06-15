@@ -258,6 +258,8 @@ kmr_assign_file(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
 {
 #ifdef __K
     KMR *mr = kvi->c.mr;
+    struct kmr_option kmr_supported = {.inspect = 1, .take_ckpt = 1};
+    kmr_check_fn_options(mr, kmr_supported, opt, __func__);
     if (kmr_ckpt_enabled(mr)) {
         if (kmr_ckpt_progress_init(kvi, kvo, opt)) {
             if (!opt.keep_open) {
