@@ -21,6 +21,8 @@ import ctypes
 
 THREADS = False
 
+kmr4py.print_backtrace_in_map_fn = False
+
 kmr0 = kmr4py.KMR(1)
 kmr0.set_option("single_thread", ("0" if THREADS else "1"))
 
@@ -62,6 +64,17 @@ assert (s01 == XX)
 
 sys.stdout.flush()
 sys.stderr.flush()
+if (RANK == 0): print "CHECK printing exceptions..."
+sys.stdout.flush()
+
+def k01exeption():
+    pass
+
+k01 = k01.map(k01exeption)
+
+time.sleep(1)
+sys.stdout.flush()
+sys.stderr.flush()
 if (RANK == 0): print "CHECK unfreed kvs message..."
 sys.stdout.flush()
 
@@ -78,7 +91,7 @@ NN = NPROCS
 
 if (RANK == 0): print "RUN map_once()..."
 
-def putXXlist(kv, kvi, kvo, i, _data):
+def putXXlist(kv, kvi, kvo, i, *_data):
     for (k, v) in XX:
         kvo.add(k, v)
     return 0
@@ -97,7 +110,7 @@ assert (s11 == YY)
 
 if (RANK == 0): print "RUN map()..."
 
-def identitymap((k, v), kvi, kvo, i, _data):
+def identitymap((k, v), kvi, kvo, i, *_data):
     kvo.add(k, v)
     return 0
 
@@ -119,7 +132,7 @@ assert (k14.get_element_count() == NN * LL * NPROCS)
 if (RANK == 0): print "RUN reduce()..."
 
 def identityred(keycheck, countn):
-    def identity_reduce_with_check_count(kvvec, n, kvi, kvo, _data):
+    def identity_reduce_with_check_count(kvvec, n, kvi, kvo, *_data):
         assert (n == countn)
         if (keycheck):
             (k0, _0) = kvvec[0]
@@ -135,7 +148,7 @@ assert (k15.get_element_count() == NN * LL * NPROCS)
 
 if (RANK == 0): print "RUN shuffle()..."
 
-def addonered(kvvec, n, kvi, kvo, _data):
+def addonered(kvvec, n, kvi, kvo, *_data):
     (k, v) = kvvec[0]
     kvo.add(k, v)
     return 0

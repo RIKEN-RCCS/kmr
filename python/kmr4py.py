@@ -16,11 +16,21 @@ import ctypes
 import types
 import cPickle
 import inspect
-#import sys
+import traceback
+import sys
 
 ## NOTE: Importing mpi4py initializes for MPI excution.
 
 __version__ = "20150401"
+
+kmrso = ctypes.CDLL("libkmr.so")
+
+_kmrso_version = ctypes.c_int.in_dll(kmrso, "kmr_version").value
+if (__version__ != str(_kmrso_version)):
+    warnings.warn(("Version unmatch with libkmr.so;"
+                   + " found=" + str(_kmrso_version)
+                   + " required=" + __version__),
+                  RuntimeWarning)
 
 ## NOTE: The highest protocol of cpickle is avoided becauase it fails
 ## to encode/decode integer zero in python-2.7.10, gcc-4.8.2, x86-64.
@@ -28,13 +38,9 @@ __version__ = "20150401"
 #_cpickle_protocol = cPickle.HIGHEST_PROTOCOL
 _cpickle_protocol = 0
 
-kmrso = ctypes.CDLL("libkmr.so")
-
-_kmrso_version = ctypes.c_int.in_dll(kmrso, "kmr_version").value
-if (__version__ != str(_kmrso_version)):
-    warnings.warn("Version unmatch with libkmr.so;"
-                  + " found=" + str(_kmrso_version)
-                  + " required=" + __version__)
+warning_function = warnings.warn
+ignore_exception_in_map_fn = True
+print_backtrace_in_map_fn = True
 
 kmrso.kmr_init_2.argtypes = [ctypes.c_int]
 kmrso.kmr_init_2.restype = ctypes.c_int
@@ -400,8 +406,14 @@ def _wrap_mapfn(pyfn):
             kvo = KVS(ckvo)
             key = kvi._decode_content(cbox.klen, cbox.k, "key")
             val = kvi._decode_content(cbox.vlen, cbox.v, "value")
-            pyfn((key, val), kvi, kvo, cindex, carg)
-            return 0
+            try:
+                pyfn((key, val), kvi, kvo, cindex)
+            except:
+                warning_function(("Exception in python callbacks: %s"
+                                  % str(sys.exc_info()[1])),
+                                 RuntimeWarning)
+                if (print_backtrace_in_map_fn): traceback.print_exc()
+            return (0 if ignore_exception_in_map_fn else -1)
         return _MKMAPFN(applyfn)
 
 ## Returns a closure which calls a given python reduce-function on the
@@ -423,7 +435,14 @@ def _wrap_redfn(pyfn):
                 key = kvi._decode_content(cbox.klen, cbox.k, "key")
                 val = kvi._decode_content(cbox.vlen, cbox.v, "value")
                 kvvec.append((key, val))
-            pyfn(kvvec, n, kvi, kvo, carg)
+            try:
+                pyfn(kvvec, n, kvi, kvo)
+            except:
+                warning_function(("Exception in python callbacks: %s"
+                                  % str(sys.exc_info()[1])),
+                                 RuntimeWarning)
+                if (print_backtrace_in_map_fn): traceback.print_exc()
+                return (0 if ignore_exception_in_map_fn else -1)
             return 0
         return _MKREDFN(applyfn)
 
@@ -491,7 +510,8 @@ class KMR():
         self.nprocs = kmrso.kmr_get_nprocs(self.ckmr)
         self.rank = kmrso.kmr_get_rank(self.ckmr)
         if ((comm is not None) and (self.rank == 0)):
-            warnings.warn("(kmr4py) mpi-comm ignored in KMR() constructor.")
+            warning_function("MPI comm ignored in KMR() constructor.",
+                             RuntimeWarning)
         return
 
     def __del__(self):
@@ -629,6 +649,8 @@ class KVS():
             u.p = s
             return (len(s), u, s)
         elif (kvty == "cstring"):
+            if (not isinstance(o, str)):
+                raise Exception("Non-8-bit string for cstring: %s" % o)
             ##s = struct.pack('@s', o)
             u.p = o
             return (len(o), u, None)
@@ -1020,7 +1042,7 @@ def fin():
 def listify(kvs):
     """Returns an array of LOCAL contents."""
     a = kvs.local_element_count() * [None]
-    def f (kv, kvi, kvo, i, _data):
+    def f (kv, kvi, kvo, i, *_data):
         a[i] = kv
         return 0
     kvo = kvs.map(f, output=False, inspect=True)
@@ -1033,7 +1055,7 @@ def _check_ctypes_values():
         raise Exception("BAD: c null pointer has a wrong value.")
 
 def _check_passing_options():
-    ## Checks if the options are passed properly from Python to C.
+    ## Checks if the options are passed properly from python to C.
     for (option, stringify) in [
         (_c_option, kmrso.kmr_stringify_options),
         (_c_file_option, kmrso.kmr_stringify_file_options),
