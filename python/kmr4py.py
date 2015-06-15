@@ -81,6 +81,15 @@ def _c_null_pointer(p):
     ## Returns true if ctypes pointer is null.
     return (not bool(p))
 
+def _string_of_options(o, prefix, attrs):
+    ## Returns print string of options for _c_option, _c_file_option,
+    ## and _c_spawn_option.
+    ss = []
+    for (f, _0, _1) in attrs:
+        if ((f not in ["gap16", "gap32"]) and getattr(o, f) == 1):
+            ss.append(f + "=1")
+    return (prefix + "(" + (",".join(ss)) + ")")
+
 class _c_option(ctypes.Structure):
     """kmr_option."""
 
@@ -121,7 +130,11 @@ class _c_option(ctypes.Structure):
                 raise Exception("Bad option: %s" % o)
         return
 
-class _c_file_option (ctypes.Structure):
+    def __str__(self):
+        return _string_of_options(self, "_c_option",
+                                  _c_option._fields_)
+
+class _c_file_option(ctypes.Structure):
     """kmr_file_option."""
 
     _fields_ = [
@@ -151,6 +164,10 @@ class _c_file_option (ctypes.Structure):
             else:
                 raise Exception("Bad option: %s" % o)
             return
+
+    def __str__(self):
+        return _string_of_options(self, "_c_file_option",
+                                     _c_file_option._fields_)
 
 class _c_spawn_option(ctypes.Structure):
     """kmr_spawn_option."""
@@ -183,6 +200,10 @@ class _c_spawn_option(ctypes.Structure):
                 raise Exception("Bad option: %s" % o)
             return
 
+    def __str__(self):
+        return _string_of_options(self, "_c_spawn_option",
+                                  _c_spawn_option._fields_)
+
 class _c_unitsized(ctypes.Union):
     """kmr_unit_sized {const char *p; long i; double d;}."""
 
@@ -212,6 +233,9 @@ class _c_kvbox(ctypes.Structure):
         self.k = key
         self.v = val
         return self
+
+_spawn_option_list = [k for (k, _1, _2) in _c_spawn_option._fields_]
+_file_option_list = [k for (k, _1, _2) in _c_file_option._fields_]
 
 kmrso.kmr_fin.argtypes = []
 kmrso.kmr_fin.restype = _c_int
@@ -259,16 +283,16 @@ kmrso.kmr_map_rank_by_rank.argtypes = [
     _c_kvs, _c_kvs, _c_void_p, _c_option, _c_fnp]
 kmrso.kmr_map_rank_by_rank.restype = None
 
+kmrso.kmr_map_for_some.argtypes = [
+    _c_kvs, _c_kvs, _c_void_p, _c_option, _c_fnp]
+kmrso.kmr_map_for_some.restype = None
+
 kmrso.kmr_map_ms.argtypes = [_c_kvs, _c_kvs, _c_void_p, _c_option, _c_fnp]
 kmrso.kmr_map_ms.restype = _c_int
 
 kmrso.kmr_map_ms_commands.argtypes = [
     _c_kvs, _c_kvs, _c_void_p, _c_option, _c_spawn_option, _c_fnp]
-kmrso.kmr_map_ms_commands.restype = None
-
-kmrso.kmr_map_for_some.argtypes = [
-    _c_kvs, _c_kvs, _c_void_p, _c_option, _c_fnp]
-kmrso.kmr_map_for_some.restype = None
+kmrso.kmr_map_ms_commands.restype = _c_int
 
 kmrso.kmr_map_via_spawn.argtypes = [
     _c_kvs, _c_kvs, _c_void_p, _c_spawn_option, _c_fnp]
@@ -436,7 +460,7 @@ def _wrap_redfn(pyfn):
                 val = kvi._decode_content(cbox.vlen, cbox.v, "value")
                 kvvec.append((key, val))
             try:
-                pyfn(kvvec, n, kvi, kvo)
+                pyfn(kvvec, kvi, kvo)
             except:
                 warning_function(("Exception in python callbacks: %s"
                                   % str(sys.exc_info()[1])),
@@ -468,7 +492,7 @@ def _filter_spawn_options(opts):
     sopts = dict()
     mopts = dict()
     for o, v in opts.iteritems():
-        if (o in _c_spawn_option._fields_):
+        if (o in _spawn_option_list):
             sopts[o] = v
         else:
             mopts[o] = v
@@ -510,8 +534,7 @@ class KMR():
         self.nprocs = kmrso.kmr_get_nprocs(self.ckmr)
         self.rank = kmrso.kmr_get_rank(self.ckmr)
         if ((comm is not None) and (self.rank == 0)):
-            warning_function("MPI comm ignored in KMR() constructor.",
-                             RuntimeWarning)
+            warning_function("MPI comm ignored in KMR() constructor.", RuntimeWarning)
         return
 
     def __del__(self):
@@ -645,15 +668,17 @@ class KVS():
         kvty = self.get_field_type(key_or_value)
         u = _c_unitsized()
         if (kvty == "opaque"):
-            s = cPickle.dumps(o, self.cpickle_protocol)
-            u.p = s
-            return (len(s), u, s)
+            data = cPickle.dumps(o, self.cpickle_protocol)
+            u.p = data
+            return (len(data), u, data)
         elif (kvty == "cstring"):
             if (not isinstance(o, str)):
-                raise Exception("Non-8-bit string for cstring: %s" % o)
-            ##s = struct.pack('@s', o)
-            u.p = o
-            return (len(o), u, None)
+                raise Exception("Not 8-bit string for cstring: %s" % o)
+            ##data = struct.pack('@s', o)
+            ## (ADD NULL FOR C STRING).
+            data = (o + "\0")
+            u.p = data
+            return (len(data), u, data)
         elif (kvty == "integer"):
             u.i = o
             return (ctypes.sizeof(_c_long), u, None)
@@ -678,7 +703,8 @@ class KVS():
             elif (kvty == "cstring"):
                 s = ctypes.string_at(u.p, siz)
                 ##o = struct.unpack('@s', s)
-                return s
+                ## (STRIPS NULLS TOO MANY).
+                return s.rstrip("\0")
             elif (kvty == "integer"):
                 return u.i
             elif (kvty == "float8"):
@@ -786,7 +812,7 @@ class KVS():
         if (cmopts.inspect == 0): self._consume()
         return kvo
 
-    def map_ms(self, kvi, fn, **mopts):
+    def map_ms(self, fn, **mopts):
         """Maps in master-slave mode."""
         ## Its call is repeated until True (assuming MPI_SUCCESS==0).
         (keyty, valty, mkkvo) = _get_options(mopts, True)
@@ -801,17 +827,19 @@ class KVS():
         self._consume()
         return kvo
 
-    def map_ms_commands(self, kvi, fn, **xopts):
+    def map_ms_commands(self, fn, **xopts):
         """Maps in master-slave mode, and runs serial commands."""
         (sopts, mopts) = _filter_spawn_options(xopts)
         (keyty, valty, mkkvo) = _get_options(mopts, True)
-        cmopts = _c_option(mopts, _enabled_options_of_map)
+        cmopts = _c_option(mopts, _enabled_options_of_map_ms)
         csopts = _c_spawn_option(sopts)
         cfn = _wrap_mapfn(fn)
         ckvi = self.ckvs
         kvo = (KVS(self.mr, keyty, valty) if mkkvo else None)
         ckvo = (kvo.ckvs if (kvo is not None) else None)
-        kmrso.kmr_map_ms_commands(ckvi, ckvo, 0, cmopts, csopts, cfn)
+        rr = 1
+        while (rr != 0):
+            rr = kmrso.kmr_map_ms_commands(ckvi, ckvo, 0, cmopts, csopts, cfn)
         self._consume()
         return kvo
 

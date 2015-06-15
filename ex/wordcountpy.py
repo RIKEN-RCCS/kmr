@@ -13,7 +13,7 @@ file_name = "../LICENSE"
 
 kmr = kmr4py.KMR(1)
 
-def read_words_from_a_file(kv, kvi, kvo, i, _data):
+def read_words_from_a_file(kv, kvi, kvo, i, *_data):
     file = open(file_name, "r")
     for line in file:
         words = re.split(r"\W+", line.strip())
@@ -22,12 +22,12 @@ def read_words_from_a_file(kv, kvi, kvo, i, _data):
                 kvo.add(w, 1)
     file.close()
 
-def print_top_five((k, v), kvi, kvo, i, _data):
+def print_top_five((k, v), kvi, kvo, i, *_data):
     ## (NO FIELD VALUE IN KMR.MR BECAUSE IT IS A DUMMY).
     if (kmr.rank == 0 and i < 5):
         print "#%s=%d" % (v, int(0 - k))
 
-def sum_counts_for_a_word(kvvec, n, kvi, kvo, _data):
+def sum_counts_for_a_word(kvvec, kvi, kvo, *_data):
     count = 0
     (k0, _1) = kvvec[0]
     for (k, v) in kvvec:

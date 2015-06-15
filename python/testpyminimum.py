@@ -19,8 +19,7 @@ import ctypes
 
 ### SETTINGS
 
-THREADS = False
-
+THREADS = True
 kmr4py.print_backtrace_in_map_fn = False
 
 kmr0 = kmr4py.KMR(1)
@@ -132,8 +131,8 @@ assert (k14.get_element_count() == NN * LL * NPROCS)
 if (RANK == 0): print "RUN reduce()..."
 
 def identityred(keycheck, countn):
-    def identity_reduce_with_check_count(kvvec, n, kvi, kvo, *_data):
-        assert (n == countn)
+    def identity_reduce_with_check_count(kvvec, kvi, kvo, *_data):
+        assert (len(kvvec) == countn)
         if (keycheck):
             (k0, _0) = kvvec[0]
             for (k, _1) in kvvec:
@@ -295,5 +294,5 @@ kmr5.dismiss()
 sys.stdout.flush()
 sys.stderr.flush()
 if (RANK == 0):
-    print "testminimum OK"
+    print "testpyminimum OK"
 sys.stdout.flush()
