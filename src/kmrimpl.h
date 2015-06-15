@@ -1033,6 +1033,15 @@ extern void *kmr_bsearch(const void *key, const void *base,
 			 size_t nel, size_t size,
 			 int (*compar)(const void *, const void *));
 
+extern int kmr_reverse_fn(const struct kmr_kv_box kv,
+			  const KMR_KVS *kvs, KMR_KVS *kvo, void *p,
+			  const long i);
+extern int kmr_pairing_fn(const struct kmr_kv_box kv,
+			  const KMR_KVS *kvi, KMR_KVS *kvo, void *p,
+			  const long i);
+extern int kmr_unpairing_fn(const struct kmr_kv_box kv,
+			    const KMR_KVS *kvs, KMR_KVS *kvo, void *p,
+			    const long i);
 extern int kmr_imax_one_fn(const struct kmr_kv_box kv[], const long n,
 			   const KMR_KVS *kvi, KMR_KVS *kvo, void *p);
 extern int kmr_isum_one_fn(const struct kmr_kv_box kv[], const long n,

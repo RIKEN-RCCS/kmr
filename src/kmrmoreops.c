@@ -137,7 +137,7 @@ kmr_get_element_count(KMR_KVS *kvs, long *v)
 
 /* ================================================================ */
 
-static int
+int
 kmr_reverse_fn(const struct kmr_kv_box kv,
 	       const KMR_KVS *kvs, KMR_KVS *kvo, void *p, const long i)
 {
@@ -191,7 +191,7 @@ kmr_add_pairing_under_key(KMR_KVS *kvo, int klen, union kmr_unit_sized k,
     return MPI_SUCCESS;
 }
 
-static int
+int
 kmr_pairing_fn(const struct kmr_kv_box kv,
 	       const KMR_KVS *kvi, KMR_KVS *kvo, void *p, const long i)
 {
@@ -213,7 +213,7 @@ kmr_pairing(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
     return kmr_map(kvi, kvo, 0, opt, kmr_pairing_fn);
 }
 
-static int
+int
 kmr_unpairing_fn(const struct kmr_kv_box kv,
 		 const KMR_KVS *kvs, KMR_KVS *kvo, void *p, const long i)
 {
@@ -867,7 +867,8 @@ kmr_distribute(KMR_KVS *kvi, KMR_KVS *kvo, _Bool cyclic, struct kmr_option opt)
 
 static int
 kmr_first_n_elements_fn(const struct kmr_kv_box kv,
-		     const KMR_KVS *kvi, KMR_KVS *kvo, void *p, const long i)
+			const KMR_KVS *kvi, KMR_KVS *kvo, void *p,
+			const long i)
 {
     long n = *(long *)p;
     if (kv.k.i < n) {
