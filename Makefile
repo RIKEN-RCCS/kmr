@@ -15,6 +15,7 @@ install:
 	cd shell; make install
 	cd kmrrun; make install
 	cd cmd; make install
+	cd python; make install
 	cd man; make install
 
 install-htmldoc: install htmldoc

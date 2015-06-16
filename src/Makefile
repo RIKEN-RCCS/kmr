@@ -5,6 +5,7 @@ include ../config.make
 .PHONY : kmr_c kmr_f
 
 INSTALL = install
+LN = ln
 
 mpicc = $(MPICC) $(OPENMP_CFLAGS) $(CFLAGS)
 mpicxx = $(MPICXX) $(OPENMP_CXXFLAGS) $(CXXFLAGS)
@@ -56,6 +57,7 @@ install::
 	if [ -f kmrf.mod ]; then $(INSTALL) -m 644 kmrf.mod $(INCDIR); fi
 	$(INSTALL) -m 644 libkmr.a $(LIBDIR)
 	$(INSTALL) -m 755 libkmr.so.$(KMRVER) $(LIBDIR)
+	$(LN) -s $(LIBDIR)/libkmr.so.$(KMRVER) $(LIBDIR)/libkmr.so
 	$(INSTALL) -m 755 kmrwatch0 $(LIBDIR)
 	$(INSTALL) -m 644 ../README $(ETCDIR)
 	$(INSTALL) -m 644 ../LICENSE $(ETCDIR)
