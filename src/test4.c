@@ -35,8 +35,7 @@ simple0(int nprocs, int rank)
     int cc;
 
     KMR *mr = kmr_create_context(MPI_COMM_WORLD, MPI_INFO_NULL, 0);
-    mr->trace_map_spawn = 1;
-    mr->spawn_max_processes = 4;
+    mr->trace_map_ms = 1;
 
     if (1) {
 	MPI_Barrier(MPI_COMM_WORLD);
@@ -80,8 +79,7 @@ simple1(int nprocs, int rank)
     int cc;
 
     KMR *mr = kmr_create_context(MPI_COMM_WORLD, MPI_INFO_NULL, 0);
-    mr->trace_map_spawn = 1;
-    mr->spawn_max_processes = 4;
+    mr->trace_map_ms = 1;
 
     if (1) {
 	MPI_Barrier(MPI_COMM_WORLD);
@@ -96,7 +94,7 @@ simple1(int nprocs, int rank)
 	    char v[256];
 	    snprintf(k, sizeof(k), "key");
 	    snprintf(v, sizeof(v), "./a.out a0 a1 a2");
-	    for (int i = 0; i < 4; i++) {
+	    for (int i = 0; i < 20; i++) {
 		kmr_add_string(kvs00, k, v);
 	    }
 	}
@@ -111,7 +109,7 @@ simple1(int nprocs, int rank)
 	} while (cc == MPI_ERR_ROOT);
 	/*kmr_dump_kvs(kvs01, 0);*/
 	if (mr->rank == 0) {
-	    assert(kvs01->c.element_count == 4);
+	    assert(kvs01->c.element_count == 20);
 	} else {
 	    assert(kvs01->c.element_count == 0);
 	}

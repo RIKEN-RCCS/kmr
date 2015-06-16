@@ -182,8 +182,8 @@ struct kmr_code_line { const char *file; const char *func; int line; };
     the nothreading option for mapper/shuffler/reducer.  ONE_STEP_SORT
     disables a prior sorting step which sort on (packed/hashed)
     integer keys in local sorting.  STEP_SYNC is to call a barrier at
-    each operation step for debugging.  TRACE_FILE_IO and
-    TRACE_MAP_SPAWN let dump trace output for debugging.
+    each operation step for debugging.  TRACE_FILE_IO, TRACE_MAP_MS,
+    and TRACE_MAP_SPAWN let dump trace output for debugging.
     (TRACE_ALLTOALL lets dump trace output on communication for
     debugging internals).  TRACE_KMRDP lets dump timing information of
     run of KMR-DP.  STD_ABORT lets use abort() instead of MPI_Abort()
@@ -199,10 +199,10 @@ struct kmr_code_line { const char *file; const char *func; int line; };
     changes the behavior to the old API).  MPI_THREAD_SUPPORT records
     the thread support level.  CKPT_ENABLE is a checkpointing enable.
     CKPT_SELECTIVE enables users to specify which kmr functions take
-    ckpt files of the output key-value stream.  To take ckpt files with
-    this option enabled, users should specify TAKE_CKPT option enabled
-    when calling a kmr function.  CKPT_NO_FSYNC does not call fsync
-    syscall on writing ckpt files.  Both CKPT_SELECTIVE and
+    ckpt files of the output key-value stream.  To take ckpt files
+    with this option enabled, users should specify TAKE_CKPT option
+    enabled when calling a kmr function.  CKPT_NO_FSYNC does not call
+    fsync syscall on writing ckpt files.  Both CKPT_SELECTIVE and
     CKPT_NO_FSYNC should be specified with CKPT_ENABLE.
     STOP_AT_SOME_CHECK_GLOBALLY forces global checking of stop-at-some
     state in mapping (not implemented).  Mapping with stop-at-some
@@ -264,6 +264,7 @@ struct kmr_ctx {
     _Bool step_sync : 1;
     _Bool trace_sorting : 1;
     _Bool trace_file_io : 1;
+    _Bool trace_map_ms : 1;
     _Bool trace_map_spawn : 1;
     _Bool trace_alltoall : 1;
     _Bool trace_kmrdp : 1;

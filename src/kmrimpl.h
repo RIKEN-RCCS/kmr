@@ -1005,10 +1005,6 @@ extern int kmr_map_via_spawn_ff(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
 				int finfo, struct kmr_spawn_option opt,
 				kmr_mapfn_t m);
 extern int kmr_get_spawner_communicator_ff(KMR *mr, long i, int *comm);
-extern int kmr_map_processes_null_info(_Bool nonmpi, KMR_KVS *kvi,
-				       KMR_KVS *kvo, void *arg,
-				       struct kmr_spawn_option opt,
-				       kmr_mapfn_t mapfn);
 
 extern void kmr_init_kvs_oncore(KMR_KVS *kvs, KMR *mr);
 extern int kmr_free_kvs_pushoff(KMR_KVS *kvs, _Bool deallocate);
@@ -1075,6 +1071,8 @@ extern int kmr_getdtablesize(KMR *mr);
 
 extern int kmr_msleep(int msec, int interval);
 extern void kmr_mfree(void *p, size_t sz);
+extern size_t kmr_mpi_type_size(char *s);
+extern uint64_t kmr_mpi_constant_value(char *s);
 
 extern int kmr_install_watch_program(KMR *mr, char *msg);
 

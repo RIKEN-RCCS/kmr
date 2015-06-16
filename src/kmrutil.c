@@ -852,6 +852,78 @@ kmr_mfree(void *p, size_t sz)
     kmr_free(p, sz);
 }
 
+/* (mpi routines for python-ctypes) Returns a sizeof a MPI type given
+   by a string. */
+
+size_t
+kmr_mpi_type_size(char *s)
+{
+    if (strcasecmp(s, "MPI_Group") == 0) {
+	return sizeof(MPI_Group);
+    } else if (strcasecmp(s, "MPI_Comm") == 0) {
+	return sizeof(MPI_Comm);
+    } else if (strcasecmp(s, "MPI_Datatype") == 0) {
+	return sizeof(MPI_Datatype);
+    } else if (strcasecmp(s, "MPI_Request") == 0) {
+	return sizeof(MPI_Request);
+    } else if (strcasecmp(s, "MPI_Op") == 0) {
+	return sizeof(MPI_Op);
+    } else if (strcasecmp(s, "MPI_Errhandler") == 0) {
+	return sizeof(MPI_Errhandler);
+    } else if (strcasecmp(s, "MPI_Info") == 0) {
+	return sizeof(MPI_Info);
+    } else {
+	char ee[80];
+	snprintf(ee, sizeof(ee),
+		 "kmr_mpi_type_size() unknown name (%s)", s);
+	kmr_warning(0, 5, ee);
+	return 0;
+    }
+}
+
+/* (mpi routines for python-ctypes) Returns a value of some MPI named
+   constants given by a string. */
+
+uint64_t
+kmr_mpi_constant_value(char *s)
+{
+    assert(sizeof(MPI_Group) <= sizeof(uint64_t)
+	   && sizeof(MPI_Comm) <= sizeof(uint64_t)
+	   && sizeof(MPI_Datatype) <= sizeof(uint64_t)
+	   && sizeof(MPI_Request) <= sizeof(uint64_t)
+	   && sizeof(MPI_Op) <= sizeof(uint64_t)
+	   && sizeof(MPI_Errhandler) <= sizeof(uint64_t)
+	   && sizeof(MPI_Info) <= sizeof(uint64_t));
+
+    if (strcasecmp(s, "MPI_COMM_WORLD") == 0) {
+	return (uint64_t)MPI_COMM_WORLD;
+    } else if (strcasecmp(s, "MPI_COMM_SELF") == 0) {
+	return (uint64_t)MPI_COMM_SELF;
+    } else if (strcasecmp(s, "MPI_COMM_NULL") == 0) {
+	return (uint64_t)MPI_COMM_NULL;
+    } else if (strcasecmp(s, "MPI_GROUP_NULL") == 0) {
+	return (uint64_t)MPI_GROUP_NULL;
+    } else if (strcasecmp(s, "MPI_DATATYPE_NULL") == 0) {
+	return (uint64_t)MPI_DATATYPE_NULL;
+    } else if (strcasecmp(s, "MPI_REQUEST_NULL") == 0) {
+	return (uint64_t)MPI_REQUEST_NULL;
+    } else if (strcasecmp(s, "MPI_OP_NULL") == 0) {
+	return (uint64_t)MPI_OP_NULL;
+    } else if (strcasecmp(s, "MPI_ERRHANDLER_NULL") == 0) {
+	return (uint64_t)MPI_ERRHANDLER_NULL;
+    } else if (strcasecmp(s, "MPI_GROUP_EMPTY") == 0) {
+	return (uint64_t)MPI_GROUP_EMPTY;
+    } else if (strcasecmp(s, "MPI_INFO_NULL") == 0) {
+	return (uint64_t)MPI_INFO_NULL;
+    } else {
+	char ee[80];
+	snprintf(ee, sizeof(ee),
+		 "kmr_mpi_constant_value() unknown name (%s)", s);
+	kmr_warning(0, 5, ee);
+	return 0;
+    }
+}
+
 /* ================================================================ */
 
 /** Copies the entry in the array.  It should be used with the INSPECT
@@ -1054,6 +1126,7 @@ kmr_check_options(KMR *mr, MPI_Info info)
 	printf("[%05d] single_thread=%d\n", r, mr->single_thread);
 	printf("[%05d] step_sync=%d\n", r, mr->step_sync);
 	printf("[%05d] trace_file_io=%d\n", r, mr->trace_file_io);
+	printf("[%05d] trace_map_ms=%d\n", r, mr->trace_map_ms);
 	printf("[%05d] trace_map_spawn=%d\n", r, mr->trace_map_spawn);
 	printf("[%05d] trace_alltoall=%d\n", r, mr->trace_alltoall);
 	printf("[%05d] trace_kmrdp=%d\n", r, mr->trace_kmrdp);
@@ -1119,6 +1192,12 @@ kmr_set_option_by_strings(KMR *mr, char *k, char *v)
 	    mr->trace_file_io = (_Bool)x;
 	} else {
 	    kmr_warning(mr, 1, "option trace_file_io be boolean");
+	}
+    } else if (strcasecmp("trace_map_ms", k) == 0) {
+	if (kmr_parse_boolean(v, &x)) {
+	    mr->trace_map_ms = (_Bool)x;
+	} else {
+	    kmr_warning(mr, 1, "option trace_map_ms be boolean");
 	}
     } else if (strcasecmp("trace_map_spawn", k) == 0) {
 	if (kmr_parse_boolean(v, &x)) {

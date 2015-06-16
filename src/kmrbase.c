@@ -241,6 +241,7 @@ kmr_create_context(const MPI_Comm comm, const MPI_Info conf,
     mr->step_sync = 0;
     mr->trace_sorting = 0;
     mr->trace_file_io = 0;
+    mr->trace_map_ms = 0;
     mr->trace_map_spawn = 0;
     mr->trace_alltoall = 0;
     mr->trace_kmrdp = 0;
