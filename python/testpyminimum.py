@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 ## testpyminimum.py
 
 ### Very Basics Test
@@ -147,7 +148,7 @@ assert (k15.get_element_count() == NN * LL * NPROCS)
 
 if (RANK == 0): print "RUN shuffle()..."
 
-def addonered(kvvec, n, kvi, kvo, *_data):
+def addonered(kvvec, kvi, kvo, *_data):
     (k, v) = kvvec[0]
     kvo.add(k, v)
     return 0
@@ -272,12 +273,14 @@ if (RANK == 0): print "RUN map() with c-function..."
 
 k51 = k50.map(kmr4py.kmrso.kmr_reverse_fn, inspect=True,
               key="opaque", value="integer")
-k52 = k50.reverse(inspect=True)
-s51 = kmr4py.listify(k51)
+k52 = k51.sort()
+k53 = k50.reverse(inspect=True)
+k54 = k53.sort()
 s52 = kmr4py.listify(k52)
-assert (s51 == s52)
-k51.free()
+s54 = kmr4py.listify(k54)
+assert (s52 == s54)
 k52.free()
+k54.free()
 
 if (RANK == 0): print "RUN save() and restore()..."
 

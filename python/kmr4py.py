@@ -1,13 +1,13 @@
 # kmr4py.py
 # Copyright (C) 2012-2015 RIKEN AICS
 
-"""KMR Python Binding"""
-
 ## NOTE: Importing mpi4py initializes for MPI execution.  It is not
 ## imported here, applications shell import it.
 
 ## NOTE: MPI_COMM_WORLD and MPI_INFO_NULL are used for MPI arguments,
 ## currently.
+
+"""KMR Python Binding"""
 
 from mpi4py import MPI
 import warnings
@@ -32,15 +32,20 @@ if (__version__ != str(_kmrso_version)):
                    + " required=" + __version__),
                   RuntimeWarning)
 
-## NOTE: The highest protocol of cpickle is avoided becauase it fails
-## to encode/decode integer zero in python-2.7.10, gcc-4.8.2, x86-64.
-
 #_cpickle_protocol = cPickle.HIGHEST_PROTOCOL
 _cpickle_protocol = 0
 
+##: A protocol used in encoding/decoding key-value fields.  NOTE: The
+##: highest protocol of cpickle is avoided becauase it fails to
+##: encode/decode integer zero in python-2.7.10, gcc-4.8.2, x86-64.
+
 warning_function = warnings.warn
-ignore_exception_in_map_fn = True
+ignore_exceptions_in_map_fn = True
 print_backtrace_in_map_fn = True
+
+force_null_terminate_in_cstring = True
+
+##: A flag to add C string terminator in cstrings.
 
 kmrso.kmr_init_2.argtypes = [ctypes.c_int]
 kmrso.kmr_init_2.restype = ctypes.c_int
@@ -49,7 +54,8 @@ kmrso.kmr_init_2.restype = ctypes.c_int
 
 kmrso.kmr_init_2(0)
 
-_c_mpi_comm = ctypes.c_void_p
+## ctypes.c_uint32 and ctypes.c_uint64 are not documented, but exist.
+
 _c_pointer = ctypes.POINTER(ctypes.c_char)
 _c_kmr = _c_pointer
 _c_kvs = _c_pointer
@@ -62,6 +68,7 @@ _c_bool = ctypes.c_bool
 _c_int = ctypes.c_int
 _c_uint = ctypes.c_uint
 _c_long = ctypes.c_long
+_c_uint32 = ctypes.c_uint32
 _c_uint64 = ctypes.c_uint64
 _c_double = ctypes.c_double
 _c_size_t = ctypes.c_size_t
@@ -74,16 +81,17 @@ _c_funcptr = type(kmrso.kmr_init_2)
 
 ## Null return values for ctypes.restype.
 
-#_c_null_void_p_value = _c_void_p()
 _c_null_pointer_value = _c_pointer()
 
 def _c_null_pointer(p):
-    ## Returns true if ctypes pointer is null.
+    """Returns true if ctypes pointer is null."""
     return (not bool(p))
 
-def _string_of_options(o, prefix, attrs):
-    ## Returns print string of options for _c_option, _c_file_option,
-    ## and _c_spawn_option.
+def _string_of_options(o):
+    """Returns a print string of options for _c_option,
+    _c_file_option, and _c_spawn_option."""
+    prefix = o.__class__.__name__
+    attrs = o.__class__._fields_
     ss = []
     for (f, _0, _1) in attrs:
         if ((f not in ["gap16", "gap32"]) and getattr(o, f) == 1):
@@ -131,8 +139,7 @@ class _c_option(ctypes.Structure):
         return
 
     def __str__(self):
-        return _string_of_options(self, "_c_option",
-                                  _c_option._fields_)
+        return _string_of_options(self)
 
 class _c_file_option(ctypes.Structure):
     """kmr_file_option."""
@@ -166,8 +173,7 @@ class _c_file_option(ctypes.Structure):
             return
 
     def __str__(self):
-        return _string_of_options(self, "_c_file_option",
-                                     _c_file_option._fields_)
+        return _string_of_options(self)
 
 class _c_spawn_option(ctypes.Structure):
     """kmr_spawn_option."""
@@ -198,11 +204,10 @@ class _c_spawn_option(ctypes.Structure):
                 self.one_by_one = v
             else:
                 raise Exception("Bad option: %s" % o)
-            return
+        return
 
     def __str__(self):
-        return _string_of_options(self, "_c_spawn_option",
-                                  _c_spawn_option._fields_)
+        return _string_of_options(self)
 
 class _c_unitsized(ctypes.Union):
     """kmr_unit_sized {const char *p; long i; double d;}."""
@@ -234,8 +239,34 @@ class _c_kvbox(ctypes.Structure):
         self.v = val
         return self
 
-_spawn_option_list = [k for (k, _1, _2) in _c_spawn_option._fields_]
-_file_option_list = [k for (k, _1, _2) in _c_file_option._fields_]
+kmrso.kmr_mpi_type_size.argtypes = [_c_string]
+kmrso.kmr_mpi_type_size.restype = _c_size_t
+
+kmrso.kmr_mpi_constant_value.argtypes = [_c_string]
+kmrso.kmr_mpi_constant_value.restype = _c_uint64
+
+## Import some MPI constant values.  Calling kmr_mpi_type_size and
+## kmr_mpi_constant_value dose not need MPI be initialized.
+
+def _setup_mpi_constants():
+    def c_type_by_size(siz):
+        if (siz == ctypes.sizeof(_c_uint64)):
+            return _c_uint64
+        elif (siz == ctypes.sizeof(_c_uint32)):
+            return _c_uint32
+        else:
+            raise Exception("Bad type size unknown: %d" % siz)
+        return None
+    global _c_mpi_comm, _c_mpi_info, _mpi_comm_world, _mpi_info_null
+    siz = kmrso.kmr_mpi_type_size("MPI_Comm")
+    _c_mpi_comm = c_type_by_size(siz)
+    siz = kmrso.kmr_mpi_type_size("MPI_Info")
+    _c_mpi_info = c_type_by_size(siz)
+    _mpi_comm_world = kmrso.kmr_mpi_constant_value("MPI_COMM_WORLD")
+    _mpi_info_null = kmrso.kmr_mpi_constant_value("MPI_INFO_NULL")
+    return
+
+_setup_mpi_constants()
 
 kmrso.kmr_fin.argtypes = []
 kmrso.kmr_fin.restype = _c_int
@@ -262,8 +293,8 @@ kmrso.kmr_add_kv.restype = None
 kmrso.kmr_add_kv_done.argtypes = [_c_kvs]
 kmrso.kmr_add_kv_done.restype = None
 
-kmrso.kmr_add_string.argtypes = [_c_kvs, _c_string, _c_string]
-kmrso.kmr_add_string.restype = _c_int
+#kmrso.kmr_add_string.argtypes = [_c_kvs, _c_string, _c_string]
+#kmrso.kmr_add_string.restype = _c_int
 
 kmrso.kmr_get_element_count.argtypes = [_c_kvs]
 kmrso.kmr_get_element_count.restype = _c_long
@@ -295,12 +326,12 @@ kmrso.kmr_map_ms_commands.argtypes = [
 kmrso.kmr_map_ms_commands.restype = _c_int
 
 kmrso.kmr_map_via_spawn.argtypes = [
-    _c_kvs, _c_kvs, _c_void_p, _c_spawn_option, _c_fnp]
+    _c_kvs, _c_kvs, _c_void_p, _c_mpi_info, _c_spawn_option, _c_fnp]
 kmrso.kmr_map_via_spawn.restype = None
 
-kmrso.kmr_map_processes_null_info.argtypes = [
-    _c_bool, _c_kvs, _c_kvs, _c_void_p, _c_spawn_option, _c_fnp]
-kmrso.kmr_map_processes_null_info.restype = None
+kmrso.kmr_map_processes.argtypes = [
+    _c_bool, _c_kvs, _c_kvs, _c_void_p, _c_mpi_info, _c_spawn_option, _c_fnp]
+kmrso.kmr_map_processes.restype = None
 
 kmrso.kmr_reduce9.argtypes = [
     _c_bool, _c_kvs, _c_kvs, _c_void_p, _c_option, _c_fnp,
@@ -386,13 +417,16 @@ kmrso.kmr_stringify_file_options.restype = _c_string
 kmrso.kmr_stringify_spawn_options.argtypes = [_c_spawn_option]
 kmrso.kmr_stringify_spawn_options.restype = _c_string
 
-receive_kvs_from_spawned_fn = kmrso.kmr_receive_kvs_from_spawned_fn
+#receive_kvs_from_spawned_fn = kmrso.kmr_receive_kvs_from_spawned_fn
 
 _kv_bad = ctypes.c_int.in_dll(kmrso, "kmr_kv_field_bad").value
 _kv_opaque = ctypes.c_int.in_dll(kmrso, "kmr_kv_field_opaque").value
 _kv_cstring = ctypes.c_int.in_dll(kmrso, "kmr_kv_field_cstring").value
 _kv_integer = ctypes.c_int.in_dll(kmrso, "kmr_kv_field_integer").value
 _kv_float8 = ctypes.c_int.in_dll(kmrso, "kmr_kv_field_float8").value
+
+_spawn_option_list = [k for (k, _1, _2) in _c_spawn_option._fields_]
+_file_option_list = [k for (k, _1, _2) in _c_file_option._fields_]
 
 _field_name_type_map = {
     "opaque" : _kv_opaque, "cstring" : _kv_cstring,
@@ -416,10 +450,9 @@ _c_mapfn_restype = _c_int
 _c_redfn_argtypes = [_c_boxvec, _c_long, _c_kvs, _c_kvs, _c_void_p]
 _c_redfn_restype = _c_int
 
-## Returns a closure which calls a given python map-function on the
-## unmarshalled contents in KVS.
-
 def _wrap_mapfn(pyfn):
+    """Returns a closure which calls a given python map-function on
+    the unmarshalled contents in KVS."""
     if (pyfn is None):
         return 0
     elif (isinstance(pyfn, _c_funcptr)):
@@ -437,13 +470,12 @@ def _wrap_mapfn(pyfn):
                                   % str(sys.exc_info()[1])),
                                  RuntimeWarning)
                 if (print_backtrace_in_map_fn): traceback.print_exc()
-            return (0 if ignore_exception_in_map_fn else -1)
+            return (0 if ignore_exceptions_in_map_fn else -1)
         return _MKMAPFN(applyfn)
 
-## Returns a closure which calls a given python reduce-function on the
-## unmarshalled contents in KVS.
-
 def _wrap_redfn(pyfn):
+    """Returns a closure which calls a given python reduce-function on
+    the unmarshalled contents in KVS."""
     if (pyfn is None):
         return 0
     elif (isinstance(pyfn, _c_funcptr)):
@@ -466,13 +498,12 @@ def _wrap_redfn(pyfn):
                                   % str(sys.exc_info()[1])),
                                  RuntimeWarning)
                 if (print_backtrace_in_map_fn): traceback.print_exc()
-                return (0 if ignore_exception_in_map_fn else -1)
-            return 0
+            return (0 if ignore_exceptions_in_map_fn else -1)
         return _MKREDFN(applyfn)
 
 def _get_options(opts, with_keyty_valty):
-    ## Returns a triple of the options: a key field type, a value
-    ## field type, and a flag of needs of output generation.
+    """Returns a triple of the options: a key field type, a value
+    field type, and a flag of needs of output generation."""
     if ((not with_keyty_valty) and (("key" in opts) or ("value" in opts))):
         raise Exception("Bad option: key= or value= not allowed")
     keyty = opts.get("key", "opaque")
@@ -485,10 +516,9 @@ def _make_frame_info(frame):
     co = sp.f_code
     return (co.co_filename, sp.f_lineno, co.co_name)
 
-## Returns a pair of dictionaries, the 1st holds options to spawn, and
-## the 2nd holds the other options.
-
 def _filter_spawn_options(opts):
+    """Returns a pair of dictionaries, the 1st holds options to spawn,
+    and the 2nd holds the other options."""
     sopts = dict()
     mopts = dict()
     for o, v in opts.iteritems():
@@ -501,23 +531,22 @@ def _filter_spawn_options(opts):
 class KMR():
     """KMR context."""
 
-    ## @var nprocs holds an nprocs of MPI.
+    ## nprocs holds an nprocs of MPI.
 
     nprocs = -1
 
-    ## @var rank holds a rank of MPI.
+    ## rank holds a rank of MPI.
 
     rank = -1
 
-    ## @var emptykvs holds an empty KVS needed by map_once,
+    ## emptykvs holds an empty KVS needed by map_once,
     ## map_on_rank_zero, read_files_reassemble, and
     ## read_file_by_segments.
 
     emptykvs = None
 
-    ## @var dismissed disables freeing KVSes (by memory management)
-    ## after dismissing KMR, because it frees KVSes which remain
-    ## unconsumed.
+    ## dismissed disables freeing KVSes (by memory management) after
+    ## dismissing KMR, because it frees KVSes which remain unconsumed.
 
     dismissed = False
 
@@ -555,6 +584,9 @@ class KMR():
         self.nprocs = -1
         self.rank = -1
         return
+
+    def create_kvs(self, **opts):
+        self.make_kvs(**opts)
 
     def make_kvs(self, **opts):
         """Makes a new KVS."""
@@ -658,13 +690,13 @@ class KVS():
         return (self.mr is None)
 
     def _consume(self):
-        ## Releases a now dangling C pointer.
+        """Releases a now dangling C pointer."""
         self.ckvs = _c_null_pointer_value
 
     def _encode_content(self, o, key_or_value):
-        ## Marshalls an object with regard to the field type.  It
-        ## retuns a 3-tuple, with length, value-union, and the 3nd to
-        ## keep a reference to a buffer.
+        """Marshalls an object with regard to the field type.  It
+        retuns a 3-tuple, with length, value-union, and the 3nd to
+        keep a reference to a buffer."""
         kvty = self.get_field_type(key_or_value)
         u = _c_unitsized()
         if (kvty == "opaque"):
@@ -676,7 +708,7 @@ class KVS():
                 raise Exception("Not 8-bit string for cstring: %s" % o)
             ##data = struct.pack('@s', o)
             ## (ADD NULL FOR C STRING).
-            data = (o + "\0")
+            data = ((o + "\0") if force_null_terminate_in_cstring else o)
             u.p = data
             return (len(data), u, data)
         elif (kvty == "integer"):
@@ -689,9 +721,9 @@ class KVS():
             raise Exception("Bad field type: %s" % kvky)
 
     def _decode_content(self, siz, u, key_or_value):
-        ## Unmarshalls an object with regard to the field type.  It
-        ## returns integer 0 when the length is 0 (it is for a dummy
-        ## key-value used in kmr_map_once() etc).
+        """Unmarshalls an object with regard to the field type.  It
+        returns integer 0 when the length is 0 (it is for a dummy
+        key-value used in kmr_map_once() etc)."""
         if (siz == 0):
             return 0
         else:
@@ -704,7 +736,8 @@ class KVS():
                 s = ctypes.string_at(u.p, siz)
                 ##o = struct.unpack('@s', s)
                 ## (STRIPS NULLS TOO MANY).
-                return s.rstrip("\0")
+                o = (s.rstrip("\0") if force_null_terminate_in_cstring else s)
+                return o
             elif (kvty == "integer"):
                 return u.i
             elif (kvty == "float8"):
@@ -853,7 +886,7 @@ class KVS():
         ckvi = self.ckvs
         kvo = (KVS(self.mr, keyty, valty) if mkkvo else None)
         ckvo = (kvo.ckvs if (kvo is not None) else None)
-        kmrso.kmr_map_via_spawn(ckvi, ckvo, 0, csopts, cfn)
+        kmrso.kmr_map_via_spawn(ckvi, ckvo, 0, _mpi_info_null, csopts, cfn)
         self._consume()
         return kvo
 
@@ -865,7 +898,8 @@ class KVS():
         ckvi = self.ckvs
         kvo = (KVS(self.mr, keyty, valty) if mkkvo else None)
         ckvo = (kvo.ckvs if (kvo is not None) else None)
-        kmrso.kmr_map_processes_null_info(nonmpi, ckvi, ckvo, 0, csopts, cfn)
+        kmrso.kmr_map_processes(nonmpi, ckvi, ckvo, 0, _mpi_info_null,
+                                csopts, cfn)
         self._consume()
         return kvo
 
@@ -1078,12 +1112,12 @@ def listify(kvs):
     return a
 
 def _check_ctypes_values():
-    ## Checks if ctypes values are properly used.
+    """Checks if ctypes values are properly used."""
     if (not _c_null_pointer(_c_null_pointer_value)):
         raise Exception("BAD: c null pointer has a wrong value.")
 
 def _check_passing_options():
-    ## Checks if the options are passed properly from python to C.
+    """Checks if the options are passed properly from python to C."""
     for (option, stringify) in [
         (_c_option, kmrso.kmr_stringify_options),
         (_c_file_option, kmrso.kmr_stringify_file_options),

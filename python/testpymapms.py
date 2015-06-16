@@ -3,8 +3,7 @@
 
 ### Master-Slave Mappers Test
 
-## TESTED: map_ms(), map_ms_commands(), map_via_spawn(),
-## map_processes()
+## TESTED: map_ms(), map_ms_commands()
 
 from mpi4py import MPI
 import kmr4py
@@ -17,7 +16,7 @@ kmr4py.print_backtrace_in_map_fn = False
 
 kmr0 = kmr4py.KMR(1)
 kmr0.set_option("single_thread", ("0" if THREADS else "1"))
-kmr0.set_option("trace_map_spawn", "1")
+kmr0.set_option("trace_map_ms", "1")
 
 NPROCS = kmr0.nprocs
 RANK = kmr0.rank
