@@ -45,18 +45,20 @@ class K_Means:
             tlst.append(lst)
 
 def calc_sq_dist(v1, v2):
-    sum = 0
+    sum_ = 0
     for (x, y) in zip(v1, v2):
-        sum += (x - y) * (x - y)
-    return sum
+        sum_ += (x - y) * (x - y)
+    return sum_
 
 # Emit Key:id of point(integer), Value:a point(list of integer)
 def load_points(kv, kvi, kvo, i):
+    del kv, kvi, i
     for (idp, point) in enumerate(kmeans.points):
         kvo.add(idp, point)
 
 # Emit Key:id of nearest group, Value:a point(list of integer)
 def calc_cluster((k, v), kvi, kvo, i):
+    del k, kvi, i
     min_id = 0
     min_dst = kmeans.grid_size * kmeans.grid_size
     for (idm, mean) in enumerate(kmeans.means):
@@ -68,18 +70,20 @@ def calc_cluster((k, v), kvi, kvo, i):
 
 # Emit nothing
 def copy_center((k, v), kvi, kvo, i):
+    del kvi, kvo, i
     kmeans.means[k] = v
 
 # Emit Key:id of group(integer),
 #      Value:coordinates of center of the group(list of integer)
-def update_cluster(kvvec, n, kvi, kvo):
-    sum = []
+def update_cluster(kvvec, kvi, kvo):
+    del kvi
+    sum_ = []
     for d in range(0, kmeans.dim):
-        sum.append(0)
-    for (k, v) in kvvec:
+        sum_.append(0)
+    for (_, v) in kvvec:
         for d in range(0, kmeans.dim):
-            sum[d] += v[d]
-    avg = [x / (len(kvvec)) for x in sum]
+            sum_[d] += v[d]
+    avg = [x / (len(kvvec)) for x in sum_]
     kvo.add_kv(kvvec[0][0], avg)
 
 
