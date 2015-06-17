@@ -42,6 +42,13 @@ tpch:
 flexdice:
 	gcc -fopenmp -m64 -std=gnu99 -Wall -Wextra -pedantic -Wno-long-long -Wno-unused-parameter -Wmissing-prototypes -Wshadow -g flexdice.c flexdicemain.c -lm
 
+update-version::
+	cp kmrdp-help.html _kmrdp-help.html
+	sed -e \
+	"s/\(KMR Version: v\)[0-9\.]*([0-9]*)/\1$(KMRVER)($(KMRVERDATE))/" \
+	< _kmrdp-help.html > kmrdp-help.html
+	rm -f _kmrdp-help.html
+
 distclean:: clean
 
 clean::

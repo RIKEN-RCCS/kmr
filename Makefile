@@ -25,6 +25,11 @@ configure: configure.ac ax_openmp.m4 ax_mpi.m4
 	cat ax_openmp.m4 ax_mpi.m4 > aclocal.m4
 	autoconf
 
+update-version::
+	cd src; make update-version
+	cd python; make update-version
+	cd ex; make update-version
+
 htmldoc::
 	rm -fr ./html
 	doxygen doxyfile
