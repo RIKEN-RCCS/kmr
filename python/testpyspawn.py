@@ -8,7 +8,6 @@
 import time
 import sys
 import os
-import ctypes
 
 n_spawns = 4
 
@@ -29,10 +28,10 @@ def run_map_via_spawn(replymode, kmr0):
 
     k00 = kmr0.make_kvs(value="cstring")
     if (RANK == 0):
-        for i in range(0, 4):
+        for _ in range(0, 4):
             k00.add("key", ("maxprocs=2 ./testpyspawn.py ack %s"
                             % replymode))
-    k00.add_kv_done();
+    k00.add_kv_done()
 
     def empty_map_fn_mpi(kv, kvi, kvo, index):
         comm = kmr0.get_spawner_communicator(index)
@@ -58,9 +57,9 @@ def run_map_via_spawn(replymode, kmr0):
     k01 = k00.map_via_spawn(mapfn, separator_space=1, **options)
 
     if ((RANK == 0) and (replymode == "returnkvs")):
-        assert (k01.get_element_count() == 32)
+        assert (k01.local_element_count() == 32)
     else:
-        assert (k01.get_element_count() == 0)
+        assert (k01.local_element_count() == 0)
     k01.free()
     return
 
@@ -75,7 +74,7 @@ def run_map_processes_seq(kmr0):
 
     k00 = kmr0.make_kvs(value="cstring")
     if (RANK == 0):
-        for i in range(0, 4):
+        for _ in range(0, 4):
             k00.add("key", "maxprocs=2 ./testpyspawn.py seq ignore")
     k00.add_kv_done()
 
@@ -92,7 +91,7 @@ def run_map_processes_seq(kmr0):
 def run_map_processes_mpi(kmr0):
     if (RANK == 0): print "RUN map_processes(mpi:noreply)..."
 
-    if (rank == 0):
+    if (RANK == 0):
         print ("Spawn 2-rank work 4 times using %d dynamic processes.\n"
                % n_spawns)
         print ("** ON SOME IMPLEMENTATIONS OF MPI,"
@@ -102,7 +101,7 @@ def run_map_processes_mpi(kmr0):
 
     k00 = kmr0.make_kvs(value="cstring")
     if (RANK == 0):
-        for i in range(0, 4):
+        for _ in range(0, 4):
             k00.add("key", "maxprocs=2 ./testpyspawn.py mpi ignore")
     k00.add_kv_done()
 
@@ -126,6 +125,7 @@ def spawned_ack(replymode):
             or (replymode == "replyroot")
             or (replymode == "returnkvs"))
 
+    from mpi4py import MPI
     import kmr4py
 
     dummykmr = kmr4py.KMR(None)
@@ -164,6 +164,7 @@ if (os.path.basename(sys.argv[0]) != "testpyspawn.py"):
 if (len(sys.argv) == 1):
     ## SPAWNER SIDE
 
+    from mpi4py import MPI
     import kmr4py
 
     kmr0 = kmr4py.KMR(1)

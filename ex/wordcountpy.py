@@ -6,7 +6,6 @@
 
 from mpi4py import MPI
 import kmr4py
-import sys
 import re
 
 file_name = "../LICENSE"
@@ -14,13 +13,13 @@ file_name = "../LICENSE"
 kmr = kmr4py.KMR(1)
 
 def read_words_from_a_file(kv, kvi, kvo, i, *_data):
-    file = open(file_name, "r")
-    for line in file:
+    file_ = open(file_name, "r")
+    for line in file_:
         words = re.split(r"\W+", line.strip())
         for w in words:
             if (w != ""):
                 kvo.add(w, 1)
-    file.close()
+    file_.close()
 
 def print_top_five((k, v), kvi, kvo, i, *_data):
     ## (NO FIELD VALUE IN KMR.MR BECAUSE IT IS A DUMMY).
@@ -29,8 +28,8 @@ def print_top_five((k, v), kvi, kvo, i, *_data):
 
 def sum_counts_for_a_word(kvvec, kvi, kvo, *_data):
     count = 0
-    (k0, _1) = kvvec[0]
-    for (k, v) in kvvec:
+    (k0, _) = kvvec[0]
+    for (_, v) in kvvec:
         count += v
     kvo.add(k0, -count)
 

@@ -9,11 +9,8 @@
 
 """KMR Python Binding"""
 
-from mpi4py import MPI
 import warnings
-import struct
 import ctypes
-import types
 import cPickle
 import inspect
 import traceback
@@ -93,7 +90,7 @@ def _string_of_options(o):
     prefix = o.__class__.__name__
     attrs = o.__class__._fields_
     ss = []
-    for (f, _0, _1) in attrs:
+    for (f, _, _) in attrs:
         if ((f not in ["gap16", "gap32"]) and getattr(o, f) == 1):
             ss.append(f + "=1")
     return (prefix + "(" + (",".join(ss)) + ")")
@@ -112,7 +109,10 @@ class _c_option(ctypes.Structure):
         ("gap16", _c_uint, 16),
         ("gap32", _c_uint, 32)]
 
-    def __init__(self, opts={}, enabledlist=[]):
+    def __init__(self, opts=None, enabledlist=None):
+        super(_c_option, self).__init__()
+        if opts is None: opts = {}
+        if enabledlist is None: enabledlist = []
         ## Sets the options as dictionary passed.
         for o, v in opts.iteritems():
             if (o in ["key", "value", "output"]):
@@ -152,7 +152,10 @@ class _c_file_option(ctypes.Structure):
         ("gap16", _c_uint, 16),
         ("gap32", _c_uint, 32)]
 
-    def __init__(self, opts={}, enabledlist=[]):
+    def __init__(self, opts=None, enabledlist=None):
+        super(_c_file_option, self).__init__()
+        if opts is None: opts = {}
+        if enabledlist is None: enabledlist = []
         ## Sets the options as dictionary passed.
         for o, v in opts.iteritems():
             if (o == "key" or o == "output"):
@@ -186,7 +189,10 @@ class _c_spawn_option(ctypes.Structure):
         ("gap16", _c_uint, 16),
         ("gap32", _c_uint, 32)]
 
-    def __init__(self, opts={}, enabledlist=[]):
+    def __init__(self, opts=None, enabledlist=None):
+        super(_c_spawn_option, self).__init__()
+        if opts is None: opts = {}
+        if enabledlist is None: enabledlist = []
         ## Sets the options as dictionary passed.
         for o, v in opts.iteritems():
             if (o == "key" or o == "output"):
@@ -230,7 +236,7 @@ class _c_kvbox(ctypes.Structure):
     ## fail to call initializers.
 
     def __init__(self):
-        super(ctypes.Structure, self).__init__()
+        super(_c_kvbox, self).__init__()
 
     def set(self, klen, key, vlen, val):
         self.klen = klen
@@ -292,9 +298,6 @@ kmrso.kmr_add_kv.restype = None
 
 kmrso.kmr_add_kv_done.argtypes = [_c_kvs]
 kmrso.kmr_add_kv_done.restype = None
-
-#kmrso.kmr_add_string.argtypes = [_c_kvs, _c_string, _c_string]
-#kmrso.kmr_add_string.restype = _c_int
 
 kmrso.kmr_get_element_count.argtypes = [_c_kvs]
 kmrso.kmr_get_element_count.restype = _c_long
@@ -425,8 +428,8 @@ _kv_cstring = ctypes.c_int.in_dll(kmrso, "kmr_kv_field_cstring").value
 _kv_integer = ctypes.c_int.in_dll(kmrso, "kmr_kv_field_integer").value
 _kv_float8 = ctypes.c_int.in_dll(kmrso, "kmr_kv_field_float8").value
 
-_spawn_option_list = [k for (k, _1, _2) in _c_spawn_option._fields_]
-_file_option_list = [k for (k, _1, _2) in _c_file_option._fields_]
+_spawn_option_list = [_k for (_k, _, _) in _c_spawn_option._fields_]
+_file_option_list = [_k for (_k, _, _) in _c_file_option._fields_]
 
 _field_name_type_map = {
     "opaque" : _kv_opaque, "cstring" : _kv_cstring,
@@ -590,7 +593,7 @@ class KMR():
 
     def make_kvs(self, **opts):
         """Makes a new KVS."""
-        (keyty, valty, _2) = _get_options(opts, True)
+        (keyty, valty, _) = _get_options(opts, True)
         return KVS(self, keyty, valty)
 
     def reply_to_spawner(self):
@@ -706,7 +709,6 @@ class KVS():
         elif (kvty == "cstring"):
             if (not isinstance(o, str)):
                 raise Exception("Not 8-bit string for cstring: %s" % o)
-            ##data = struct.pack('@s', o)
             ## (ADD NULL FOR C STRING).
             data = ((o + "\0") if force_null_terminate_in_cstring else o)
             u.p = data
@@ -718,7 +720,7 @@ class KVS():
             u.d = o
             return (ctypes.sizeof(_c_double), u, None)
         else:
-            raise Exception("Bad field type: %s" % kvky)
+            raise Exception("Bad field type: %s" % kvty)
 
     def _decode_content(self, siz, u, key_or_value):
         """Unmarshalls an object with regard to the field type.  It
@@ -734,7 +736,6 @@ class KVS():
                 return o
             elif (kvty == "cstring"):
                 s = ctypes.string_at(u.p, siz)
-                ##o = struct.unpack('@s', s)
                 ## (STRIPS NULLS TOO MANY).
                 o = (s.rstrip("\0") if force_null_terminate_in_cstring else s)
                 return o
@@ -743,7 +744,7 @@ class KVS():
             elif (kvty == "float8"):
                 return u.d
             else:
-                raise Exception("Bad field type: %s" % kvky)
+                raise Exception("Bad field type: %s" % kvty)
 
     def get_field_type(self, key_or_value):
         """Get a field type of a KVS."""
@@ -905,11 +906,11 @@ class KVS():
 
     def map_parallel_processes(self, fn, **sopts):
         """Maps on processes started by MPI_Comm_spawn()."""
-        return map_processes(self, False, fn, **sopts)
+        return self.map_processes(False, fn, **sopts)
 
     def map_serial_processes(self, fn, **sopts):
         """Maps on processes started by MPI_Comm_spawn()."""
-        return map_processes(self, True, fn, **sopts)
+        return self.map_processes(True, fn, **sopts)
 
     def reduce(self, fn, **mopts):
         """Reduces key-value pairs."""
@@ -954,7 +955,7 @@ class KVS():
         """Makes a new pair by swapping the key and the value."""
         keyty = self.get_field_type("key")
         valty = self.get_field_type("value")
-        (_0, _1, mkkvo) = _get_options(mopts, False)
+        (_, _, mkkvo) = _get_options(mopts, False)
         cmopts = _c_option(mopts, _enabled_options_of_map)
         assert (mkkvo is True)
         ckvi = self.ckvs
@@ -968,7 +969,7 @@ class KVS():
         """Shuffles key-value pairs."""
         keyty = self.get_field_type("key")
         valty = self.get_field_type("value")
-        (_0, _1, mkkvo) = _get_options(mopts, False)
+        (_, _, mkkvo) = _get_options(mopts, False)
         cmopts = _c_option(mopts, _enabled_options_of_reduce)
         ckvi = self.ckvs
         kvo = (KVS(self.mr, keyty, valty) if mkkvo else None)
@@ -981,7 +982,7 @@ class KVS():
         """Replicates key-value pairs to be visible on all ranks."""
         keyty = self.get_field_type("key")
         valty = self.get_field_type("value")
-        (_0, _1, mkkvo) = _get_options(mopts, False)
+        (_, _, mkkvo) = _get_options(mopts, False)
         cmopts = _c_option(mopts, _enabled_options_of_shuffle)
         ckvi = self.ckvs
         kvo = (KVS(self.mr, keyty, valty) if mkkvo else None)
@@ -994,7 +995,7 @@ class KVS():
         """Distributes pairs approximately evenly to ranks."""
         keyty = self.get_field_type("key")
         valty = self.get_field_type("value")
-        (_0, _1, mkkvo) = _get_options(mopts, False)
+        (_, _, mkkvo) = _get_options(mopts, False)
         cmopts = _c_option(mopts, _enabled_options_of_distribute)
         ckvi = self.ckvs
         kvo = (KVS(self.mr, keyty, valty) if mkkvo else None)
@@ -1007,7 +1008,7 @@ class KVS():
         """Reorders key-value pairs in a single rank."""
         keyty = self.get_field_type("key")
         valty = self.get_field_type("value")
-        (_0, _1, mkkvo) = _get_options(mopts, False)
+        (_, _, mkkvo) = _get_options(mopts, False)
         cmopts = _c_option(mopts, _enabled_options_of_sort_locally)
         ckvi = self.ckvs
         kvo = (KVS(self.mr, keyty, valty) if mkkvo else None)
@@ -1020,7 +1021,7 @@ class KVS():
         """Sorts a KVS globally."""
         keyty = self.get_field_type("key")
         valty = self.get_field_type("value")
-        (_0, _1, mkkvo) = _get_options(mopts, False)
+        (_, _, mkkvo) = _get_options(mopts, False)
         cmopts = _c_option(mopts, _enabled_options_of_sort)
         ckvi = self.ckvs
         kvo = (KVS(self.mr, keyty, valty) if mkkvo else None)
@@ -1047,12 +1048,12 @@ class KVS():
         self._consume()
         return kvo
 
-    def read_files_reassemble(self, filename, color, offset, bytes):
+    def read_files_reassemble(self, filename, color, offset, bytes_):
         """Reassembles files reading by ranks."""
         buf = _c_void_p()
         siz = _c_uint64(0)
         kmrso.kmr_read_files_reassemble(
-            self.ckmr, filename, color, offset, bytes,
+            self.ckmr, filename, color, offset, bytes_,
             ctypes.byref(buf), ctypes.byref(siz))
         ##AHO
         addr = buf.value

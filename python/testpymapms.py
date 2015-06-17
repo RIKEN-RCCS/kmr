@@ -9,7 +9,6 @@ from mpi4py import MPI
 import kmr4py
 import time
 import sys
-import ctypes
 
 THREADS = True
 kmr4py.print_backtrace_in_map_fn = False
@@ -62,7 +61,7 @@ def run_map_ms_commands():
     k10 = kmr0.make_kvs(value="cstring")
     if (RANK == 0):
         for i in range(0, 20):
-            k10.add(("index=" + str(i)), ("sleep 3"));
+            k10.add(("index=" + str(i)), ("sleep 3"))
     k10.add_kv_done()
     k11 = k10.sort()
     s11 = kmr4py.listify(k11)

@@ -56,4 +56,5 @@ clean::
 	cd shell; make clean
 	cd kmrrun; make clean
 	cd cmd; make clean
+	cd python; make clean
 	cd ex; make clean
