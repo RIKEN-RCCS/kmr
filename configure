@@ -583,7 +583,7 @@ PACKAGE_URL='http://mt.aics.riken.jp/kmr'
 
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
-KMRDATE
+KMRVERDATE
 KMRVER
 KMRWATCH
 KMRTARGET
@@ -5313,15 +5313,7 @@ _ACEOF
 
 KMRVER=$version
 
-KMRDATE=$release_date
-
-cat >>confdefs.h <<_ACEOF
-#define KMRVER "$version"
-_ACEOF
-
-cat >>confdefs.h <<_ACEOF
-#define KMRDATE $release_date
-_ACEOF
+KMRVERDATE=$release_date
 
 
 cat >confcache <<\_ACEOF
