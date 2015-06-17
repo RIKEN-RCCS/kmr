@@ -39,6 +39,9 @@ If you release a new version of KMR, follow the following instructions.
        $ make configure
 
 6. Run 'make update-version' to update version string in files.
+
+       $ make update-version
+
    It will update the following files.
 
        src/kmr.h              (line 7)
