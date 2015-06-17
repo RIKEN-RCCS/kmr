@@ -1,6 +1,7 @@
 # config.make.in (2014-02-04)
 
-KMRVER = 1.7
+KMRVER = @KMRVER@
+KMRVERDATE = @KMRVERDATE@
 
 prefix = @prefix@
 exec_prefix = @exec_prefix@
