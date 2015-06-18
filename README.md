@@ -45,8 +45,9 @@ KMR can be installed by just typing 'configure', 'make' and
     $ make
     $ make install
 
-To build KMR documents, type 'make htmldoc'. It depends on Doxygen and
-Gnu troff.  The documents are generated under './html' directory.
+To build KMR documents, type 'make htmldoc'. It depends on Doxygen,
+Epydoc and Gnu troff.  The documents are generated under './html'
+directory.
 
     $ make htmldoc
 

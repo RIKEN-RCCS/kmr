@@ -33,6 +33,7 @@ update-version::
 htmldoc::
 	rm -fr ./html
 	doxygen doxyfile
+	epydoc --config epydoc python/kmr4py.py
 	cp -p ./kmr.jpg ./html/
 	groff -man -Thtml man/kmrshell.1 > html/kmrshell_81.html
 	groff -man -Thtml man/kmrshell_mpi.1 > html/kmrshell_mpi_81.html

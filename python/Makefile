@@ -17,4 +17,4 @@ update-version::
 
 
 clean::
-	rm -f kmr4py.pyc
+	rm -f *.pyc

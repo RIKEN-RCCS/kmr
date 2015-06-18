@@ -16,6 +16,7 @@ Contents (in this page):
 <li><a href="#installation">Installation</a>
 <li><a href="#applicationcompilation">Application Compilation</a>
 <li><a href="#simplestusage">Simplest Usage</a>
+<li><a href="#pythonapi">Python API</a>
 <li><a href="#sortingkeyvalues">Sorting Key-Values</a>
 <li><a href="#rankawarecommunication">Rank-Aware Communication</a>
 <li><a href="#masterslavemapper">Master-Slave Mapper</a>
@@ -363,6 +364,38 @@ See <a href="kmr_8h.html#details">descriptions in kmr.h</a>.
 <p>
 For the next step, browse documents starting with
 <a href="test0_8c_source.html#l00119">simple0 in test0.c</a>.
+
+<a name="pythonapi"></a>
+<h1>Python API</h1>
+
+<p>
+KMR also provides API for Python as 'kmr4py' Python module.  It is
+installed along with KMR C library.  The supported version of
+Python is bigger than 2.6.x.  Currently it does not support Python3.
+A Python MPI implementation is required to use kmr4py module.
+Any Python MPI implementations may work with kmr4py, only mpi4py
+is tested.
+
+<p>
+To run a program that use kmr4py, the enviroment variables,
+LD_LIBRARY_PATH and PYTHONPATH, must be set so that kmr shared library
+(libkmr.so) and python module (kmr4py.py) can be found from Python
+interpreter.  By default, these two files are located under $KMRHOME/lib
+directory where KMR is isntalled.
+
+<pre class="fragment">
+export LD_LIBRARY_PATH=$KMRHOME/lib:$LD_LIBRARY_PATH
+export PYTHONPATH=$KMRHOME/lib:PYTHONPATH
+mpiexec -n 4 python YOUR_PROGRAM.py
+</pre>
+
+<p>
+There are some example applications included in KMR package under
+'ex/' directory.
+
+<p>
+Also see the <a href="./python/index.html">Python API document</a>.
+
 
 <a name="sortingkeyvalues"></a>
 <h1>Sorting Key-Values</h1>
