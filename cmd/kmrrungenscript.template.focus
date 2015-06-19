@@ -3,9 +3,9 @@
 #SBATCH -p %(QUEUE)s
 #SBATCH -t %(RSCTIME)s
 #SBATCH -n %(NODE)s
-#SBATCH -J job_kmrrun
-#SBATCH -o job_kmrrun.%%J.out
-#SBATCH -e job_kmrrun.%%J.err
+#SBATCH -J %(NAME)s
+#SBATCH -o %(NAME)s.%%J.out
+#SBATCH -e %(NAME)s.%%J.err
 
 module load gnu/openmpi165
 
