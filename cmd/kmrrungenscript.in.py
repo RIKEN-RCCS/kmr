@@ -215,7 +215,7 @@ def select_scheduler(opts, sched):
     kmrrun_parameter += './' + os.path.basename(opts.indir)
     name = 'kmrrun_job'
     if opts.scrfile:
-        name = opts.srcfile
+        name = opts.scrfile
 
     if sched.upper() == 'K':
         script = k_scheduler(name, queue, rsctime, node, kmrrun_path,
