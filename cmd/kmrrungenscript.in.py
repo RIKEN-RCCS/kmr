@@ -30,7 +30,8 @@ def checkexist(path):
 
 def checkrestart(restart_basename, procstr, sched):
     if sched.upper() == 'K':
-        ckpt_prefix = os.path.basename(restart_basename) + '.'
+        if restart_basename is None: return
+        ckpt_prefix = restart_basename + '.'
     else:
         ckpt_prefix = 'ckptdir'
     repatter = re.compile(r'^%s\d+$' % ckpt_prefix)
@@ -358,15 +359,17 @@ if __name__ == "__main__":
                       "--ckpt",
                       dest="ckpt",
                       action="store_true",
-                      help="save checkpoint (default is false)",
+                      help="enable Checkpoint/Restart (default is false)",
                       default=False)
 
     parser.add_option("-R",
-                      "--restart",
+                      "--restart-filename",
                       dest="restart",
                       type="string",
-                      help="restart using checkpoint. "
-                      "Specify prefix of checkpoint directory. "
+                      help="specify prefix of directories where checkpoint "
+                      "files are located. "
+                      "This option should be given when restarting on "
+                      "a system that requires staging. "
                       "Valid only on K scheduler.",
                       metavar="'string'")
 
@@ -403,7 +406,7 @@ if __name__ == "__main__":
         sys.exit()
 
     checkexist(options.indir)
-    if options.ckpt or options.restart:
+    if options.ckpt:
         if options.sched == 'K':
             checkrestart(options.restart, options.proc, 'K')
         else:

@@ -145,11 +145,12 @@ Enables checkpoint/restart.
 .sp
 .ne 2
 .na
--R ckptdir, --restart=ckptdir
+-R ckptdir, --restart-filename=ckptdir
 .ad
 .sp .6
 .RS 4n
 Specifies prefix of directories where checkpoint files are located.
+This option should be given when restarting on a system that requires staging.
 Valid only on K scheduler.
 .RE
 
