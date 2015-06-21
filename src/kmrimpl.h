@@ -947,7 +947,7 @@ kmr_ntuple_insertion_point(struct kmr_ntuple *u)
 }
 
 #define CHECK_ONE_FN_OPTION(NAME, A, B) \
-    if (A < B) { \
+    if (A . NAME < B . NAME) { \
         char ee[80]; \
         snprintf(ee, sizeof(ee), \
                  "%s() does not support '" # NAME "' option", func); \
@@ -960,13 +960,13 @@ static inline void
 kmr_check_fn_options(KMR *mr, struct kmr_option provide,
                      struct kmr_option given, const char *func)
 {
-    CHECK_ONE_FN_OPTION(nothreading, provide.nothreading, given.nothreading);
-    CHECK_ONE_FN_OPTION(inspect, provide.inspect, given.inspect);
-    CHECK_ONE_FN_OPTION(keep_open, provide.keep_open, given.keep_open);
-    CHECK_ONE_FN_OPTION(key_as_rank, provide.key_as_rank, given.key_as_rank);
-    CHECK_ONE_FN_OPTION(rank_zero, provide.rank_zero, given.rank_zero);
-    CHECK_ONE_FN_OPTION(collapse, provide.collapse, given.collapse);
-    CHECK_ONE_FN_OPTION(take_ckpt, provide.take_ckpt, given.take_ckpt);
+    CHECK_ONE_FN_OPTION(nothreading, provide, given);
+    CHECK_ONE_FN_OPTION(inspect,     provide, given);
+    CHECK_ONE_FN_OPTION(keep_open,   provide, given);
+    CHECK_ONE_FN_OPTION(key_as_rank, provide, given);
+    CHECK_ONE_FN_OPTION(rank_zero,   provide, given);
+    CHECK_ONE_FN_OPTION(collapse,    provide, given);
+    CHECK_ONE_FN_OPTION(take_ckpt,   provide, given);
 }
 
 extern int kmr_kv_field_bad;
