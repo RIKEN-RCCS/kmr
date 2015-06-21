@@ -23,7 +23,7 @@ import ctypes
 THREADS = True
 kmr4py.print_backtrace_in_map_fn = False
 
-kmr0 = kmr4py.KMR(1)
+kmr0 = kmr4py.KMR("world")
 kmr0.set_option("single_thread", ("0" if THREADS else "1"))
 
 NPROCS = kmr0.nprocs
@@ -37,8 +37,8 @@ kmr4py._check_passing_options()
 # SAMPLE LIST; IT SHOULD BE SORTED LIST:
 
 XX = [(0, "re"), (1, "he"), (2, "fu"), (3, "me"),
-       (4, "yo"), (5, "its"), (6, "moo"), (7, "nana"),
-       (8, "ya"), (9, "kono"), (10, "toe")]
+      (4, "yo"), (5, "its"), (6, "moo"), (7, "nana"),
+      (8, "ya"), (9, "kono"), (10, "toe")]
 LL = len(XX)
 
 YY = []
@@ -49,28 +49,39 @@ k00 = kmr0.make_kvs(key="integer")
 for (k, v) in XX:
     k00.add(k, v)
 k00.add_kv_done()
-
 s00 = kmr4py.listify(k00)
 assert (s00 == XX)
 k00.free()
 
-k01 = kmr0.make_kvs(key="opaque")
+k01 = kmr0.make_kvs(key="float8")
 for (k, v) in XX:
-    k01.add(k, v)
+    k01.add(float(k), v)
 k01.add_kv_done()
-
+sxx = map((lambda (k, v): (float(k), v)), XX)
 s01 = kmr4py.listify(k01)
-assert (s01 == XX)
+assert (s01 == sxx)
+k01.free()
+
+k02 = kmr0.make_kvs(key="opaque", value="cstring")
+for (k, v) in XX:
+    k02.add(k, v)
+k02.add_kv_done()
+s02 = kmr4py.listify(k02)
+assert (s02 == XX)
 
 sys.stdout.flush()
 sys.stderr.flush()
 if (RANK == 0): print "CHECK printing exceptions..."
 sys.stdout.flush()
 
-def k01exeption():
+## k02exception raises an exception by mismatch of the number of
+## parameters:
+
+def k02exception():
     pass
 
-k01 = k01.map(k01exeption)
+time.sleep(1)
+k02.map(k02exception, inspect=True)
 
 time.sleep(1)
 sys.stdout.flush()
@@ -78,13 +89,15 @@ sys.stderr.flush()
 if (RANK == 0): print "CHECK unfreed kvs message..."
 sys.stdout.flush()
 
+## k02 is left unfreed and issues a warning message:
+
 time.sleep(1)
 kmr0.dismiss()
 time.sleep(1)
 
 ### MAPPING/REDUCING
 
-kmr1 = kmr4py.KMR(1)
+kmr1 = kmr4py.KMR("world")
 kmr1.set_option("single_thread", ("0" if THREADS else "1"))
 
 NN = NPROCS
@@ -163,7 +176,7 @@ kmr1.dismiss()
 
 ### REDUCE_AS_ONE/SORT
 
-kmr2 = kmr4py.KMR(1)
+kmr2 = kmr4py.KMR("world")
 kmr2.set_option("single_thread", ("0" if THREADS else "1"))
 
 k20 = kmr2.emptykvs.map_once(False, putXXlist, key="integer")
@@ -192,7 +205,7 @@ kmr2.dismiss()
 
 ### CONCATENATE
 
-kmr3 = kmr4py.KMR(1)
+kmr3 = kmr4py.KMR("world")
 kmr3.set_option("single_thread", ("0" if THREADS else "1"))
 
 k30 = kmr3.make_kvs(key="integer")
@@ -215,7 +228,7 @@ kmr3.dismiss()
 
 ### REVERSE
 
-kmr4 = kmr4py.KMR(1)
+kmr4 = kmr4py.KMR("world")
 kmr4.set_option("single_thread", ("0" if THREADS else "1"))
 
 k40 = kmr4.emptykvs.map_once(False, putXXlist, key="integer")
@@ -262,7 +275,7 @@ kmr4.dismiss()
 
 ### SAVE/RESTORE
 
-kmr5 = kmr4py.KMR(1)
+kmr5 = kmr4py.KMR("world")
 kmr5.set_option("single_thread", ("0" if THREADS else "1"))
 
 k50 = kmr5.emptykvs.map_once(False, putXXlist, key="integer")

@@ -35,8 +35,8 @@ def run_map_via_spawn(replymode, kmr0):
 
     def empty_map_fn_mpi(kv, kvi, kvo, index):
         comm = kmr0.get_spawner_communicator(index)
-        print ("mapfn[index=%d]: sleeping 12 sec (comm=%d)..." % (index, comm))
-        time.sleep(12)
+        print ("mapfn[index=%d]: sleeping 7 sec (comm=%d)..." % (index, comm))
+        time.sleep(7)
         return 0
 
     if (replymode == "noreply"):
@@ -80,8 +80,8 @@ def run_map_processes_seq(kmr0):
 
     def empty_map_fn_seq(kv, kvi, kvo, index):
         comm = kmr0.get_spawner_communicator(index)
-        print ("mapfn[index=%d]: sleeping 12 sec (comm=%d)..." % (index, comm))
-        time.sleep(12)
+        print ("mapfn[index=%d]: sleeping 7 sec (comm=%d)..." % (index, comm))
+        time.sleep(7)
         return 0
 
     k01 = k00.map_processes(True, empty_map_fn_seq, separator_space=1)
@@ -107,8 +107,8 @@ def run_map_processes_mpi(kmr0):
 
     def empty_map_fn_mpi(kv, kvi, kvo, index):
         comm = kmr0.get_spawner_communicator(index)
-        print ("mapfn[index=%d]: sleeping 12 sec (comm=%d)..." % (index, comm))
-        time.sleep(12)
+        print ("mapfn[index=%d]: sleeping 7 sec (comm=%d)..." % (index, comm))
+        time.sleep(7)
         return 0
 
     k01 = k00.map_processes(False, empty_map_fn_mpi, separator_space=1)
@@ -128,7 +128,7 @@ def spawned_ack(replymode):
     from mpi4py import MPI
     import kmr4py
 
-    dummykmr = kmr4py.KMR(None)
+    dummykmr = kmr4py.KMR("dummy")
     NPROCS = dummykmr.nprocs
     RANK = dummykmr.rank
 
@@ -167,7 +167,7 @@ if (len(sys.argv) == 1):
     from mpi4py import MPI
     import kmr4py
 
-    kmr0 = kmr4py.KMR(1)
+    kmr0 = kmr4py.KMR("world")
     kmr0.set_option("single_thread", "1")
     kmr0.set_option("trace_map_spawn", "1")
     kmr0.set_option("spawn_max_processes", "4")

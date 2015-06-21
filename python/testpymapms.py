@@ -13,7 +13,7 @@ import sys
 THREADS = True
 kmr4py.print_backtrace_in_map_fn = False
 
-kmr0 = kmr4py.KMR(1)
+kmr0 = kmr4py.KMR("world")
 kmr0.set_option("single_thread", ("0" if THREADS else "1"))
 kmr0.set_option("trace_map_ms", "1")
 
