@@ -10,7 +10,7 @@ import re
 
 file_name = "../LICENSE"
 
-kmr = kmr4py.KMR(1)
+kmr = kmr4py.KMR("world")
 
 def read_words_from_a_file(kv, kvi, kvo, i, *_data):
     file_ = open(file_name, "r")
