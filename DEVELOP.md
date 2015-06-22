@@ -31,34 +31,34 @@ If you release a new version of KMR, follow the following instructions.
 4. Edit configure.ac to include the release version and date
    (line 21 and 22)
 
-       version="1.7"
-       release_date="20150622"
+        version="1.7"
+        release_date="20150622"
 
 5. Run 'make configure' to update configure script
 
-       $ make configure
+        $ make configure
 
 6. Run 'make update-version' to update version string in files.
 
-       $ ./configure
-       $ make update-version
+        $ ./configure
+        $ make update-version
 
    It will update the following files.
 
-       src/kmr.h              (line 7)
-       src/kmr-overview.html  (line 5)
-       python/kmr4py.py       (line 21)
-       ex/kmrdp-help.html     (line 7)
+        src/kmr.h              (line 7)
+        src/kmr-overview.html  (line 5)
+        python/kmr4py.py       (line 21)
+        ex/kmrdp-help.html     (line 7)
 
 7. Commit and push changes to the all updated files
 
 8. Tag the head of the master branch as the version number and push it
 
-       $ git tag -m 'KMR release v1.7' v1.7
-       $ git push origin v1.7
+        $ git tag -m 'KMR release v1.7' v1.7
+        $ git push origin v1.7
 
 9. Make html documents locally
 
-       $ make htmldoc
+        $ make htmldoc
 
 10. Publish the htmldoc on http://pf-aics-riken.github.io/kmr-manual/
