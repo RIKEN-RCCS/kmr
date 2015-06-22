@@ -1,4 +1,4 @@
-## 1.7 (upcomming)
+## 1.7 (2015-06-22)
 
 - Change license to BSD
 - Strictly check options passed to kmr functions
