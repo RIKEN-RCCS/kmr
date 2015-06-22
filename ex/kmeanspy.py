@@ -89,7 +89,7 @@ def update_cluster(kvvec, kvi, kvo):
 
 #### main
 comm = MPI.COMM_WORLD
-kmr = kmr4py.KMR(comm)
+kmr = kmr4py.KMR("world")
 kmeans = K_Means()
 random.seed(1)
 
