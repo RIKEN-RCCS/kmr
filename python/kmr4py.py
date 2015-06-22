@@ -1152,7 +1152,7 @@ class KVS():
         buf = _c_void_p()
         siz = _c_uint64(0)
         kmrso.kmr_read_files_reassemble(
-            self._ckmr, filename, color, offset, bytes_,
+            self.mr._ckmr, filename, color, offset, bytes_,
             ctypes.byref(buf), ctypes.byref(siz))
         addr = buf.value
         ptr = (_c_ubyte * siz.value).from_address(addr)
@@ -1166,7 +1166,7 @@ class KVS():
         buf = _c_void_p()
         siz = _c_uint64(0)
         kmrso.kmr_read_file_by_segments(
-            self._ckmr, filename, color,
+            self.mr._ckmr, filename, color,
             ctypes.byref(buf), ctypes.byref(siz))
         addr = buf.value
         ptr = (_c_ubyte * siz.value).from_address(addr)
