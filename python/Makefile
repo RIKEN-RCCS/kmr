@@ -7,7 +7,7 @@ INSTALL = install
 all::
 
 install:
-	${INSTALL} -m 755 kmr4py.py $(LIBDIR)
+	${INSTALL} -m 644 kmr4py.py $(LIBDIR)
 
 update-version::
 	cp kmr4py.py _kmr4py.py
