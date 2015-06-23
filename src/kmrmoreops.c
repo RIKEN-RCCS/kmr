@@ -33,10 +33,11 @@ kmr_find_key_fn(const struct kmr_kv_box kv,
 }
 
 /** Finds a key-value pair for a key.  It is an error when not exactly
-    one entry is found.  It does not consume the input KVS KVI.  It
-    maps internally, so it is slow.  It is tricky that the internally
-    created KVS KVS0 points to the key-value area in the input KVS
-    KVI. */
+    one entry is found.  It does not consume the input KVS KVI.  The
+    returned key-value entry must be used before freeing the input
+    KVS, when it points to an opaque data.  It maps internally, so it
+    is slow.  It is tricky that the internally created KVS KVS0 points
+    to the key-value area in the input KVS KVI. */
 
 int
 kmr_find_key(KMR_KVS *kvi, struct kmr_kv_box ki, struct kmr_kv_box *ko)
