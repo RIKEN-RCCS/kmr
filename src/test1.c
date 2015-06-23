@@ -110,6 +110,7 @@ aggregatevalues0(const struct kmr_kv_box kv[], const long n,
 		       && kv[i].k.d == b0.k.d);
 		break;
 	    case KMR_KV_OPAQUE:
+	    case KMR_KV_CSTRING:
 	    case KMR_KV_POINTER_OWNED:
 	    case KMR_KV_POINTER_UNMANAGED:
 		assert(kv[i].klen == b0.klen
@@ -231,8 +232,10 @@ simple0(int nprocs, int rank, _Bool pushoff)
     cc = kmr_restore_kvs(kvs1r, data, sz, kmr_noopt);
     assert(cc == MPI_SUCCESS);
     free(data);
-    assert(kvs1r->c.key_data == KMR_KV_OPAQUE
-	   && kvs1r->c.value_data == KMR_KV_OPAQUE);
+    assert((kvs1r->c.key_data == KMR_KV_OPAQUE
+	    || kvs1r->c.key_data == KMR_KV_CSTRING)
+	   && (kvs1r->c.value_data == KMR_KV_OPAQUE
+	       || kvs1r->c.value_data == KMR_KV_CSTRING));
 
     /* Map pairs. */
 

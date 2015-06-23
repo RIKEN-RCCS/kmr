@@ -298,7 +298,7 @@ kmr_assign_file(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
     /* Create <iog_id,file_name> kvs and shuffle it */
     enum kmr_kv_field keyf = kvi->c.key_data;
     enum kmr_kv_field valf = kvi->c.value_data;
-    assert(valf == KMR_KV_OPAQUE);
+    assert(valf == KMR_KV_OPAQUE || valf == KMR_KV_CSTRING);
     KMR_KVS *kvs_each_file = kmr_create_kvs(mr, keyf, valf);
     struct kmr_option inspect = {.inspect = 1};
     cc = kmr_shuffle(kvi, kvs_each_file, inspect);

@@ -1,5 +1,6 @@
 #!/bin/bash
 #
+#PJM --name "%(NAME)s"
 #PJM --rsc-list "rscgrp=%(QUEUE)s"
 #PJM --rsc-list "elapse=%(RSCTIME)s"
 #PJM --rsc-list "node=%(NODE)s"

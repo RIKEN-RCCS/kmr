@@ -15,6 +15,7 @@ install:
 	cd shell; make install
 	cd kmrrun; make install
 	cd cmd; make install
+	cd python; make install
 	cd man; make install
 
 install-htmldoc: install htmldoc
@@ -24,9 +25,15 @@ configure: configure.ac ax_openmp.m4 ax_mpi.m4
 	cat ax_openmp.m4 ax_mpi.m4 > aclocal.m4
 	autoconf
 
+update-version::
+	cd src; make update-version
+	cd python; make update-version
+	cd ex; make update-version
+
 htmldoc::
 	rm -fr ./html
 	doxygen doxyfile
+	epydoc --config epydoc python/kmr4py.py
 	cp -p ./kmr.jpg ./html/
 	groff -man -Thtml man/kmrshell.1 > html/kmrshell_81.html
 	groff -man -Thtml man/kmrshell_mpi.1 > html/kmrshell_mpi_81.html
@@ -55,4 +62,5 @@ clean::
 	cd shell; make clean
 	cd kmrrun; make clean
 	cd cmd; make clean
+	cd python; make clean
 	cd ex; make clean

@@ -4,7 +4,7 @@
 #ifndef _KMR_H
 #define _KMR_H
 
-#define KMR_H  20150401
+#define KMR_H  20150622
 
 /** \file kmr.h KMR Interface.  GENERAL NOTES.  (1) The sizes of
     key-value fields are rounded up to 8-byte boundary. */
@@ -182,8 +182,8 @@ struct kmr_code_line { const char *file; const char *func; int line; };
     the nothreading option for mapper/shuffler/reducer.  ONE_STEP_SORT
     disables a prior sorting step which sort on (packed/hashed)
     integer keys in local sorting.  STEP_SYNC is to call a barrier at
-    each operation step for debugging.  TRACE_FILE_IO and
-    TRACE_MAP_SPAWN let dump trace output for debugging.
+    each operation step for debugging.  TRACE_FILE_IO, TRACE_MAP_MS,
+    and TRACE_MAP_SPAWN let dump trace output for debugging.
     (TRACE_ALLTOALL lets dump trace output on communication for
     debugging internals).  TRACE_KMRDP lets dump timing information of
     run of KMR-DP.  STD_ABORT lets use abort() instead of MPI_Abort()
@@ -199,10 +199,10 @@ struct kmr_code_line { const char *file; const char *func; int line; };
     changes the behavior to the old API).  MPI_THREAD_SUPPORT records
     the thread support level.  CKPT_ENABLE is a checkpointing enable.
     CKPT_SELECTIVE enables users to specify which kmr functions take
-    ckpt files of the output key-value stream.  To take ckpt files with
-    this option enabled, users should specify TAKE_CKPT option enabled
-    when calling a kmr function.  CKPT_NO_FSYNC does not call fsync
-    syscall on writing ckpt files.  Both CKPT_SELECTIVE and
+    ckpt files of the output key-value stream.  To take ckpt files
+    with this option enabled, users should specify TAKE_CKPT option
+    enabled when calling a kmr function.  CKPT_NO_FSYNC does not call
+    fsync syscall on writing ckpt files.  Both CKPT_SELECTIVE and
     CKPT_NO_FSYNC should be specified with CKPT_ENABLE.
     STOP_AT_SOME_CHECK_GLOBALLY forces global checking of stop-at-some
     state in mapping (not implemented).  Mapping with stop-at-some
@@ -264,6 +264,7 @@ struct kmr_ctx {
     _Bool step_sync : 1;
     _Bool trace_sorting : 1;
     _Bool trace_file_io : 1;
+    _Bool trace_map_ms : 1;
     _Bool trace_map_spawn : 1;
     _Bool trace_alltoall : 1;
     _Bool trace_kmrdp : 1;
@@ -299,19 +300,22 @@ struct kmr_ctx {
 };
 
 /** Datatypes of Keys or Values.  It indicates the field data of keys
-    or values.  KMR_KV_OPAQUE is a variable-sized byte vector.
-    KMR_KV_INTEGER is a long integer, and KMR_KV_FLOAT8 is a double.
-    The datatypes are mostly uninterpreted in mapping/reducing, except
-    for in sorting.  There are two other types for pointers.  Pointers
-    can be stored as they are (unlike opaque data, which are embedded
-    in the field), but converted to opaque ones before communication.
-    KMR_KV_POINTER_OWNED is an allocated pointer, and the data will be
-    freed on consuming a key-value stream.  KMR_KV_POINTER_UNMANAGED
-    is a pointer to a possibly shared data. */
+    or values.  KMR_KV_OPAQUE is a variable-sized byte vector, and
+    KMR_KV_CSTRING is a non-wide C string, and they are dealt with in
+    exactly the same way.  KMR_KV_INTEGER is a long integer, and
+    KMR_KV_FLOAT8 is a double.  The datatypes are mostly uninterpreted
+    in mapping/reducing, except for in sorting.  There are two other
+    types for pointers.  Pointers can be stored as they are (unlike
+    opaque data, which are embedded in the field), but converted to
+    opaque ones before communication.  KMR_KV_POINTER_OWNED is an
+    allocated pointer, and the data will be freed on consuming a
+    key-value stream.  KMR_KV_POINTER_UNMANAGED is a pointer to a
+    possibly shared data. */
 
 enum kmr_kv_field {
     KMR_KV_BAD,
     KMR_KV_OPAQUE,
+    KMR_KV_CSTRING,
     KMR_KV_INTEGER,
     KMR_KV_FLOAT8,
     KMR_KV_POINTER_OWNED,
@@ -800,6 +804,7 @@ extern int kmr_map_serial_processes(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
 				    struct kmr_spawn_option opt,
 				    kmr_mapfn_t mapfn);
 
+extern KMR *kmr_create_context_world(void);
 extern KMR *kmr_create_dummy_context(void);
 extern int kmr_send_kvs_to_spawner(KMR *mr, KMR_KVS *kvs);
 extern int kmr_receive_kvs_from_spawned_fn(const struct kmr_kv_box kv,

@@ -30,6 +30,16 @@
 #define MAX(a,b) (((a)>(b))?(a):(b))
 #define NEVERHERE 0
 
+/* Copy of constant values to make accessible from dlopen(). */
+
+int kmr_kv_field_bad = KMR_KV_BAD;
+int kmr_kv_field_opaque = KMR_KV_OPAQUE;
+int kmr_kv_field_cstring = KMR_KV_CSTRING;
+int kmr_kv_field_integer = KMR_KV_INTEGER;
+int kmr_kv_field_float8 = KMR_KV_FLOAT8;
+int kmr_kv_field_pointer_owned = KMR_KV_POINTER_OWNED;
+int kmr_kv_field_pointer_unmanaged = KMR_KV_POINTER_UNMANAGED;
+
 /* Issues warning.  MR can be null (then verbosity is 5).  MASK is 1
    to 9; 1 for printed always (unsuppressible), 5 or less for printed
    normally, 9 for printed only at highest verbosity. */
@@ -292,10 +302,17 @@ kmr_fix_bits_endian_ff(unsigned long b)
 }
 
 int
-kmr_get_rank_ff(const KMR_KVS *kvs)
+kmr_get_nprocs(const KMR *mr)
 {
-    assert(kvs != 0);
-    return kvs->c.mr->rank;
+    assert(mr != 0);
+    return mr->nprocs;
+}
+
+int
+kmr_get_rank(const KMR *mr)
+{
+    assert(mr != 0);
+    return mr->rank;
 }
 
 int
@@ -303,6 +320,13 @@ kmr_get_nprocs_ff(const KMR_KVS *kvs)
 {
     assert(kvs != 0);
     return kvs->c.mr->nprocs;
+}
+
+int
+kmr_get_rank_ff(const KMR_KVS *kvs)
+{
+    assert(kvs != 0);
+    return kvs->c.mr->rank;
 }
 
 int
@@ -328,6 +352,71 @@ kmr_local_element_count(KMR_KVS *kvs, long *v)
     assert(v != 0);
     *v = kvs->c.element_count;
     return MPI_SUCCESS;
+}
+
+/** Returns a print string of a single option, to check the bits are
+    properly encoded in foreign language interfaces. */
+
+char *
+kmr_stringify_options(struct kmr_option o)
+{
+    if (o.nothreading) {
+	return "nothreading";
+    } else if (o.inspect) {
+	return "inspect";
+    } else if (o.keep_open) {
+	return "keep_open";
+    } else if (o.key_as_rank) {
+	return "key_as_rank";
+    } else if (o.rank_zero) {
+	return "rank_zero";
+    } else if (o.collapse) {
+	return "collapse";
+    } else if (o.take_ckpt) {
+	return "take_ckpt";
+    } else {
+	return 0;
+    }
+}
+
+/** Returns a print string of a single option, to check the bits are
+    properly encoded in foreign language interfaces. */
+
+char *
+kmr_stringify_file_options(struct kmr_file_option o)
+{
+    if (o.each_rank) {
+	return "each_rank";
+    } else if (o.subdirectories) {
+	return "subdirectories";
+    } else if (o.list_file) {
+	return "list_file";
+    } else if (o.shuffle_names) {
+	return "shuffle_names";
+    } else {
+	return 0;
+    }
+}
+
+/** Returns a print string of a single option, to check the bits are
+    properly encoded in foreign language interfaces. */
+
+char *
+kmr_stringify_spawn_options(struct kmr_spawn_option o)
+{
+    if (o.separator_space) {
+	return "separator_space";
+    } else if (o.reply_each) {
+	return "reply_each";
+    } else if (o.reply_root) {
+	return "reply_root";
+    } else if (o.one_by_one) {
+	return "one_by_one";
+    } else if (o.take_ckpt) {
+	return "take_ckpt";
+    } else {
+	return 0;
+    }
 }
 
 /* ================================================================ */
@@ -763,6 +852,78 @@ kmr_mfree(void *p, size_t sz)
     kmr_free(p, sz);
 }
 
+/* (mpi routines for python-ctypes) Returns a sizeof a MPI type given
+   by a string. */
+
+size_t
+kmr_mpi_type_size(char *s)
+{
+    if (strcasecmp(s, "MPI_Group") == 0) {
+	return sizeof(MPI_Group);
+    } else if (strcasecmp(s, "MPI_Comm") == 0) {
+	return sizeof(MPI_Comm);
+    } else if (strcasecmp(s, "MPI_Datatype") == 0) {
+	return sizeof(MPI_Datatype);
+    } else if (strcasecmp(s, "MPI_Request") == 0) {
+	return sizeof(MPI_Request);
+    } else if (strcasecmp(s, "MPI_Op") == 0) {
+	return sizeof(MPI_Op);
+    } else if (strcasecmp(s, "MPI_Errhandler") == 0) {
+	return sizeof(MPI_Errhandler);
+    } else if (strcasecmp(s, "MPI_Info") == 0) {
+	return sizeof(MPI_Info);
+    } else {
+	char ee[80];
+	snprintf(ee, sizeof(ee),
+		 "kmr_mpi_type_size() unknown name (%s)", s);
+	kmr_warning(0, 5, ee);
+	return 0;
+    }
+}
+
+/* (mpi routines for python-ctypes) Returns a value of some MPI named
+   constants given by a string. */
+
+uint64_t
+kmr_mpi_constant_value(char *s)
+{
+    assert(sizeof(MPI_Group) <= sizeof(uint64_t)
+	   && sizeof(MPI_Comm) <= sizeof(uint64_t)
+	   && sizeof(MPI_Datatype) <= sizeof(uint64_t)
+	   && sizeof(MPI_Request) <= sizeof(uint64_t)
+	   && sizeof(MPI_Op) <= sizeof(uint64_t)
+	   && sizeof(MPI_Errhandler) <= sizeof(uint64_t)
+	   && sizeof(MPI_Info) <= sizeof(uint64_t));
+
+    if (strcasecmp(s, "MPI_COMM_WORLD") == 0) {
+	return (uint64_t)MPI_COMM_WORLD;
+    } else if (strcasecmp(s, "MPI_COMM_SELF") == 0) {
+	return (uint64_t)MPI_COMM_SELF;
+    } else if (strcasecmp(s, "MPI_COMM_NULL") == 0) {
+	return (uint64_t)MPI_COMM_NULL;
+    } else if (strcasecmp(s, "MPI_GROUP_NULL") == 0) {
+	return (uint64_t)MPI_GROUP_NULL;
+    } else if (strcasecmp(s, "MPI_DATATYPE_NULL") == 0) {
+	return (uint64_t)MPI_DATATYPE_NULL;
+    } else if (strcasecmp(s, "MPI_REQUEST_NULL") == 0) {
+	return (uint64_t)MPI_REQUEST_NULL;
+    } else if (strcasecmp(s, "MPI_OP_NULL") == 0) {
+	return (uint64_t)MPI_OP_NULL;
+    } else if (strcasecmp(s, "MPI_ERRHANDLER_NULL") == 0) {
+	return (uint64_t)MPI_ERRHANDLER_NULL;
+    } else if (strcasecmp(s, "MPI_GROUP_EMPTY") == 0) {
+	return (uint64_t)MPI_GROUP_EMPTY;
+    } else if (strcasecmp(s, "MPI_INFO_NULL") == 0) {
+	return (uint64_t)MPI_INFO_NULL;
+    } else {
+	char ee[80];
+	snprintf(ee, sizeof(ee),
+		 "kmr_mpi_constant_value() unknown name (%s)", s);
+	kmr_warning(0, 5, ee);
+	return 0;
+    }
+}
+
 /* ================================================================ */
 
 /** Copies the entry in the array.  It should be used with the INSPECT
@@ -938,8 +1099,6 @@ kmr_check_options(KMR *mr, MPI_Info info)
 	assert(cc == MPI_SUCCESS);
     }
 
-    _Bool flag_log_traces = 0;
-
     for (int i = 0; i < n; i++) {
 	char k[MPI_MAX_INFO_KEY + 1];
 	char v[MPI_MAX_INFO_VAL + 1];
@@ -948,117 +1107,13 @@ kmr_check_options(KMR *mr, MPI_Info info)
 	assert(cc == MPI_SUCCESS);
 	cc = MPI_Info_get(info, k, MPI_MAX_INFO_VAL, v, &flag);
 	assert(cc == MPI_SUCCESS && flag != 0);
-	int x;
-	if (flag == 1 && strcasecmp("sort_threads_depth", k) == 0) {
-	    if (kmr_parse_int(v, &x) && x >= 0) {
-		mr->sort_threads_depth = x;
-	    } else {
-		kmr_warning(mr, 1, ("option sort_threads_depth be"
-				    " non-negative integer"));
-	    }
-	} else if (flag == 1 && strcasecmp("verbosity", k) == 0) {
-	    if (kmr_parse_int(v, &x) && (1 <= x && x <= 9)) {
-		mr->verbosity = (uint8_t)x;
-	    } else {
-		kmr_warning(mr, 1, "option verbosity be 1-9");
-	    }
-	} else if (flag == 1 && strcasecmp("k", k) == 0) {
-	    if (kmr_parse_boolean(v, &x)) {
-		mr->onk = (_Bool)x;
-	    } else {
-		kmr_warning(mr, 1, "option k be boolean");
-	    }
-	} else if (flag == 1 && strcasecmp("single_thread", k) == 0) {
-	    if (kmr_parse_boolean(v, &x)) {
-		mr->single_thread = (_Bool)x;
-	    } else {
-		kmr_warning(mr, 1, "option single_thread be boolean");
-	    }
-	} else if (flag == 1 && strcasecmp("step_sync", k) == 0) {
-	    if (kmr_parse_boolean(v, &x)) {
-		mr->step_sync = (_Bool)x;
-	    } else {
-		kmr_warning(mr, 1, "option step_sync be boolean");
-	    }
-	} else if (flag == 1 && strcasecmp("trace_file_io", k) == 0) {
-	    if (kmr_parse_boolean(v, &x)) {
-		mr->trace_file_io = (_Bool)x;
-	    } else {
-		kmr_warning(mr, 1, "option trace_file_io be boolean");
-	    }
-	} else if (flag == 1 && strcasecmp("trace_map_spawn", k) == 0) {
-	    if (kmr_parse_boolean(v, &x)) {
-		mr->trace_map_spawn = (_Bool)x;
-	    } else {
-		kmr_warning(mr, 1, "option trace_map_spawn be boolean");
-	    }
-	} else if (flag == 1 && strcasecmp("std_abort", k) == 0) {
-	    if (kmr_parse_boolean(v, &x)) {
-		mr->std_abort = (_Bool)x;
-	    } else {
-		kmr_warning(mr, 1, "option std_abort be boolean");
-	    }
-	} else if (flag == 1 && strcasecmp("trace_alltoall", k) == 0) {
-	    if (kmr_parse_boolean(v, &x)) {
-		mr->trace_alltoall = (_Bool)x;
-	    } else {
-		kmr_warning(mr, 1, "option trace_alltoall be boolean");
-	    }
-	} else if (flag == 1 && strcasecmp("atoa_threshold", k) == 0) {
-	    if (kmr_parse_int(v, &x) && x >= 0) {
-		mr->atoa_threshold = x;
-	    } else {
-		kmr_warning(mr, 1, ("option atoa_threshold be"
-				    " non-negative integer"));
-	    }
-	} else if (flag == 1 && strcasecmp("log_traces", k) == 0) {
-	    if (kmr_parse_boolean(v, &x)) {
-		flag_log_traces = x;
-	    } else {
-		kmr_warning(mr, 1, "option log_traces be boolean");
-	    }
-	} else if (flag == 1 && strcasecmp("ckpt_enable", k) == 0) {
-	    if (kmr_parse_boolean(v, &x)) {
-		mr->ckpt_enable = (_Bool)x;
-	    } else {
-		kmr_warning(mr, 1, "option ckpt_enable be boolean");
-	    }
-	} else if (flag == 1 && strcasecmp("ckpt_selective", k) == 0) {
-	    if (kmr_parse_boolean(v, &x)) {
-		mr->ckpt_selective = (_Bool)x;
-	    } else {
-		kmr_warning(mr, 1, "option ckpt_selective be boolean");
-	    }
-	} else if (flag == 1 && strcasecmp("ckpt_no_fsync", k) == 0) {
-	    if (kmr_parse_boolean(v, &x)) {
-		mr->ckpt_no_fsync = (_Bool)x;
-	    } else {
-		kmr_warning(mr, 1, "option ckpt_no_fsync be boolean");
-	    }
-	} else if (flag == 1 && strcasecmp("pushoff_block_size", k) == 0) {
-	    size_t z;
-	    if (kmr_parse_size_t(v, &z)) {
-		mr->pushoff_block_size = z;
-	    }
-	} else if (flag == 1 && strcasecmp("pushoff_poll_rate", k) == 0) {
-	    if (kmr_parse_int(v, &x)) {
-		mr->pushoff_poll_rate = x;
-	    }
-	} else if (flag == 1 && strcasecmp("pushoff_fast_notice", k) == 0) {
-	    if (kmr_parse_boolean(v, &x)) {
-		mr->pushoff_fast_notice = (_Bool)x;
-	    } else {
-		kmr_warning(mr, 1, "option pushoff_fast_notice be boolean");
-	    }
+	if (flag == 1) {
+	    kmr_set_option_by_strings(mr, k, v);
 	} else {
 	    char ee[80];
 	    snprintf(ee, 80, "option \"%s\" ignored", k);
 	    kmr_warning(mr, 1, ee);
 	}
-    }
-
-    if (flag_log_traces && (mr->log_traces == 0)) {
-	kmr_open_log(mr);
     }
 
     if (mr->verbosity == 9) {
@@ -1071,6 +1126,7 @@ kmr_check_options(KMR *mr, MPI_Info info)
 	printf("[%05d] single_thread=%d\n", r, mr->single_thread);
 	printf("[%05d] step_sync=%d\n", r, mr->step_sync);
 	printf("[%05d] trace_file_io=%d\n", r, mr->trace_file_io);
+	printf("[%05d] trace_map_ms=%d\n", r, mr->trace_map_ms);
 	printf("[%05d] trace_map_spawn=%d\n", r, mr->trace_map_spawn);
 	printf("[%05d] trace_alltoall=%d\n", r, mr->trace_alltoall);
 	printf("[%05d] trace_kmrdp=%d\n", r, mr->trace_kmrdp);
@@ -1082,6 +1138,136 @@ kmr_check_options(KMR *mr, MPI_Info info)
 	printf("[%05d] pushoff_block_size=%zd\n", r, mr->pushoff_block_size);
 	printf("[%05d] pushoff_poll_rate=%d\n", r, mr->pushoff_poll_rate);
 	printf("[%05d] pushoff_fast_notice=%d\n", r, mr->pushoff_fast_notice);
+    }
+    return MPI_SUCCESS;
+}
+
+/* Set an option in KMR context as given by a key and a value. */
+
+int
+kmr_set_option_by_strings(KMR *mr, char *k, char *v)
+{
+    int x;
+    if (strcasecmp("log_traces", k) == 0) {
+	if (kmr_parse_boolean(v, &x)) {
+	    if (mr->log_traces == 0) {
+		kmr_open_log(mr);
+	    }
+	} else {
+	    kmr_warning(mr, 1, "option log_traces be boolean");
+	}
+    } else if (strcasecmp("sort_threads_depth", k) == 0) {
+	if (kmr_parse_int(v, &x) && x >= 0) {
+	    mr->sort_threads_depth = x;
+	} else {
+	    kmr_warning(mr, 1, ("option sort_threads_depth be"
+				" non-negative integer"));
+	}
+    } else if (strcasecmp("verbosity", k) == 0) {
+	if (kmr_parse_int(v, &x) && (1 <= x && x <= 9)) {
+	    mr->verbosity = (uint8_t)x;
+	} else {
+	    kmr_warning(mr, 1, "option verbosity be 1-9");
+	}
+    } else if (strcasecmp("k", k) == 0) {
+	if (kmr_parse_boolean(v, &x)) {
+	    mr->onk = (_Bool)x;
+	} else {
+	    kmr_warning(mr, 1, "option k be boolean");
+	}
+    } else if (strcasecmp("single_thread", k) == 0) {
+	if (kmr_parse_boolean(v, &x)) {
+	    mr->single_thread = (_Bool)x;
+	} else {
+	    kmr_warning(mr, 1, "option single_thread be boolean");
+	}
+    } else if (strcasecmp("step_sync", k) == 0) {
+	if (kmr_parse_boolean(v, &x)) {
+	    mr->step_sync = (_Bool)x;
+	} else {
+	    kmr_warning(mr, 1, "option step_sync be boolean");
+	}
+    } else if (strcasecmp("trace_file_io", k) == 0) {
+	if (kmr_parse_boolean(v, &x)) {
+	    mr->trace_file_io = (_Bool)x;
+	} else {
+	    kmr_warning(mr, 1, "option trace_file_io be boolean");
+	}
+    } else if (strcasecmp("trace_map_ms", k) == 0) {
+	if (kmr_parse_boolean(v, &x)) {
+	    mr->trace_map_ms = (_Bool)x;
+	} else {
+	    kmr_warning(mr, 1, "option trace_map_ms be boolean");
+	}
+    } else if (strcasecmp("trace_map_spawn", k) == 0) {
+	if (kmr_parse_boolean(v, &x)) {
+	    mr->trace_map_spawn = (_Bool)x;
+	} else {
+	    kmr_warning(mr, 1, "option trace_map_spawn be boolean");
+	}
+    } else if (strcasecmp("std_abort", k) == 0) {
+	if (kmr_parse_boolean(v, &x)) {
+	    mr->std_abort = (_Bool)x;
+	} else {
+	    kmr_warning(mr, 1, "option std_abort be boolean");
+	}
+    } else if (strcasecmp("trace_alltoall", k) == 0) {
+	if (kmr_parse_boolean(v, &x)) {
+	    mr->trace_alltoall = (_Bool)x;
+	} else {
+	    kmr_warning(mr, 1, "option trace_alltoall be boolean");
+	}
+    } else if (strcasecmp("atoa_threshold", k) == 0) {
+	if (kmr_parse_int(v, &x) && x >= 0) {
+	    mr->atoa_threshold = x;
+	} else {
+	    kmr_warning(mr, 1, ("option atoa_threshold be"
+				" non-negative integer"));
+	}
+    } else if (strcasecmp("spawn_max_processes", k) == 0) {
+	if (kmr_parse_int(v, &x) && x >= 0) {
+	    mr->spawn_max_processes = x;
+	} else {
+	    kmr_warning(mr, 1, ("option spawn_max_processes be"
+				" non-negative integer"));
+	}
+    } else if (strcasecmp("ckpt_enable", k) == 0) {
+	if (kmr_parse_boolean(v, &x)) {
+	    mr->ckpt_enable = (_Bool)x;
+	} else {
+	    kmr_warning(mr, 1, "option ckpt_enable be boolean");
+	}
+    } else if (strcasecmp("ckpt_selective", k) == 0) {
+	if (kmr_parse_boolean(v, &x)) {
+	    mr->ckpt_selective = (_Bool)x;
+	} else {
+	    kmr_warning(mr, 1, "option ckpt_selective be boolean");
+	}
+    } else if (strcasecmp("ckpt_no_fsync", k) == 0) {
+	if (kmr_parse_boolean(v, &x)) {
+	    mr->ckpt_no_fsync = (_Bool)x;
+	} else {
+	    kmr_warning(mr, 1, "option ckpt_no_fsync be boolean");
+	}
+    } else if (strcasecmp("pushoff_block_size", k) == 0) {
+	size_t z;
+	if (kmr_parse_size_t(v, &z)) {
+	    mr->pushoff_block_size = z;
+	}
+    } else if (strcasecmp("pushoff_poll_rate", k) == 0) {
+	if (kmr_parse_int(v, &x)) {
+	    mr->pushoff_poll_rate = x;
+	}
+    } else if (strcasecmp("pushoff_fast_notice", k) == 0) {
+	if (kmr_parse_boolean(v, &x)) {
+	    mr->pushoff_fast_notice = (_Bool)x;
+	} else {
+	    kmr_warning(mr, 1, "option pushoff_fast_notice be boolean");
+	}
+    } else {
+	char ee[80];
+	snprintf(ee, 80, "option \"%s\" ignored", k);
+	kmr_warning(mr, 1, ee);
     }
     return MPI_SUCCESS;
 }
@@ -1375,6 +1561,7 @@ kmr_dump_slot(union kmr_unit_sized e, int len, enum kmr_kv_field data,
 	snprintf(buf, (size_t)buflen, "%e", e.d);
 	break;
     case KMR_KV_OPAQUE:
+    case KMR_KV_CSTRING:
     case KMR_KV_POINTER_OWNED:
     case KMR_KV_POINTER_UNMANAGED:
 	kmr_dump_opaque(e.p, len, buf, buflen);
@@ -1447,7 +1634,8 @@ static int
 kmr_dump_kvs_pair_value(KMR_KVS *kvs, int flag)
 {
     assert(kvs->c.magic != KMR_KVS_BAD);
-    assert(kvs->c.value_data == KMR_KV_OPAQUE);
+    assert(kvs->c.value_data == KMR_KV_OPAQUE
+	   || kvs->c.value_data == KMR_KV_CSTRING);
     int rank = kvs->c.mr->rank;
     printf("[%05d] element_count=%ld\n", rank, kvs->c.element_count);
     struct kmr_option opt = {.inspect = 1};
@@ -1495,13 +1683,15 @@ kmr_print_options(struct kmr_option opt)
 	   " .keep_open=%d,"
 	   " .key_as_rank=%d,"
 	   " .rank_zero=%d,"
+	   " .take_ckpt=%d,"
 	   " .collapse=%d\n",
 	   opt.nothreading,
 	   opt.inspect,
 	   opt.keep_open,
 	   opt.key_as_rank,
 	   opt.rank_zero,
-	   opt.collapse);
+	   opt.collapse,
+	   opt.take_ckpt);
 }
 
 void
@@ -1522,10 +1712,14 @@ kmr_print_spawn_options(struct kmr_spawn_option opt)
 {
     printf((".separator_space=%d,"
 	    " .reply_each=%d,"
-	    " .reply_root=%d,"),
+	    " .reply_root=%d,"
+	    " .one_by_one=%d,"
+	    " .take_ckpt=%d\n"),
 	   opt.separator_space,
 	   opt.reply_each,
-	   opt.reply_root);
+	   opt.reply_root,
+	   opt.one_by_one,
+	   opt.take_ckpt);
 }
 
 void

@@ -92,6 +92,7 @@ aggregatevaluesfn(const struct kmr_kv_box kv[], const long n,
 		       && kv[i].k.d == b0.k.d);
 		break;
 	    case KMR_KV_OPAQUE:
+	    case KMR_KV_CSTRING:
 	    case KMR_KV_POINTER_OWNED:
 	    case KMR_KV_POINTER_UNMANAGED:
 		assert(kv[i].klen == b0.klen

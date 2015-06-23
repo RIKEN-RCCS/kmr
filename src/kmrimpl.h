@@ -234,6 +234,7 @@ kmr_unit_sized_p(enum kmr_kv_field data)
 	assert(data != KMR_KV_BAD);
 	return 0;
     case KMR_KV_OPAQUE:
+    case KMR_KV_CSTRING:
 	return 0;
     case KMR_KV_INTEGER:
     case KMR_KV_FLOAT8:
@@ -674,6 +675,7 @@ kmr_key_pointer_p(KMR_KVS *kvs)
 	xassert(kvs->c.key_data != KMR_KV_BAD);
 	return 0;
     case KMR_KV_OPAQUE:
+    case KMR_KV_CSTRING:
     case KMR_KV_INTEGER:
     case KMR_KV_FLOAT8:
 	return 0;
@@ -696,6 +698,7 @@ kmr_value_pointer_p(KMR_KVS *kvs)
 	xassert(kvs->c.value_data != KMR_KV_BAD);
 	return 0;
     case KMR_KV_OPAQUE:
+    case KMR_KV_CSTRING:
     case KMR_KV_INTEGER:
     case KMR_KV_FLOAT8:
 	return 0;
@@ -738,6 +741,7 @@ kmr_assert_kv_sizes(KMR_KVS *kvs, const struct kmr_kv_box kv)
 	}
 	break;
     case KMR_KV_OPAQUE:
+    case KMR_KV_CSTRING:
     case KMR_KV_POINTER_OWNED:
     case KMR_KV_POINTER_UNMANAGED:
 	break;
@@ -760,6 +764,7 @@ kmr_assert_kv_sizes(KMR_KVS *kvs, const struct kmr_kv_box kv)
 	}
 	break;
     case KMR_KV_OPAQUE:
+    case KMR_KV_CSTRING:
     case KMR_KV_POINTER_OWNED:
     case KMR_KV_POINTER_UNMANAGED:
 	break;
@@ -781,6 +786,7 @@ kmr_unit_sized_or_opaque(enum kmr_kv_field data)
 	xassert(data != KMR_KV_BAD);
 	return KMR_KV_BAD;
     case KMR_KV_OPAQUE:
+    case KMR_KV_CSTRING:
     case KMR_KV_INTEGER:
     case KMR_KV_FLOAT8:
 	return data;
@@ -807,6 +813,7 @@ kmr_unit_sized_with_unmanaged(enum kmr_kv_field data)
     case KMR_KV_FLOAT8:
 	return data;
     case KMR_KV_OPAQUE:
+    case KMR_KV_CSTRING:
     case KMR_KV_POINTER_OWNED:
     case KMR_KV_POINTER_UNMANAGED:
 	return KMR_KV_POINTER_UNMANAGED;
@@ -940,7 +947,7 @@ kmr_ntuple_insertion_point(struct kmr_ntuple *u)
 }
 
 #define CHECK_ONE_FN_OPTION(NAME, A, B) \
-    if (A < B) { \
+    if (A . NAME < B . NAME) { \
         char ee[80]; \
         snprintf(ee, sizeof(ee), \
                  "%s() does not support '" # NAME "' option", func); \
@@ -953,14 +960,22 @@ static inline void
 kmr_check_fn_options(KMR *mr, struct kmr_option provide,
                      struct kmr_option given, const char *func)
 {
-    CHECK_ONE_FN_OPTION(nothreading, provide.nothreading, given.nothreading);
-    CHECK_ONE_FN_OPTION(inspect, provide.inspect, given.inspect);
-    CHECK_ONE_FN_OPTION(keep_open, provide.keep_open, given.keep_open);
-    CHECK_ONE_FN_OPTION(key_as_rank, provide.key_as_rank, given.key_as_rank);
-    CHECK_ONE_FN_OPTION(rank_zero, provide.rank_zero, given.rank_zero);
-    CHECK_ONE_FN_OPTION(collapse, provide.collapse, given.collapse);
-    CHECK_ONE_FN_OPTION(take_ckpt, provide.take_ckpt, given.take_ckpt);
+    CHECK_ONE_FN_OPTION(nothreading, provide, given);
+    CHECK_ONE_FN_OPTION(inspect,     provide, given);
+    CHECK_ONE_FN_OPTION(keep_open,   provide, given);
+    CHECK_ONE_FN_OPTION(key_as_rank, provide, given);
+    CHECK_ONE_FN_OPTION(rank_zero,   provide, given);
+    CHECK_ONE_FN_OPTION(collapse,    provide, given);
+    CHECK_ONE_FN_OPTION(take_ckpt,   provide, given);
 }
+
+extern int kmr_kv_field_bad;
+extern int kmr_kv_field_opaque;
+extern int kmr_kv_field_cstring;
+extern int kmr_kv_field_integer;
+extern int kmr_kv_field_float8;
+extern int kmr_kv_field_pointer_owned;
+extern int kmr_kv_field_pointer_unmanaged;
 
 extern int kmr_k_node(KMR *mr, kmr_k_position_t p);
 
@@ -975,8 +990,10 @@ extern int kmr_intstr_ff(long p, char *s, int n);
 
 extern unsigned long kmr_fix_bits_endian_ff(unsigned long b);
 
-extern int kmr_get_rank_ff(const KMR_KVS *kvs);
+extern int kmr_get_nprocs(const KMR *mr);
+extern int kmr_get_rank(const KMR *mr);
 extern int kmr_get_nprocs_ff(const KMR_KVS *kvs);
+extern int kmr_get_rank_ff(const KMR_KVS *kvs);
 extern int kmr_get_key_type_ff(const KMR_KVS *kvs);
 extern int kmr_get_value_type_ff(const KMR_KVS *kvs);
 
@@ -1012,6 +1029,15 @@ extern void *kmr_bsearch(const void *key, const void *base,
 			 size_t nel, size_t size,
 			 int (*compar)(const void *, const void *));
 
+extern int kmr_reverse_fn(const struct kmr_kv_box kv,
+			  const KMR_KVS *kvs, KMR_KVS *kvo, void *p,
+			  const long i);
+extern int kmr_pairing_fn(const struct kmr_kv_box kv,
+			  const KMR_KVS *kvi, KMR_KVS *kvo, void *p,
+			  const long i);
+extern int kmr_unpairing_fn(const struct kmr_kv_box kv,
+			    const KMR_KVS *kvs, KMR_KVS *kvo, void *p,
+			    const long i);
 extern int kmr_imax_one_fn(const struct kmr_kv_box kv[], const long n,
 			   const KMR_KVS *kvi, KMR_KVS *kvo, void *p);
 extern int kmr_isum_one_fn(const struct kmr_kv_box kv[], const long n,
@@ -1045,11 +1071,17 @@ extern int kmr_getdtablesize(KMR *mr);
 
 extern int kmr_msleep(int msec, int interval);
 extern void kmr_mfree(void *p, size_t sz);
+extern size_t kmr_mpi_type_size(char *s);
+extern uint64_t kmr_mpi_constant_value(char *s);
 
 extern int kmr_install_watch_program(KMR *mr, char *msg);
 
 extern int kmr_check_options(KMR *mr, MPI_Info conf);
 extern int kmr_load_preference(KMR *mr, MPI_Info info);
+extern int kmr_set_option_by_strings(KMR *mr, char *k, char *v);
+extern char *kmr_stringify_options(struct kmr_option o);
+extern char *kmr_stringify_file_options(struct kmr_file_option o);
+extern char *kmr_stringify_spawn_options(struct kmr_spawn_option o);
 extern void kmr_print_options(struct kmr_option opt);
 extern void kmr_print_file_options(struct kmr_file_option opt);
 extern void kmr_print_spawn_options(struct kmr_spawn_option opt);

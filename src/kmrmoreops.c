@@ -72,7 +72,8 @@ int
 kmr_find_string(KMR_KVS *kvi, const char *k, const char **vq)
 {
     assert(k != 0 && vq != 0);
-    assert(kvi->c.key_data == KMR_KV_OPAQUE);
+    assert(kvi->c.key_data == KMR_KV_OPAQUE
+	   || kvi->c.key_data == KMR_KV_CSTRING);
     int klen = ((int)strlen(k) + 1);
     struct kmr_kv_box ki = {.klen = klen, .k.p = k, .vlen = 0, .v.p = 0};
     struct kmr_kv_box vo;
@@ -136,7 +137,7 @@ kmr_get_element_count(KMR_KVS *kvs, long *v)
 
 /* ================================================================ */
 
-static int
+int
 kmr_reverse_fn(const struct kmr_kv_box kv,
 	       const KMR_KVS *kvs, KMR_KVS *kvo, void *p, const long i)
 {
@@ -167,7 +168,8 @@ kmr_add_pairing_under_key(KMR_KVS *kvo, int klen, union kmr_unit_sized k,
 			  const struct kmr_kv_box kv,
 			  enum kmr_kv_field keyf, enum kmr_kv_field valf)
 {
-    assert(kvo->c.value_data == KMR_KV_OPAQUE);
+    assert(kvo->c.value_data == KMR_KV_OPAQUE
+	   || kvo->c.value_data == KMR_KV_CSTRING);
     size_t sz = kmr_kvs_entry_netsize_of_box(kv);
     assert(kmr_check_alignment(sz));
     char buf[10 * 1024];
@@ -189,7 +191,7 @@ kmr_add_pairing_under_key(KMR_KVS *kvo, int klen, union kmr_unit_sized k,
     return MPI_SUCCESS;
 }
 
-static int
+int
 kmr_pairing_fn(const struct kmr_kv_box kv,
 	       const KMR_KVS *kvi, KMR_KVS *kvo, void *p, const long i)
 {
@@ -211,7 +213,7 @@ kmr_pairing(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
     return kmr_map(kvi, kvo, 0, opt, kmr_pairing_fn);
 }
 
-static int
+int
 kmr_unpairing_fn(const struct kmr_kv_box kv,
 		 const KMR_KVS *kvs, KMR_KVS *kvo, void *p, const long i)
 {
@@ -865,7 +867,8 @@ kmr_distribute(KMR_KVS *kvi, KMR_KVS *kvo, _Bool cyclic, struct kmr_option opt)
 
 static int
 kmr_first_n_elements_fn(const struct kmr_kv_box kv,
-		     const KMR_KVS *kvi, KMR_KVS *kvo, void *p, const long i)
+			const KMR_KVS *kvi, KMR_KVS *kvo, void *p,
+			const long i)
 {
     long n = *(long *)p;
     if (kv.k.i < n) {
@@ -901,9 +904,9 @@ kmr_choose_first_part(KMR_KVS *kvi, KMR_KVS *kvo, long n,
     return MPI_SUCCESS;
 }
 
-/** Maps until some key-value are added.  It stops processing, when the
-    output is non-empty.  Existence/emptiness be checked by
-    kmr_get_element_count(). */
+/** Maps until some key-value are added.  It stops processing, when
+    the output is non-empty.  It does not guarantee singleness.
+    Existence/emptiness be checked by kmr_get_element_count(). */
 
 int
 kmr_map_for_some(KMR_KVS *kvi, KMR_KVS *kvo,
@@ -913,6 +916,10 @@ kmr_map_for_some(KMR_KVS *kvi, KMR_KVS *kvo,
     cc = kmr_map9(1, kvi, kvo, arg, opt, m, __FILE__, __LINE__, __func__);
     return cc;
 }
+
+/** Reduces until some key-value are added.  It stops processing, when
+    the output is non-empty.  It does not guarantee singleness.
+    Existence/emptiness be checked by kmr_get_element_count(). */
 
 int
 kmr_reduce_for_some(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
@@ -1030,7 +1037,8 @@ int
 kmr_add_ntuple(KMR_KVS *kvo, void *k, int klen, struct kmr_ntuple *u)
 {
     assert(u->index == u->n);
-    assert(kvo->c.value_data == KMR_KV_OPAQUE);
+    assert(kvo->c.value_data == KMR_KV_OPAQUE
+	   || kvo->c.value_data == KMR_KV_CSTRING);
     struct kmr_kv_box kv = {
 	.klen = klen,
 	.vlen = kmr_size_ntuple(u),

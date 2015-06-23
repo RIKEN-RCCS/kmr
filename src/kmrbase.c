@@ -241,6 +241,7 @@ kmr_create_context(const MPI_Comm comm, const MPI_Info conf,
     mr->step_sync = 0;
     mr->trace_sorting = 0;
     mr->trace_file_io = 0;
+    mr->trace_map_ms = 0;
     mr->trace_map_spawn = 0;
     mr->trace_alltoall = 0;
     mr->trace_kmrdp = 0;
@@ -289,6 +290,13 @@ kmr_create_context(const MPI_Comm comm, const MPI_Info conf,
     /* Initialize checkpoint context. */
     kmr_ckpt_create_context(mr);
 
+    return mr;
+}
+
+KMR *
+kmr_create_context_world()
+{
+    KMR *mr = kmr_create_context(MPI_COMM_WORLD, MPI_INFO_NULL, "");
     return mr;
 }
 
@@ -774,6 +782,7 @@ kmr_add_kv1(KMR_KVS *kvs, void *k, int klen, void *v, int vlen)
 	xk.d = *(double *)k;
 	break;
     case KMR_KV_OPAQUE:
+    case KMR_KV_CSTRING:
     case KMR_KV_POINTER_OWNED:
     case KMR_KV_POINTER_UNMANAGED:
 	xk.p = k;
@@ -797,6 +806,7 @@ kmr_add_kv1(KMR_KVS *kvs, void *k, int klen, void *v, int vlen)
 	xv.d = *(double *)v;
 	break;
     case KMR_KV_OPAQUE:
+    case KMR_KV_CSTRING:
     case KMR_KV_POINTER_OWNED:
     case KMR_KV_POINTER_UNMANAGED:
 	xv.p = v;
@@ -893,8 +903,10 @@ kmr_add_kv_done(KMR_KVS *kvs)
 int
 kmr_add_string(KMR_KVS *kvs, const char *k, const char *v)
 {
-    if (!(kvs->c.key_data == KMR_KV_OPAQUE
-	  && kvs->c.value_data == KMR_KV_OPAQUE)) {
+    if (!((kvs->c.key_data == KMR_KV_OPAQUE
+	   || kvs->c.key_data == KMR_KV_CSTRING)
+	  && (kvs->c.value_data == KMR_KV_OPAQUE
+	      || kvs->c.value_data == KMR_KV_CSTRING))) {
 	kmr_error(kvs->c.mr,
 		  "key-value data-types need be opaque for strings");
     }
@@ -1082,7 +1094,7 @@ kmr_map_parked(struct kmr_kv_box *ev, long evcnt, long mapcount,
 		if (ccx != MPI_SUCCESS) {
 		    char ee[80];
 		    snprintf(ee, sizeof(ee),
-			     "Map-fn returned with error cc=%d", cc);
+			     "Map-fn returned with error cc=%d", ccx);
 		    kmr_error(mr, ee);
 		}
 		if (mr->log_traces != 0) {
@@ -1511,6 +1523,7 @@ kmr_hash_key(const KMR_KVS *kvs, const struct kmr_kv_box kv)
 	xassert(kvs->c.key_data != KMR_KV_BAD);
 	return -1;
     case KMR_KV_OPAQUE:
+    case KMR_KV_CSTRING:
 	return (signed long)kmr_hash_key_opaque((void *)kv.k.p, kv.klen);
     case KMR_KV_INTEGER:
 	return kv.k.i;
@@ -1557,6 +1570,7 @@ kmr_stable_key(const struct kmr_kv_box kv, const KMR_KVS *kvs)
 	xassert(kvs->c.key_data != KMR_KV_BAD);
 	return -1;
     case KMR_KV_OPAQUE:
+    case KMR_KV_CSTRING:
 	return kmr_stable_key_opaque(kv);
     case KMR_KV_INTEGER:
 	return kv.k.i;
@@ -1698,6 +1712,7 @@ kmr_choose_sorter(const KMR_KVS *kvs)
     case KMR_KV_FLOAT8:
 	return kmr_compare_float8;
     case KMR_KV_OPAQUE:
+    case KMR_KV_CSTRING:
     case KMR_KV_POINTER_OWNED:
     case KMR_KV_POINTER_UNMANAGED:
 	return kmr_compare_opaque;
@@ -1724,6 +1739,7 @@ kmr_choose_record_sorter(const KMR_KVS *kvs)
 	assert(NEVERHERE);
 	return kmr_compare_record_float8_;
     case KMR_KV_OPAQUE:
+    case KMR_KV_CSTRING:
     case KMR_KV_POINTER_OWNED:
     case KMR_KV_POINTER_UNMANAGED:
 	return kmr_compare_record_opaque;
@@ -2398,7 +2414,7 @@ kmr_reduce_threading(_Bool stop_when_some_added,
 		    if (ccx != MPI_SUCCESS) {
 			char ee[80];
 			snprintf(ee, sizeof(ee),
-				 "Reduce-fn returned with error cc=%d", cc);
+				 "Reduce-fn returned with error cc=%d", ccx);
 			kmr_error(mr, ee);
 		    }
 		    if (mr->log_traces != 0) {

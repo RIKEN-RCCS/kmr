@@ -2,7 +2,7 @@
 
 <p>Copyright (C) 2012-2015 RIKEN AICS</p>
 
-<p>(KMR Version: v1.6(20150401))</p>
+<p>(KMR Version: v1.7(20150622))</p>
 
 <p>
 KMR comes with ABSOLUTELY NO WARRANTY.
@@ -16,6 +16,7 @@ Contents (in this page):
 <li><a href="#installation">Installation</a>
 <li><a href="#applicationcompilation">Application Compilation</a>
 <li><a href="#simplestusage">Simplest Usage</a>
+<li><a href="#pythonapi">Python API</a>
 <li><a href="#sortingkeyvalues">Sorting Key-Values</a>
 <li><a href="#rankawarecommunication">Rank-Aware Communication</a>
 <li><a href="#masterslavemapper">Master-Slave Mapper</a>
@@ -363,6 +364,38 @@ See <a href="kmr_8h.html#details">descriptions in kmr.h</a>.
 <p>
 For the next step, browse documents starting with
 <a href="test0_8c_source.html#l00119">simple0 in test0.c</a>.
+
+<a name="pythonapi"></a>
+<h1>Python API</h1>
+
+<p>
+KMR also provides API for Python as 'kmr4py' Python module.  It is
+installed along with KMR C library.  The supported version of
+Python is bigger than 2.6.x.  Currently it does not support Python3.
+A Python MPI implementation is required to use kmr4py module.
+Any Python MPI implementations may work with kmr4py, only mpi4py
+is tested.
+
+<p>
+To run a program that uses kmr4py, the enviroment variables,
+LD_LIBRARY_PATH and PYTHONPATH, must be set so that kmr shared library
+(libkmr.so) and python module (kmr4py.py) can be found from Python
+interpreter.  By default, these two files are located under $KMRHOME/lib
+directory where KMR is isntalled.
+
+<pre class="fragment">
+export LD_LIBRARY_PATH=$KMRHOME/lib:$LD_LIBRARY_PATH
+export PYTHONPATH=$KMRHOME/lib:PYTHONPATH
+mpiexec -n 4 python YOUR_PROGRAM.py
+</pre>
+
+<p>
+There are some example applications included in KMR package under
+'ex/' directory.
+
+<p>
+Also see the <a href="./python/index.html">Python API document</a>.
+
 
 <a name="sortingkeyvalues"></a>
 <h1>Sorting Key-Values</h1>
@@ -973,11 +1006,6 @@ is a word count.
 is a simplest test code.  It is not an example, but a test.
 
 <dt>
-<a href="testf_8f90_source.html">testf.f90</a>:
-<dd>
-is a simplest test code in Fortran (F2003).
-
-<dt>
 <a href="kmeans-kmr_8c_source.html">kmeans-kmr.c</a>:
 <dd>
 is a calculation of K-Means.
@@ -985,7 +1013,44 @@ is a calculation of K-Means.
 <dt>
 <a href="kmeans-mrmpi_8cpp_source.html">kmeans-mrmpi.cpp</a> (for reference):
 <dd>
-is a calculation of K-Means in MapReduce-MPI.
+is a calculation of K-Means in MapReduce-MPI (not in KMR).
+
+<dt>
+<a href="wordcountf_8f90_source.html">wordcountf.f90</a>:
+<dd>
+is a word count in Fortran (F2003).
+
+<dt>
+<a href="testf_8f90_source.html">testf.f90</a>:
+<dd>
+is a simplest test code in Fortran (F2003).
+
+<dt>
+<a href="wordcountpy_8py_source.html">wordcountpy.py</a>:
+<dd>
+is a word count in Python.
+
+<dt>
+<a href="kmeanspy_8py_source.html">kmeanspy.py</a>:
+<dd>
+is a calculation of K-Means in Python.
+
+<dt>
+<a href="testcxx_8cpp_source.html">testcxx.cpp</a>:
+<dd>
+is a code in C++11 with a closure.
+
+<dt>
+<a href="graysort_8c_source.html">graysort.c</a>:
+<dd>
+is a GraySort.  See "http://sortbenchmark.org" for TeraSort
+benchmarks.
+
+<dt>
+<a href="tpch_8c_source.html">tpch.c</a>:
+<dd>
+is TPC-H benchmarks.  It runs SQL queries by map-reduce.  See
+"http://www.tpc.org/tpch/" for TPC-H benchmarks.
 
 <dt>
 <a href="mrmpi-wordfreq_8c_source.html">mrmpi-wordfreq.c</a>:
@@ -1005,23 +1070,6 @@ Phoenix-MapReduce, but rewritten much.
 is a simple matrix-multiply.  It works simply by distributing rows.
 It is of course slow sequentially, too.  It is taken from
 Phoenix-MapReduce, but rewritten much.
-
-<dt>
-<a href="graysort_8c_source.html">graysort.c</a>:
-<dd>
-is a GraySort.  See "http://sortbenchmark.org" for TeraSort
-benchmarks.
-
-<dt>
-<a href="tpch_8c_source.html">tpch.c</a>:
-<dd>
-is TPC-H benchmarks.  It runs SQL queries by map-reduce.  See
-"http://www.tpc.org/tpch/" for TPC-H benchmarks.
-
-<dt>
-<a href="testcxx_8cpp_source.html">testcxx.cpp</a>:
-<dd>
-is a code in C++11 with a closure.
 </dl>
 
 <p>

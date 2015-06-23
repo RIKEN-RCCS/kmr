@@ -15,6 +15,12 @@ AC_PREREQ([2.68])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([config.make])
 
+# 'version' is the version of KMR release and 'release_date' is its
+# release date.
+# Update these two variables when new version of KMR is released.
+version="1.7"
+release_date="20150622"
+
 # It sets {target_os}, which is used to add rt library for
 # clock_gettime() in Linux.
 
@@ -292,9 +298,9 @@ fi
 # KMRTARGET is a target of makefile.
 AC_SUBST(KMRTARGET)
 if test "$enable_fortran" = "yes"; then
-  KMRTARGET=kmr_f.a
+  KMRTARGET=kmr_f
 else
-  KMRTARGET=kmr_c.a
+  KMRTARGET=kmr_c
 fi
 
 # Check if TOFU support files are available.
@@ -351,5 +357,8 @@ fi
 
 test "x$prefix" = xNONE && prefix=$ac_default_prefix
 AC_DEFINE_UNQUOTED(KMRLIBDIR, ["$prefix"])
+
+AC_SUBST(KMRVER, $version)
+AC_SUBST(KMRVERDATE, $release_date)
 
 AC_OUTPUT

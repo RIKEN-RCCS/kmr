@@ -24,21 +24,30 @@ def checkexist(path):
 
 ## Check restart mode.
 #  If node > number of checkpoint file, error.
-#  @param procstr           string that represents process number
 #  @param restart_basename  prefix of checkpoint directory name
+#  @param procstr           string that represents process number
+#  @param sched             string that represents scheduler type
 
-def checkrestart(procstr, restart_basename):
+def checkrestart(restart_basename, procstr, sched):
+    if sched.upper() == 'K':
+        if restart_basename is None: return
+        ckpt_prefix = restart_basename + '.'
+    else:
+        ckpt_prefix = 'ckptdir'
+    repatter = re.compile(r'^%s\d+$' % ckpt_prefix)
     files = os.listdir('./')
     count = 0
-    for sfile in files:
-        if sfile.split(".")[0] == os.path.basename(restart_basename):
-            count = count +1
-    fname = os.path.basename(restart_basename) + '.00000/nprocs'
-    if not os.path.exists(fname):
+    for file_ in files:
+        if repatter.match(file_):
+            count += 1
+    if count == 0: return
+
+    nprocs_file = ckpt_prefix + '00000/nprocs'
+    if not os.path.exists(nprocs_file):
         print >> sys.stderr, \
-            'Error: Checkpoint nproc file %s not exit.\n' % fname
+            'Error: Checkpoint nproc file %s not exit.\n' % nprocs_file
         sys.exit()
-    preprocstr = open(fname).read()
+    preprocstr = open(nprocs_file).read()
     preproc = preprocstr.split("=")[1]
     if count != int(preproc):
         print >> sys.stderr, \
@@ -86,6 +95,7 @@ def k_node_to_int(shape_str):
 
 
 ## Generates job-script for K.
+#  @param name               name of the job
 #  @param queue              queue to submit job
 #  @param rsctime            resource time limit
 #  @param node               number of node to execute.
@@ -101,7 +111,7 @@ def k_node_to_int(shape_str):
 #  @param ckpt               enable checkpoint
 #  @param restart_basename   prefix of checkpoint directory name
 
-def k_scheduler(queue, rsctime, node, kmrrun_path, kmrrun_parameter,
+def k_scheduler(name, queue, rsctime, node, kmrrun_path, kmrrun_parameter,
                 template_path, shape, proc, mapper, kvgen, reducer, indir,
                 ckpt, restart_basename):
     # Stage in section
@@ -144,13 +154,14 @@ def k_scheduler(queue, rsctime, node, kmrrun_path, kmrrun_parameter,
     execstr = 'mpiexec -n %d ./kmrrun %s' % (k_node_to_int(proc), kmrrun_parameter)
 
     template = open(template_path).read()
-    return template % {'QUEUE': queue, 'NODE': node, 'RSCTIME': rsctime,
-                       'KMRRUN': kmrrun_path, 'SHAPE': shape, 'PROC': proc,
-                       'DATASTGIN': stginstr, 'DATASTGOUT': stgoutstr,
-                       'EXEC': execstr}
+    return template % {'NAME': name, 'QUEUE': queue, 'NODE': node,
+                       'RSCTIME': rsctime, 'KMRRUN': kmrrun_path,
+                       'SHAPE': shape, 'PROC': proc, 'DATASTGIN': stginstr,
+                       'DATASTGOUT': stgoutstr, 'EXEC': execstr}
 
 
 ## Generates job-script for FOCUS supercomputer
+#  @param name               name of the job
 #  @param queue              queue to submit job
 #  @param rsctime            resource time limit
 #  @param node               number of MPI processes to use
@@ -158,11 +169,12 @@ def k_scheduler(queue, rsctime, node, kmrrun_path, kmrrun_parameter,
 #  @param kmrrun_parameter   parameter for kmrrun
 #  @param template_path      path for template file
 
-def focus_scheduler(queue, rsctime, node, kmrrun_path, kmrrun_parameter,
+def focus_scheduler(name, queue, rsctime, node, kmrrun_path, kmrrun_parameter,
                     template_path):
     template = open(template_path).read()
-    return template % {'QUEUE': queue, 'NODE': node, 'RSCTIME': rsctime,
-                       'KMRRUN': kmrrun_path, 'KMRRUN_PARAM': kmrrun_parameter}
+    return template % {'NAME': name, 'QUEUE': queue, 'NODE': node,
+                       'RSCTIME': rsctime, 'KMRRUN': kmrrun_path,
+                       'KMRRUN_PARAM': kmrrun_parameter}
 
 
 ## Selects job-scheduler.
@@ -202,15 +214,18 @@ def select_scheduler(opts, sched):
     if opts.ckpt or opts.restart:
         kmrrun_parameter += '--ckpt '
     kmrrun_parameter += './' + os.path.basename(opts.indir)
+    name = 'kmrrun_job'
+    if opts.scrfile:
+        name = opts.scrfile
 
     if sched.upper() == 'K':
-        script = k_scheduler(queue, rsctime, node, kmrrun_path,
+        script = k_scheduler(name, queue, rsctime, node, kmrrun_path,
                              kmrrun_parameter,
                              template_dir + '/kmrrungenscript.template.k',
                              opts.shape, opts.proc, mapper, kvgen, reducer,
                              opts.indir, opts.ckpt, opts.restart)
     elif sched.upper() == 'FOCUS':
-        script = focus_scheduler(queue, rsctime, node, kmrrun_path,
+        script = focus_scheduler(name, queue, rsctime, node, kmrrun_path,
                                  kmrrun_parameter,
                                  template_dir + '/kmrrungenscript.template.focus')
     # for other schedulers...
@@ -344,15 +359,18 @@ if __name__ == "__main__":
                       "--ckpt",
                       dest="ckpt",
                       action="store_true",
-                      help="save checkpoint (default is false)",
+                      help="enable Checkpoint/Restart (default is false)",
                       default=False)
 
     parser.add_option("-R",
-                      "--restart",
+                      "--restart-filename",
                       dest="restart",
                       type="string",
-                      help="restart using checkpoint. "
-                      "Specify prefix of checkpoint directory",
+                      help="specify prefix of directories where checkpoint "
+                      "files are located. "
+                      "This option should be given when restarting on "
+                      "a system that requires staging. "
+                      "Valid only on K scheduler.",
                       metavar="'string'")
 
     parser.add_option("-S",
@@ -388,8 +406,11 @@ if __name__ == "__main__":
         sys.exit()
 
     checkexist(options.indir)
-    if options.restart:
-        checkrestart(options.proc, options.restart)
+    if options.ckpt:
+        if options.sched == 'K':
+            checkrestart(options.restart, options.proc, 'K')
+        else:
+            checkrestart(options.restart, '1', options.sched)
 
     select_scheduler(options, options.sched)
     warn_stageout(options)

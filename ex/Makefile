@@ -4,6 +4,7 @@ include ../config.make
 
 mpicc=$(MPICC) $(OPENMP_CFLAGS) $(CFLAGS)
 mpicxx=$(MPICXX) $(OPENMP_CXXFLAGS) $(CXXFLAGS)
+mpif90=$(MPIFC) $(OPENMP_FFLAGS) $(FCFLAGS)
 
 LIBS += ../src/libkmr.a
 INCL=-I ../src/
@@ -32,11 +33,21 @@ rmat:
 phoenix-kmeans:
 	$(mpicc) $(INCL) -g phoenix-kmeans.c $(LIBS)
 
+wordcountf:
+	$(mpif90) $(INCL) -cpp -g wordcountf.f90 $(LIBS)
+
 tpch:
 	$(mpicc) $(INCL) -g tpch.c $(LIBS)
 
 flexdice:
 	gcc -fopenmp -m64 -std=gnu99 -Wall -Wextra -pedantic -Wno-long-long -Wno-unused-parameter -Wmissing-prototypes -Wshadow -g flexdice.c flexdicemain.c -lm
+
+update-version::
+	cp kmrdp-help.html _kmrdp-help.html
+	sed -e \
+	"s/\(KMR Version: v\)[0-9\.]*([0-9]*)/\1$(KMRVER)($(KMRVERDATE))/" \
+	< _kmrdp-help.html > kmrdp-help.html
+	rm -f _kmrdp-help.html
 
 distclean:: clean
 

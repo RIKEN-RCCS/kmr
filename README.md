@@ -28,6 +28,15 @@ KMR, but they are needed for running some examples.
 INSTALL
 -------
 
+Building KMR requires a C compiler that supports C99 standard and an
+MPI library that supports MPI 2.2.  However the command line tool
+'kmrrun' supports only OpenMPI and Fujitsu MPI.  KMR does not depend
+on any other libraries.  KMR is developed and tested mainly on the
+following environments.
+
+* CentOS 6.5 Linux x86_64, GCC 4.4.7, OpenMPI 1.8.3
+* K Computer/FX10, Fujitsu Compiler, Fujitsu MPI (latest stable)
+
 KMR can be installed by just typing 'configure', 'make' and
 'make install'.  To change the installation directory, specify
 '--prefix' option to the configure script.
@@ -36,15 +45,9 @@ KMR can be installed by just typing 'configure', 'make' and
     $ make
     $ make install
 
-KMR can work with any kind of C compilers that support C99 standard and
-MPI libraries.  KMR does not depend on any other libraries.  KMR is
-developed and tested mainly on the following environments.
-
-* CentOS 6.5 Linux x86_64, GCC 4.4.7, OpenMPI 1.8.3
-* K Computer/FX10, Fujitsu Compiler, Fujitsu MPI (latest stable)
-
-To build KMR documents, type 'make htmldoc'. It depends on Doxygen and
-Gnu troff.  The documents are generated under './html' directory.
+To build KMR documents, type 'make htmldoc'. It depends on Doxygen,
+Epydoc and Gnu troff.  The documents are generated under './html'
+directory.
 
     $ make htmldoc
 
