@@ -954,6 +954,9 @@ extern int kmr_assign_file(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt);
 extern int kmr_map_multiprocess(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
                                 struct kmr_option opt, int max_nprocs,
                                 kmr_mapfn_t m);
+extern int kmr_map_multiprocess_by_key(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
+                                       struct kmr_option opt, int rank_key,
+                                       kmr_mapfn_t m);
 
 /* Suppresses warnings of unused constants (for icc). */
 
