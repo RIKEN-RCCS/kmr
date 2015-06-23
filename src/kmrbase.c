@@ -1354,6 +1354,7 @@ kmr_take_one(KMR_KVS *kvi, struct kmr_kv_box *kv)
 	assert(b->partial_element_count == 1);
 	assert(e != 0);
 	*kv = kmr_pick_kv(e, kvi);
+	kvi->c.current_block = 0;
 	return MPI_SUCCESS;
     } else {
 	if (kvi->c.element_count == 0) {
