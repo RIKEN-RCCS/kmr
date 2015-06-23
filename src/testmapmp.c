@@ -11,17 +11,17 @@
 /* Puts many key-value pairs to output KVO. */
 static int
 addintkeys0(const struct kmr_kv_box kv0,
-	    const KMR_KVS *kvs0, KMR_KVS *kvo, void *p, const long i_)
+            const KMR_KVS *kvs0, KMR_KVS *kvo, void *p, const long i_)
 {
     assert(kvs0 == 0 && kv0.klen == 0 && kv0.vlen == 0 && kvo != 0);
     int N = *((int *)p);
     int cc;
     for (int i = 0; i < N; i++) {
-	struct kmr_kv_box kv = {
-	    .klen = sizeof(long), .k.i = i,
-	    .vlen = sizeof(long), .v.i = i };
-	cc = kmr_add_kv(kvo, kv);
-	assert(cc == MPI_SUCCESS);
+        struct kmr_kv_box kv = {
+            .klen = sizeof(long), .k.i = i,
+            .vlen = sizeof(long), .v.i = i };
+        cc = kmr_add_kv(kvo, kv);
+        assert(cc == MPI_SUCCESS);
     }
     return MPI_SUCCESS;
 }
@@ -29,7 +29,7 @@ addintkeys0(const struct kmr_kv_box kv0,
 /* Puts a key-value whose value is number of key multiplyed by key */
 static int
 multiplykey0(const struct kmr_kv_box kv0,
-	     const KMR_KVS *kvi, KMR_KVS *kvo, void *p, const long i_)
+             const KMR_KVS *kvi, KMR_KVS *kvo, void *p, const long i_)
 {
     MPI_Comm comm = kvi->c.mr->comm;
     int rank = kvi->c.mr->rank;
@@ -46,18 +46,18 @@ multiplykey0(const struct kmr_kv_box kv0,
 
     int val = -1;
     if (rank == 0) {
-	val = (int)kv0.k.i;
+        val = (int)kv0.k.i;
     }
     cc = MPI_Bcast(&val, 1, MPI_INT, 0, comm);
     assert(cc == MPI_SUCCESS);
     if (rank != 0) {
-	assert(val != -1);
-	assert(val == (int)kv0.k.i);
+        assert(val != -1);
+        assert(val == (int)kv0.k.i);
     }
 
     struct kmr_kv_box kv = {
-	.klen = sizeof(long), .k.i = val,
-	.vlen = sizeof(long), .v.i = val * val };
+        .klen = sizeof(long), .k.i = val,
+        .vlen = sizeof(long), .v.i = val * val };
     cc = kmr_add_kv(kvo, kv);
     assert(cc == MPI_SUCCESS);
 
@@ -67,26 +67,26 @@ multiplykey0(const struct kmr_kv_box kv0,
 /* Verify the answer. */
 static int
 verify0(const struct kmr_kv_box *kv, const long n,
-	const KMR_KVS *kvi, KMR_KVS *kvo, void *p)
+        const KMR_KVS *kvi, KMR_KVS *kvo, void *p)
 {
     int max_nprocs = *((int *)p);
     _Bool success = 1;
     if (n <= 0 || n > max_nprocs) {
-	success = 0;
+        success = 0;
     }
     for (int i = 0; i < n; i++) {
-	if (kv[i].k.i * kv[i].k.i != kv[i].v.i) {
-	    success = 0;
-	    break;
-	}
+        if (kv[i].k.i * kv[i].k.i != kv[i].v.i) {
+            success = 0;
+            break;
+        }
     }
     if (!success) {
-	/* if the answer is not correct, set a key-value */
-	struct kmr_kv_box nkv = {
-	    .klen = sizeof(long), .k.i = 0,
-	    .vlen = sizeof(long), .v.i = 0 };
-	int cc = kmr_add_kv(kvo, nkv);
-	assert(cc == MPI_SUCCESS);
+        /* if the answer is not correct, set a key-value */
+        struct kmr_kv_box nkv = {
+            .klen = sizeof(long), .k.i = 0,
+            .vlen = sizeof(long), .v.i = 0 };
+        int cc = kmr_add_kv(kvo, nkv);
+        assert(cc == MPI_SUCCESS);
     }
     return MPI_SUCCESS;
 }
@@ -132,7 +132,7 @@ test_map_multiprocess0(int rank)
     KMR_KVS *kvs1 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_INTEGER);
     int max_nprocs = 2;
     cc = kmr_map_multiprocess(kvs0, kvs1, &max_nprocs, kmr_noopt, max_nprocs,
-			      multiplykey0);
+                              multiplykey0);
     assert(cc == MPI_SUCCESS);
 
     /* Shuffle */
@@ -169,7 +169,7 @@ test_map_multiprocess0(int rank)
 /* Compares the key sent from root in sub-communicator. */
 static int
 comparekey1(const struct kmr_kv_box kv0,
-	    const KMR_KVS *kvi, KMR_KVS *kvo, void *p, const long i_)
+            const KMR_KVS *kvi, KMR_KVS *kvo, void *p, const long i_)
 {
     MPI_Comm comm = kvi->c.mr->comm;
     int rank = kvi->c.mr->rank;
@@ -182,13 +182,13 @@ comparekey1(const struct kmr_kv_box kv0,
 
     int val = -1;
     if (rank == 0) {
-	val = (int)kv0.k.i;
+        val = (int)kv0.k.i;
     }
     cc = MPI_Bcast(&val, 1, MPI_INT, 0, comm);
     assert(cc == MPI_SUCCESS);
     if (rank != 0) {
-	assert(val != -1);
-	assert(val == (int)kv0.k.i);
+        assert(val != -1);
+        assert(val == (int)kv0.k.i);
     }
 
     return MPI_SUCCESS;
@@ -235,9 +235,146 @@ test_map_multiprocess1(int rank)
 
     int max_nprocs = 2;
     cc = kmr_map_multiprocess(kvs0, 0, &max_nprocs, kmr_noopt, max_nprocs,
-			      comparekey1);
+                              comparekey1);
     assert(cc == MPI_SUCCESS);
 
+    kmr_free_context(mr);
+}
+
+/* Puts a key-value whose key is 'even' or 'odd' and whose value is
+   sum of values whose keys are same ('even' or 'odd') only on rank0
+   in kvi->c.mr->comm (split communicator) */
+static int
+sumvalues0(const struct kmr_kv_box kv0,
+           const KMR_KVS *kvi, KMR_KVS *kvo, void *p, const long i_)
+{
+    MPI_Comm comm = kvi->c.mr->comm;
+    int rank = kvi->c.mr->rank;
+    int nprocs;
+    MPI_Comm_size(comm, &nprocs);
+    assert(kvo != 0);
+    int comm_comp_res;
+    MPI_Comm_compare(comm, kvo->c.mr->comm, &comm_comp_res);
+    assert(comm_comp_res == MPI_IDENT);
+    assert(rank == kvo->c.mr->rank);
+    int nprocs_calc = *((int *)p);
+    assert(nprocs_calc == nprocs);
+    assert(i_ == 0);
+    int cc;
+
+    int val = (int)kv0.v.i;
+    int vals[nprocs];
+    cc = MPI_Gather(&val, 1, MPI_INT, vals, 1, MPI_INT, 0, comm);
+    assert(cc == MPI_SUCCESS);
+
+    if (rank == 0) {
+        int sum = 0;
+        for (int i = 0; i < nprocs; i++) {
+            sum += vals[i];
+        }
+        struct kmr_kv_box kv = {
+            .klen = kv0.klen, .k.p = kv0.k.p,
+            .vlen = sizeof(long), .v.i = sum };
+        cc = kmr_add_kv(kvo, kv);
+        assert(cc == MPI_SUCCESS);
+    }
+
+    return MPI_SUCCESS;
+}
+
+/* Verify the answer. */
+static int
+verify_by_key0(const struct kmr_kv_box kv0,
+               const KMR_KVS *kvi, KMR_KVS *kvo, void *p, const long i_)
+{
+    int nprocs = *((int *)p);
+    char *key = (char *)kv0.k.p;
+    int start_from = 0;
+    if (key[0] == 'o') start_from = 1; /* In case of odd number */
+    int sum = 0;
+    for (int i = start_from; i < nprocs; i += 2) {
+        sum += i;
+    }
+
+    if (kv0.v.i != sum) {
+        /* if the answer is not correct, set a key-value */
+        struct kmr_kv_box nkv = {
+            .klen = sizeof(long), .k.i = 0,
+            .vlen = sizeof(long), .v.i = 0 };
+        int cc = kmr_add_kv(kvo, nkv);
+        assert(cc == MPI_SUCCESS);
+    }
+    return MPI_SUCCESS;
+}
+
+static void
+test_map_multiprocess_by_key0(int rank, int nprocs)
+{
+    MPI_Barrier(MPI_COMM_WORLD);
+    usleep(50 * 1000);
+    if (rank == 0) {printf("CHECK KMR_MAP_MULTIPROCESS_BY_KEY 0...\n");}
+    fflush(0);
+    usleep(50 * 1000);
+
+    int cc;
+    KMR *mr = kmr_create_context(MPI_COMM_WORLD, MPI_INFO_NULL, 0);
+    assert(mr != 0);
+
+    /* Put key-value pairs. */
+    MPI_Barrier(mr->comm);
+    usleep(50 * 1000);
+    if (rank == 0) {printf("ADD (1 element on each rank)\n");}
+    fflush(0);
+    usleep(50 * 1000);
+
+    KMR_KVS *kvs0 = kmr_create_kvs(mr, KMR_KV_OPAQUE, KMR_KV_INTEGER);
+    {
+        char *key = (rank % 2 == 0) ? "even" : "odd";
+        struct kmr_kv_box kv = {
+            .klen = (int)(strlen(key) + 1), .k.p = key,
+            .vlen = sizeof(long),           .v.i = rank };
+        cc = kmr_add_kv(kvs0, kv);
+        assert(cc == MPI_SUCCESS);
+    }
+    cc = kmr_add_kv_done(kvs0);
+    assert(cc == MPI_SUCCESS);
+
+    long cnt0;
+    cc = kmr_get_element_count(kvs0, &cnt0);
+    assert(cc == MPI_SUCCESS);
+    assert(cnt0 == nprocs);
+
+    /* Multipy values using kmr_map_multiprocess_by_key  */
+    MPI_Barrier(mr->comm);
+    usleep(50 * 1000);
+    if (rank == 0) {printf("call KMR_MAP_MULTIPROCESS_BY_KEY\n");}
+    fflush(0);
+    usleep(50 * 1000);
+
+    int nprocs_sub = nprocs / 2;
+    if (nprocs % 2 == 1 && rank % 2 == 0) nprocs_sub += 1;
+    KMR_KVS *kvs1 = kmr_create_kvs(mr, KMR_KV_OPAQUE, KMR_KV_INTEGER);
+    cc = kmr_map_multiprocess_by_key(kvs0, kvs1, &nprocs_sub, kmr_noopt,
+                                     rank, sumvalues0);
+    assert(cc == MPI_SUCCESS);
+
+    /* Verify the answer */
+    MPI_Barrier(mr->comm);
+    usleep(50 * 1000);
+    if (rank == 0) {printf("VERIFY THE ANSWER\n");}
+    fflush(0);
+    usleep(50 * 1000);
+
+    KMR_KVS *kvs2 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_INTEGER);
+    cc = kmr_map(kvs1, kvs2, &nprocs, kmr_noopt, verify_by_key0);
+    assert(cc == MPI_SUCCESS);
+
+    long cnt2;
+    cc = kmr_get_element_count(kvs2, &cnt2);
+    assert(cc == MPI_SUCCESS);
+    assert(cnt2 == 0);
+
+    kmr_free_kvs(kvs2);
     kmr_free_context(mr);
 }
 
@@ -252,6 +389,7 @@ main(int argc, char **argv)
 
     test_map_multiprocess0(rank);
     test_map_multiprocess1(rank);
+    test_map_multiprocess_by_key0(rank, nprocs);
 
     MPI_Barrier(MPI_COMM_WORLD);
     usleep(50 * 1000);
