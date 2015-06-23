@@ -2,7 +2,7 @@
 
 /* Check MPI parappel mapping on key-value pairs defined in kmrmapmp.c.
    Run it with "mpirun -np n a.out".
- */
+*/
 
 #include <unistd.h>
 #include <mpi.h>
@@ -66,15 +66,26 @@ multiplykey0(const struct kmr_kv_box kv0,
 
 /* Verify the answer. */
 static int
-verify0(const struct kmr_kv_box kv0,
-	const KMR_KVS *kvs0, KMR_KVS *kvo, void *p, const long i_)
+verify0(const struct kmr_kv_box *kv, const long n,
+	const KMR_KVS *kvi, KMR_KVS *kvo, void *p)
 {
-    if (kv0.k.i * kv0.k.i != kv0.v.i) {
+    int max_nprocs = *((int *)p);
+    _Bool success = 1;
+    if (n <= 0 || n > max_nprocs) {
+	success = 0;
+    }
+    for (int i = 0; i < n; i++) {
+	if (kv[i].k.i * kv[i].k.i != kv[i].v.i) {
+	    success = 0;
+	    break;
+	}
+    }
+    if (!success) {
 	/* if the answer is not correct, set a key-value */
-	struct kmr_kv_box kv = {
+	struct kmr_kv_box nkv = {
 	    .klen = sizeof(long), .k.i = 0,
 	    .vlen = sizeof(long), .v.i = 0 };
-	int cc = kmr_add_kv(kvo, kv);
+	int cc = kmr_add_kv(kvo, nkv);
 	assert(cc == MPI_SUCCESS);
     }
     return MPI_SUCCESS;
@@ -124,6 +135,17 @@ test_map_multiprocess0(int rank)
 			      multiplykey0);
     assert(cc == MPI_SUCCESS);
 
+    /* Shuffle */
+    MPI_Barrier(mr->comm);
+    usleep(50 * 1000);
+    if (rank == 0) {printf("PERFORM SHUFFLE\n");}
+    fflush(0);
+    usleep(50 * 1000);
+
+    KMR_KVS *kvs2 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_INTEGER);
+    cc = kmr_shuffle(kvs1, kvs2, kmr_noopt);
+    assert(cc == MPI_SUCCESS);
+
     /* Verify the answer */
     MPI_Barrier(mr->comm);
     usleep(50 * 1000);
@@ -131,20 +153,23 @@ test_map_multiprocess0(int rank)
     fflush(0);
     usleep(50 * 1000);
 
-    KMR_KVS *kvs2 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_INTEGER);
-    cc = kmr_map(kvs1, kvs2, 0, kmr_noopt, verify0);
+    KMR_KVS *kvs3 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_INTEGER);
+    cc = kmr_reduce(kvs2, kvs3, &max_nprocs, kmr_noopt, verify0);
     assert(cc == MPI_SUCCESS);
 
-    long cnt2;
-    cc = kmr_get_element_count(kvs2, &cnt2);
+    long cnt3;
+    cc = kmr_get_element_count(kvs3, &cnt3);
     assert(cc == MPI_SUCCESS);
-    assert(cnt2 == 0);
+    assert(cnt3 == 0);
+
+    kmr_free_kvs(kvs3);
+    kmr_free_context(mr);
 }
 
 /* Compares the key sent from root in sub-communicator. */
 static int
 comparekey1(const struct kmr_kv_box kv0,
-			const KMR_KVS *kvi, KMR_KVS *kvo, void *p, const long i_)
+	    const KMR_KVS *kvi, KMR_KVS *kvo, void *p, const long i_)
 {
     MPI_Comm comm = kvi->c.mr->comm;
     int rank = kvi->c.mr->rank;
@@ -212,6 +237,8 @@ test_map_multiprocess1(int rank)
     cc = kmr_map_multiprocess(kvs0, 0, &max_nprocs, kmr_noopt, max_nprocs,
 			      comparekey1);
     assert(cc == MPI_SUCCESS);
+
+    kmr_free_context(mr);
 }
 
 int
