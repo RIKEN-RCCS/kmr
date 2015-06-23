@@ -1145,6 +1145,29 @@ simple6(int nprocs, int rank)
 
     kmr_free_kvs(kvs1);
 
+    /* Check using KVS after inspecting by kmr_take_one(). */
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    usleep(50 * 1000);
+    if (rank == 0) {printf("CHECK KMR_TAKE_ONE()...\n");}
+    fflush(0);
+    usleep(50 * 1000);
+
+    const long ONE = 1;    
+
+    KMR_KVS *kvs4 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_INTEGER);
+    kmr_map_once(kvs4, (void *)&ONE, kmr_noopt, 0, addkeys6);
+    
+    struct kmr_kv_box kv;
+    kmr_take_one(kvs4, &kv);
+    assert(kv.k.i == 0 && kv.v.i == 0);
+
+    long calls4 = 0;
+    KMR_KVS *kvs5 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_INTEGER);
+    kmr_map(kvs4, kvs5, &calls4, kmr_noopt, addeach6);
+
+    kmr_free_kvs(kvs5);
+
     kmr_free_context(mr);
 }
 
