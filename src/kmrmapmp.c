@@ -245,7 +245,10 @@ kmr_map_multiprocess_by_key(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
     assert(cc == MPI_SUCCESS);
     /* assign color */
     int task_color = 0;
-    {
+    long kvi_count;
+    cc = kmr_local_element_count(kvi, &kvi_count);
+    assert(cc == MPI_SUCCESS);
+    if (kvi_count > 0) {
         struct kmr_kv_box ki, ko;
         cc = kmr_take_one(kvi, &ki);
         assert(cc == MPI_SUCCESS);
