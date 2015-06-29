@@ -1,7 +1,7 @@
 /* kmrmapmp.c (2015-06-04) */
 /* Copyright (C) 2012-2015 RIKEN AICS */
 
-/** \file kmrmapmp.c MPI Parappel Mapping on Key-Value Pairs. */
+/** \file kmrmapmp.c MPI Parallel Mapping on Key-Value Stream. */
 
 
 #include <mpi.h>
@@ -169,13 +169,34 @@ kmr_define_color_fn(const struct kmr_kv_box kv, const KMR_KVS *kvi,
     return MPI_SUCCESS;
 }
 
-/*
-   Group processes by key and run a mapper to consume key-value pairs
-   which has the key in parallel using processes in the group.
+/** Group processes by Key-Values that have the same keys, create an
+    MPI sub-communicators that contain the processes with the same key
+    and then run the specified task in each communicator in parallel.
+    Each process should have at most only one Key-Value in its input
+    KVS (KVI).  The sizes of sub-communicators depend on number of
+    Key-Values that have same keys.
 
-   TODO write document
-   TODO implement exceptional case
-   TODO rethink nice name
+    The parent communicator is 'KVI->c.mr->comm'.  Keys of Key-Value
+    in KVI is used as color (group id) for splitting the communicator.
+    RANK_KEY is used as key when assigning ranks to processes in a
+    sub-communicator.  A process which has a smaller value of RANK_KEY
+    is given a smaller value of rank.  The user-defined map-function,
+    M, is called against the Key-Value in KVI.  In the map-function,
+    the sub-communicator can be accessed by 'kvi->c.mr->comm' or
+    'kvo->c.mr->comm'.  Any MPI functions can be called by through
+    the sub-communicator.
+
+    It is a collective operation.  It supports checkpoint/restart,
+    but whole resultant KVO is taken as a checkpoint file once when
+    all key-value pairs are completely processed.
+
+    It consumes the input key-value stream KVI unless INSPECT option
+    is marked.  The output key-value stream KVO can be null, but in
+    that case, a map-function cannot add key-value pairs.
+    The pointer ARG is just passed to a map-function as a general
+    argument.  M is the map-function.  See the description on
+    the type ::kmr_mapfn_t.
+    Effective-options:  INSPECT, TAKE_CKPT.  See struct kmr_option.
 */
 
 int
