@@ -16,10 +16,37 @@ kmrhome = '@KMRHOME@'
 #  If file does not exist, it prints an error message and exit.
 #  @param path  file path for check.
 
-def checkexist(path):
+def _check_exist(path):
     if not os.path.exists(path):
         print >> sys.stderr, 'Error: file or dir "%s" is not exist.' % path
         sys.exit()
+    return path
+
+
+## Check if command in the specified command line exists.
+#  @param cmdline  a command line to be executed
+#  @param sched    string that represents scheduler type
+
+def check_cmdline(cmdline, sched):
+    _check_exist(cmdline.split()[0])
+    if sched.upper() == 'K':
+        cmdlns = cmdline.split()
+        cmdlns[0] = './' + os.path.basename(cmdlns[0])
+        return ' '.join(cmdlns)
+    else:
+        return cmdline
+
+## Check if command in the specified command line exists.
+#  @param dirname  name of directory where input files are located
+#  @param sched    string that represents scheduler type
+
+def check_indir(dirname, sched):
+    _check_exist(dirname)
+    if sched.upper() == 'K':
+        _dirname = dirname.rstrip().rstrip('/')
+        return './' + os.path.basename(_dirname)
+    else:
+        return dirname
 
 
 ## Check restart mode.
@@ -28,7 +55,7 @@ def checkexist(path):
 #  @param procstr           string that represents process number
 #  @param sched             string that represents scheduler type
 
-def checkrestart(restart_basename, procstr, sched):
+def check_restart(restart_basename, procstr, sched):
     if sched.upper() == 'K':
         if restart_basename is None: return
         ckpt_prefix = restart_basename + '.'
@@ -64,24 +91,6 @@ def checkrestart(restart_basename, procstr, sched):
         sys.stderr.write("*** Reduction mode. ***\n")
 
 
-## Update command path.
-#  @param cmd     path to a command
-
-def update_execpath(cmd):
-    if cmd:
-        m = re.match(r"^\./.+", cmd)
-        if not m:
-            m = re.match("^/.+", cmd)
-            if m:
-                print >> sys.stderr, \
-                    'Error: A program should be specified by a relative ' \
-                    'path from the current directory.'
-                sys.exit()
-            else:
-                cmd = './' + cmd
-    return cmd
-
-
 ## Parse K node declaration into an integer.
 #  @param shape_str       string that represents K node shape
 
@@ -104,9 +113,9 @@ def k_node_to_int(shape_str):
 #  @param template_path      path for template file
 #  @param shape              mpi process shape
 #  @param proc               number of execute proc
-#  @param mapper             mapper program
-#  @param kvgen              kv generator program
-#  @param reducer            reducer program
+#  @param mapper             mapper command line
+#  @param kvgen              kv generator command line
+#  @param reducer            reducer command line
 #  @param indir              directory where inputs are located(staged-in)
 #  @param ckpt               enable checkpoint
 #  @param restart_basename   prefix of checkpoint directory name
@@ -115,28 +124,31 @@ def k_scheduler(name, queue, rsctime, node, kmrrun_path, kmrrun_parameter,
                 template_path, shape, proc, mapper, kvgen, reducer, indir,
                 ckpt, restart_basename):
     # Stage in section
-    stginstr = ""
+    stginstr = ''
     if mapper:
         mapper_cmd = mapper.split()[0]
-        stginstr += '#PJM --stgin "%s %s"' % (mapper_cmd, mapper_cmd)
+        mapper_cmd_base = os.path.basename(mapper_cmd)
+        stginstr += '#PJM --stgin "%s %s"' % (mapper_cmd, mapper_cmd_base)
     if kvgen:
         if len(stginstr):
             stginstr += '\n'
         kvgen_cmd = kvgen.split()[0]
-        stginstr += '#PJM --stgin "%s %s"' % (kvgen_cmd, kvgen_cmd)
+        kvgen_cmd_base = os.path.basename(kvgen_cmd)
+        stginstr += '#PJM --stgin "%s %s"' % (kvgen_cmd, kvgen_cmd_base)
     if reducer:
         if len(stginstr):
             stginstr += '\n'
         reducer_cmd = reducer.split()[0]
-        stginstr += '#PJM --stgin "%s %s"' % (reducer_cmd, reducer_cmd)
+        reducer_cmd_base = os.path.basename(reducer_cmd)
+        stginstr += '#PJM --stgin "%s %s"' % (reducer_cmd, reducer_cmd_base)
     if len(stginstr):
         stginstr += '\n'
-    indir_stgin = './' + os.path.basename(indir)
+    indir_stgin = './' + os.path.basename(indir.rstrip().rstrip('/'))
     stginstr += '#PJM --stgin "%s/* %s/"' % (indir, indir_stgin)
     # Stage in ckpt files
     if restart_basename:
         fname = os.path.basename(restart_basename) + '.00000/nprocs'
-        nproc = int(open(fname).read().split("=")[1])
+        nproc = int(open(fname).read().split('=')[1])
         for rank in range(nproc):
             stginstr += '\n'
             stginstr += '#PJM --stgin "./%s.%05d/* ./ckptdir%05d/"' \
@@ -199,9 +211,9 @@ def select_scheduler(opts, sched):
     queue    = opts.queue
     node     = opts.node
     rsctime  = options.rsctime
-    mapper   = update_execpath(opts.mapper)
-    kvgen    = update_execpath(opts.kvgen)
-    reducer  = update_execpath(opts.reducer)
+    mapper   = check_cmdline(opts.mapper, sched)
+    kvgen    = check_cmdline(opts.kvgen, sched)
+    reducer  = check_cmdline(opts.reducer, sched)
     kmrrun_parameter = ''
     if opts.taskproc:
         kmrrun_parameter += '-n %s ' % (opts.taskproc)
@@ -213,7 +225,7 @@ def select_scheduler(opts, sched):
         kmrrun_parameter += '-r "%s" ' % (reducer)
     if opts.ckpt or opts.restart:
         kmrrun_parameter += '--ckpt '
-    kmrrun_parameter += './' + os.path.basename(opts.indir)
+    kmrrun_parameter += check_indir(opts.indir, sched)
     name = 'kmrrun_job'
     if opts.scrfile:
         name = opts.scrfile
@@ -222,8 +234,9 @@ def select_scheduler(opts, sched):
         script = k_scheduler(name, queue, rsctime, node, kmrrun_path,
                              kmrrun_parameter,
                              template_dir + '/kmrrungenscript.template.k',
-                             opts.shape, opts.proc, mapper, kvgen, reducer,
-                             opts.indir, opts.ckpt, opts.restart)
+                             opts.shape, opts.proc, opts.mapper, opts.kvgen,
+                             opts. reducer, opts.indir,
+                             opts.ckpt, opts.restart)
     elif sched.upper() == 'FOCUS':
         script = focus_scheduler(name, queue, rsctime, node, kmrrun_path,
                                  kmrrun_parameter,
@@ -405,12 +418,11 @@ if __name__ == "__main__":
             "Error: Specify kv generator when reducer is specified\n"
         sys.exit()
 
-    checkexist(options.indir)
     if options.ckpt:
         if options.sched == 'K':
-            checkrestart(options.restart, options.proc, 'K')
+            check_restart(options.restart, options.proc, 'K')
         else:
-            checkrestart(options.restart, '1', options.sched)
+            check_restart(options.restart, '1', options.sched)
 
     select_scheduler(options, options.sched)
     warn_stageout(options)

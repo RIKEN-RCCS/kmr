@@ -1338,7 +1338,9 @@ kmr_map_rank_by_rank(KMR_KVS *kvi, KMR_KVS *kvo,
 
 /** Extracts a single key-value pair locally in the key-value stream
     KVI.  It is an error when zero or more than one entries are in the
-    KVI.  It does not consume the input KVS (INSPECT IMPLIED). */
+    KVI.  It does not consume the input KVS (INSPECT IMPLIED).  The
+    returned key-value entry must be used before freeing the input
+    KVS, when it points to an opaque data. */
 
 int
 kmr_take_one(KMR_KVS *kvi, struct kmr_kv_box *kv)

@@ -4,7 +4,7 @@
 #ifndef _KMR_H
 #define _KMR_H
 
-#define KMR_H  20150622
+#define KMR_H  20150629
 
 /** \file kmr.h KMR Interface.  GENERAL NOTES.  (1) The sizes of
     key-value fields are rounded up to 8-byte boundary. */
