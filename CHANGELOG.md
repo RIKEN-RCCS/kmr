@@ -1,3 +1,8 @@
+## 1.7.1 (2015-06-29)
+
+- BUGFIX: kmr_take_one()
+- BUGFIX: kmrrungenscript.py
+
 ## 1.7 (2015-06-22)
 
 - Change license to BSD
