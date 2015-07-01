@@ -592,7 +592,8 @@ union kmr_kvs {
     rank.  TAKE_CKPT tells kmr functions that support
     Checkpoint/Restart to take checkpoints of the output key-value
     stream when CKPT_SELECTIVE global option is enabled.  RANK_ZERO
-    tells kmr_replicate() to gather pairs on rank0 only.  (COLLAPSE
+    tells kmr_replicate() to gather pairs on rank0 only and
+    kmr_map_multiprocess() to process pairs on rank0 only.  (COLLAPSE
     tells a mapper to convert pointer data to opaque.  Conversions of
     data fields are needed in advance to exchanging data in shuffling.
     It is mainly intended internal use only).  The padding fields make

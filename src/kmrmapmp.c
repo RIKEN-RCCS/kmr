@@ -21,22 +21,32 @@ kmr_add_on_rank_zero_fn(const struct kmr_kv_box kv, const KMR_KVS *kvi,
     return MPI_SUCCESS;
 }
 
-/** Maps key-value pair stored in rank 0 in parallel using multiple
-    processes.  All other key-value pairs stored in other ranks are
-    ignored.  To process key-value pairs stored in other ranks, call
-    kmr_replicate() to gather all key-value pairs on rank 0 before
-    calling this function.  All ranks that call this function are
-    grouped to form sub-communicators whose maximum communicator
-    sizes are MAX_NPROCS.  The maximum number of sub-communicators
-    is kvi->c.mr->nprocs / MAX_NPROCS.
+/** Maps key-value pairs using multiple processes.
+    All ranks that call this function are grouped to form
+    sub-communicators whose maximum communicator sizes are
+    MAX_NPROCS.  The number of sub-communicators can be calculated
+    by kvi->c.mr->nprocs / MAX_NPROCS (kvi is a parameter to this
+    function).  The sub-communicator can be accessed by
+    'kvi->c.mr->comm' or 'kvo->c.mr->comm' from the user-defined
+    map-function.  Here kvi and kvo are parameters for the
+    map-function, not the parameter to this function.
+    Any MPI functions can be called by using the sub-communicator.
 
-    The key-value pairs in rank 0 are scattered to the sub-communicators.
-    In each sub-communicator, each rank receives the same key-value
-    pair at the same map-function calls.  In the user-defined
-    map-function, M, the sub-communicator can be accessed by
-    'kvi->c.mr->comm' or 'kvo->c.mr->comm'.  Any MPI functions can
-    be called by specifying the sub-communicator to process the given
-    key-value pair using multiple processes.
+    Without any option, all key-value pairs in each group are processed
+    inside the group.  When processing a key-value pair, all ranks
+    in a group call the map-function given the same key-value pair
+    as a parameter.  This means that a target key-value pair is
+    broadcasted to all ranks in the group before processing.
+    This is repeated until all the key-value pairs in the group
+    are processed.
+
+    When RANK_ZERO option is given, only key-value pairs in rank 0
+    are processed and all other key-value pairs stored on other
+    ranks are ignored.  In this case, key-value pairs in rank 0
+    are scattered to rank 0 processes in the sub-communicators.
+    In each sub-communicator, the rank 0 process broadcasts the
+    key-values to other ranks, and then each rank calls the
+    map-function as the above.
 
     It is a collective operation.  It supports checkpoint/restart,
     but whole resultant KVO is taken as a checkpoint file once when
@@ -48,7 +58,8 @@ kmr_add_on_rank_zero_fn(const struct kmr_kv_box kv, const KMR_KVS *kvi,
     The pointer ARG is just passed to a map-function as a general
     argument.  M is the map-function.  See the description on
     the type ::kmr_mapfn_t.
-    Effective-options:  INSPECT, TAKE_CKPT.  See struct kmr_option.
+    Effective-options:  INSPECT, RANK_ZERO, TAKE_CKPT.
+    See struct kmr_option.
 */
 
 int
@@ -57,7 +68,8 @@ kmr_map_multiprocess(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
 {
     kmr_assert_kvs_ok(kvi, kvo, 1, 0);
     KMR *mr = kvi->c.mr;
-    struct kmr_option opt_supported = {.inspect = 1, .take_ckpt = 1};
+    struct kmr_option opt_supported = {.inspect = 1, .rank_zero = 1,
+                                       .take_ckpt = 1};
     kmr_check_fn_options(mr, opt_supported, opt, __func__);
     int cc;
 
@@ -84,34 +96,42 @@ kmr_map_multiprocess(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
     MPI_Comm_split(mr->comm, task_color, mr->rank, &task_comm);
     KMR *task_mr = kmr_create_context(task_comm, MPI_INFO_NULL, 0);
 
-    /* distribute key-values in root (rank0 in mr->comm) to
-       rank0 processes in sub-communicators */
-    MPI_Comm root_comm;
-    int task_rank;
-    MPI_Comm_rank(task_comm, &task_rank);
-    int root_color = (task_rank == 0)? 1 : 0;
-    MPI_Comm_split(mr->comm, root_color, mr->rank, &root_comm);
-
     enum kmr_kv_field kvi_keyf = kmr_unit_sized_or_opaque(kvi->c.key_data);
     enum kmr_kv_field kvi_valf = kmr_unit_sized_or_opaque(kvi->c.value_data);
+
     KMR_KVS *kvs0 = kmr_create_kvs(task_mr, kvi_keyf, kvi_valf);
-    if (task_rank == 0) {
-        KMR *rmr = kmr_create_context(root_comm, MPI_INFO_NULL, 0);
-        KMR_KVS *_kvs0 = kmr_create_kvs(rmr, kvi_keyf, kvi_valf);
-        struct kmr_option inspect = {.inspect = 1};
-        cc = kmr_map(kvi, _kvs0, 0, inspect, kmr_add_on_rank_zero_fn);
-        assert(cc == MPI_SUCCESS);
-        KMR_KVS *_kvs1 = kmr_create_kvs(rmr, kvi_keyf, kvi_valf);
-        cc = kmr_distribute(_kvs0, _kvs1, 0, kmr_noopt);
-        assert(cc == MPI_SUCCESS);
-        cc = kmr_map(_kvs1, kvs0, 0, kmr_noopt, kmr_add_identity_fn);
-        assert(cc == MPI_SUCCESS);
-        cc = kmr_free_context(rmr);
-        assert(cc == MPI_SUCCESS);
+    if (opt.rank_zero) {
+        /* distribute key-values in root (rank0 in mr->comm) to
+           rank0 processes in sub-communicators */
+        MPI_Comm root_comm;
+        int task_rank;
+        MPI_Comm_rank(task_comm, &task_rank);
+        int root_color = (task_rank == 0)? 1 : 0;
+        MPI_Comm_split(mr->comm, root_color, mr->rank, &root_comm);
+
+        if (task_rank == 0) {
+            KMR *rmr = kmr_create_context(root_comm, MPI_INFO_NULL, 0);
+            KMR_KVS *_kvs0 = kmr_create_kvs(rmr, kvi_keyf, kvi_valf);
+            struct kmr_option inspect = {.inspect = 1};
+            cc = kmr_map(kvi, _kvs0, 0, inspect, kmr_add_on_rank_zero_fn);
+            assert(cc == MPI_SUCCESS);
+            KMR_KVS *_kvs1 = kmr_create_kvs(rmr, kvi_keyf, kvi_valf);
+            cc = kmr_distribute(_kvs0, _kvs1, 0, kmr_noopt);
+            assert(cc == MPI_SUCCESS);
+            cc = kmr_map(_kvs1, kvs0, 0, kmr_noopt, kmr_add_identity_fn);
+            assert(cc == MPI_SUCCESS);
+            cc = kmr_free_context(rmr);
+            assert(cc == MPI_SUCCESS);
+        } else {
+            kmr_add_kv_done(kvs0);
+        }
+        MPI_Comm_free(&root_comm);
     } else {
-        kmr_add_kv_done(kvs0);
+        /* prepare for replicating key-values in each sub-communicator */
+        struct kmr_option inspect = {.inspect = 1};
+        cc = kmr_map(kvi, kvs0, 0, inspect, kmr_add_identity_fn);
+        assert(cc == MPI_SUCCESS);
     }
-    MPI_Comm_free(&root_comm);
 
     /* distribute key-values in each sub-communicator */
     KMR_KVS *kvs1 = kmr_create_kvs(task_mr, kvi_keyf, kvi_valf);
