@@ -146,8 +146,19 @@ kmr_map_multiprocess(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
 }
 
 static int
-kmr_reduce_zero_key_fn(const struct kmr_kv_box kv[], const long n,
-                       const KMR_KVS *kvi, KMR_KVS *kvo, void *p)
+kmr_m_zero_val_kv_fn(const struct kmr_kv_box kv, const KMR_KVS *kvi,
+                     KMR_KVS *kvo, void *arg, const long i)
+{
+    struct kmr_kv_box nkv = {
+        .klen = kv.klen,      .k = kv.k,
+        .vlen = sizeof(long), .v.i = 0 };
+        kmr_add_kv(kvo, nkv);
+        return MPI_SUCCESS;
+}
+
+static int
+kmr_r_zero_key_kv_fn(const struct kmr_kv_box kv[], const long n,
+                     const KMR_KVS *kvi, KMR_KVS *kvo, void *p)
 {
     struct kmr_kv_box nkv = {
         .klen = sizeof(long), .k.i = 0,
@@ -225,23 +236,25 @@ kmr_map_multiprocess_by_key(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
 
     /* gather key info. on rank0 in mr->comm to assign color */
 
-    KMR_KVS *kvs0 = kmr_create_kvs(mr, kvi_keyf, kvi_valf);
-    cc = kmr_shuffle(kvi, kvs0, inspect);
+    KMR_KVS *kvs0 = kmr_create_kvs(mr, kvi_keyf, KMR_KV_INTEGER);
+    cc = kmr_map(kvi, kvs0, 0, inspect, kmr_m_zero_val_kv_fn);
+    KMR_KVS *kvs1 = kmr_create_kvs(mr, kvi_keyf, KMR_KV_INTEGER);
+    cc = kmr_shuffle(kvs0, kvs1, kmr_noopt);
     assert(cc == MPI_SUCCESS);
-    KMR_KVS *kvs1 = kmr_create_kvs(mr, KMR_KV_INTEGER, kvi_keyf);
-    cc = kmr_reduce(kvs0, kvs1, 0, kmr_noopt, kmr_reduce_zero_key_fn);
+    KMR_KVS *kvs2 = kmr_create_kvs(mr, KMR_KV_INTEGER, kvi_keyf);
+    cc = kmr_reduce(kvs1, kvs2, 0, kmr_noopt, kmr_r_zero_key_kv_fn);
     assert(cc == MPI_SUCCESS);
     /* gather on a rank (rank0) as the previously generated key is 0 */
-    KMR_KVS *kvs2 = kmr_create_kvs(mr, KMR_KV_INTEGER, kvi_keyf);
-    cc = kmr_shuffle(kvs1, kvs2, kmr_noopt);
+    KMR_KVS *kvs3 = kmr_create_kvs(mr, KMR_KV_INTEGER, kvi_keyf);
+    cc = kmr_shuffle(kvs2, kvs3, kmr_noopt);
     assert(cc == MPI_SUCCESS);
     /* define comm colors to keys on a rank (rank0) */
-    KMR_KVS *kvs3 = kmr_create_kvs(mr, kvi_keyf, KMR_KV_INTEGER);
-    cc = kmr_map(kvs2, kvs3, 0, kmr_noopt, kmr_define_color_fn);
+    KMR_KVS *kvs4 = kmr_create_kvs(mr, kvi_keyf, KMR_KV_INTEGER);
+    cc = kmr_map(kvs3, kvs4, 0, kmr_noopt, kmr_define_color_fn);
     assert(cc == MPI_SUCCESS);
     /* distribute the color assignment to all ranks */
-    KMR_KVS *kvs4 = kmr_create_kvs(mr, kvi_keyf, KMR_KV_INTEGER);
-    cc = kmr_replicate(kvs3, kvs4, kmr_noopt);
+    KMR_KVS *kvs5 = kmr_create_kvs(mr, kvi_keyf, KMR_KV_INTEGER);
+    cc = kmr_replicate(kvs4, kvs5, kmr_noopt);
     assert(cc == MPI_SUCCESS);
     /* assign color */
     int task_color = 0;
@@ -252,11 +265,11 @@ kmr_map_multiprocess_by_key(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
         struct kmr_kv_box ki, ko;
         cc = kmr_take_one(kvi, &ki);
         assert(cc == MPI_SUCCESS);
-        cc = kmr_find_key(kvs4, ki, &ko);
+        cc = kmr_find_key(kvs5, ki, &ko);
         assert(cc == MPI_SUCCESS);
         task_color = (int)ko.v.i;
     }
-    kmr_free_kvs(kvs4);
+    kmr_free_kvs(kvs5);
 
     /* split communicator */
     MPI_Comm task_comm;
