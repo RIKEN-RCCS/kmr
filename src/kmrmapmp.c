@@ -23,10 +23,12 @@ kmr_add_on_rank_zero_fn(const struct kmr_kv_box kv, const KMR_KVS *kvi,
 
 /** Maps key-value pair stored in rank 0 in parallel using multiple
     processes.  All other key-value pairs stored in other ranks are
-    ignored.  All ranks that call this function are grouped to form
-    sub-communicators whose maximum communicator sizes are MAX_NPROCS.
-    The maximum number of sub-communicators is
-    kvi->c.mr->nprocs / MAX_NPROCS.
+    ignored.  To process key-value pairs stored in other ranks, call
+    kmr_replicate() to gather all key-value pairs on rank 0 before
+    calling this function.  All ranks that call this function are
+    grouped to form sub-communicators whose maximum communicator
+    sizes are MAX_NPROCS.  The maximum number of sub-communicators
+    is kvi->c.mr->nprocs / MAX_NPROCS.
 
     The key-value pairs in rank 0 are scattered to the sub-communicators.
     In each sub-communicator, each rank receives the same key-value
@@ -146,8 +148,8 @@ kmr_map_multiprocess(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
 }
 
 static int
-kmr_m_zero_val_kv_fn(const struct kmr_kv_box kv, const KMR_KVS *kvi,
-                     KMR_KVS *kvo, void *arg, const long i)
+kmr_remove_val_fn(const struct kmr_kv_box kv, const KMR_KVS *kvi,
+                  KMR_KVS *kvo, void *arg, const long i)
 {
     struct kmr_kv_box nkv = {
         .klen = kv.klen,      .k = kv.k,
@@ -157,8 +159,8 @@ kmr_m_zero_val_kv_fn(const struct kmr_kv_box kv, const KMR_KVS *kvi,
 }
 
 static int
-kmr_r_zero_key_kv_fn(const struct kmr_kv_box kv[], const long n,
-                     const KMR_KVS *kvi, KMR_KVS *kvo, void *p)
+kmr_zero_key_fn(const struct kmr_kv_box kv[], const long n,
+                const KMR_KVS *kvi, KMR_KVS *kvo, void *p)
 {
     struct kmr_kv_box nkv = {
         .klen = sizeof(long), .k.i = 0,
@@ -180,22 +182,22 @@ kmr_define_color_fn(const struct kmr_kv_box kv, const KMR_KVS *kvi,
     return MPI_SUCCESS;
 }
 
-/** Group processes by Key-Values that have the same keys, create an
-    MPI sub-communicators that contain the processes with the same key
-    and then run the specified task in each communicator in parallel.
-    Each process should have at most only one Key-Value in its input
-    KVS (KVI).  The sizes of sub-communicators depend on number of
-    Key-Values that have same keys.
+/** Group processes by key-value pairs that have the same keys, create
+    an MPI sub-communicators that contain the processes with the same
+    key and then run the specified task in each communicator in parallel.
+    Each process should have at most only one key-value pair in its
+    input KVS (KVI).  The sizes of sub-communicators depend on number
+    of key-value pairs that have same keys.
 
-    The parent communicator is 'KVI->c.mr->comm'.  Keys of Key-Value
-    in KVI is used as color (group id) for splitting the communicator.
-    RANK_KEY is used as key when assigning ranks to processes in a
-    sub-communicator.  A process which has a smaller value of RANK_KEY
-    is given a smaller value of rank.  The user-defined map-function,
-    M, is called against the Key-Value in KVI.  In the map-function,
-    the sub-communicator can be accessed by 'kvi->c.mr->comm' or
-    'kvo->c.mr->comm'.  Any MPI functions can be called by through
-    the sub-communicator.
+    The parent communicator is 'KVI->c.mr->comm'.  Keys of key-value
+    pair in KVIs is used as color (group id) for splitting the
+    communicator.  RANK_KEY is used as key when assigning ranks to
+    processes in a sub-communicator.  A process which has a smaller
+    value of RANK_KEY is given a smaller value of rank.  The
+    user-defined map-function, M, is called against the key-value pair
+    in KVI.  In the map-function, the sub-communicator can be accessed
+    by 'kvi->c.mr->comm' or 'kvo->c.mr->comm'.  Any MPI functions can
+    be called by through the sub-communicator.
 
     It is a collective operation.  It supports checkpoint/restart,
     but whole resultant KVO is taken as a checkpoint file once when
@@ -237,12 +239,12 @@ kmr_map_multiprocess_by_key(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
     /* gather key info. on rank0 in mr->comm to assign color */
 
     KMR_KVS *kvs0 = kmr_create_kvs(mr, kvi_keyf, KMR_KV_INTEGER);
-    cc = kmr_map(kvi, kvs0, 0, inspect, kmr_m_zero_val_kv_fn);
+    cc = kmr_map(kvi, kvs0, 0, inspect, kmr_remove_val_fn);
     KMR_KVS *kvs1 = kmr_create_kvs(mr, kvi_keyf, KMR_KV_INTEGER);
     cc = kmr_shuffle(kvs0, kvs1, kmr_noopt);
     assert(cc == MPI_SUCCESS);
     KMR_KVS *kvs2 = kmr_create_kvs(mr, KMR_KV_INTEGER, kvi_keyf);
-    cc = kmr_reduce(kvs1, kvs2, 0, kmr_noopt, kmr_r_zero_key_kv_fn);
+    cc = kmr_reduce(kvs1, kvs2, 0, kmr_noopt, kmr_zero_key_fn);
     assert(cc == MPI_SUCCESS);
     /* gather on a rank (rank0) as the previously generated key is 0 */
     KMR_KVS *kvs3 = kmr_create_kvs(mr, KMR_KV_INTEGER, kvi_keyf);
