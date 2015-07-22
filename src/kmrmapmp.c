@@ -95,6 +95,7 @@ kmr_map_multiprocess(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
     int task_color = mr->rank / max_nprocs;
     MPI_Comm_split(mr->comm, task_color, mr->rank, &task_comm);
     KMR *task_mr = kmr_create_context(task_comm, MPI_INFO_NULL, 0);
+    task_mr->preset_block_size = mr->preset_block_size;
 
     enum kmr_kv_field kvi_keyf = kmr_unit_sized_or_opaque(kvi->c.key_data);
     enum kmr_kv_field kvi_valf = kmr_unit_sized_or_opaque(kvi->c.value_data);
@@ -111,6 +112,7 @@ kmr_map_multiprocess(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
 
         if (task_rank == 0) {
             KMR *rmr = kmr_create_context(root_comm, MPI_INFO_NULL, 0);
+            rmr->preset_block_size = mr->preset_block_size;
             KMR_KVS *_kvs0 = kmr_create_kvs(rmr, kvi_keyf, kvi_valf);
             struct kmr_option inspect = {.inspect = 1};
             cc = kmr_map(kvi, _kvs0, 0, inspect, kmr_add_on_rank_zero_fn);
@@ -297,6 +299,7 @@ kmr_map_multiprocess_by_key(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
     MPI_Comm task_comm;
     MPI_Comm_split(mr->comm, task_color, rank_key, &task_comm);
     KMR *task_mr = kmr_create_context(task_comm, MPI_INFO_NULL, 0);
+    task_mr->preset_block_size = mr->preset_block_size;
 
     /* create input kvs that uses task_comm */
     KMR_KVS *task_kvs0 = kmr_create_kvs(task_mr, kvi_keyf, kvi_valf);
