@@ -25,7 +25,7 @@ read_ids_from_a_file(const struct kmr_kv_box kv0,
     
     while(fgets(buf, BUF_MAX, f) != NULL){
         int FromNodeId, ToNodeId;
-        // skip comment line and etc...
+        // skip comment or space or something...
         if(!isdigit(buf[0])){
             continue;
         }
@@ -60,15 +60,15 @@ sum_toids_for_a_fromid(const struct kmr_kv_box kv[], const long n,
                        const KMR_KVS *kvs, KMR_KVS *kvo, void *p)
 {
     // Reduce function
-    long *ToNodeIds;
-    NODE_PAGERANK np;
-    
+
     // make key: [url, pagerank]
-    np.node_id = kv[0].k.i;
-    np.pagerank = 1.0;
+    NODE_PAGERANK np = {
+        .node_id = kv[0].k.i,
+        .pagerank = 1.0
+    };    
 
     // make val: outlink_list
-    ToNodeIds = malloc((size_t)((long)sizeof(long) * n));
+    long *ToNodeIds = malloc((size_t)((long)sizeof(long) * n));
     for(int i = 0;i < n; i++){
         ToNodeIds[i] = kv[i].v.i;
     }
@@ -95,16 +95,15 @@ calc_pagerank_drain(const struct kmr_kv_box kv0,
     // get key: [url, pagerank], value: outlink_list 
     long  n = kv0.vlen / (long)sizeof(long);
     NODE_PAGERANK *np = (NODE_PAGERANK *)(kv0.k.p);
-    double pagerank_drain = np->pagerank / (double)n;
 
     for(int j = 0; j < n; j++){
+        double pagerank_drain = np->pagerank / (double)n;
         long ToNodeId = ((long *)(kv0.v.p))[j];
         int vlen = sizeof(DATA_HEADER) + sizeof(double);
         DATA_HEADER *drain_header = malloc((size_t)vlen);
         drain_header->type = PAGERANK;
         drain_header->size = sizeof(double);
         *((double *)(drain_header + 1)) = pagerank_drain;
-
 
         // emit( key: outlink, value: pagerank/size(outlink_list) )
         struct kmr_kv_box kv = {
@@ -146,11 +145,11 @@ sum_pagerank_for_a_toid(const struct kmr_kv_box kv[], const long n,
     double pagerank = 0.0;
     NODE_PAGERANK np = {.node_id = 0, .pagerank = 0.0};
     struct kmr_kv_box kvn = {.klen = 0};
+    np.node_id = kv[0].k.i;
 
     for(int i = 0; i < n; i++){
         DATA_HEADER *h = (DATA_HEADER *)(kv[i].v.p);
         if(h->type == TO_IDS){
-            np.node_id = kv[i].k.i;
             kvn.vlen = (int)h->size;
             kvn.v.p  = (char *)(h + 1);
         }
@@ -230,7 +229,7 @@ main(int argc, char **argv)
 
 
 
-    //// calculate pagegraph ////
+    //// calculate pagerank ////
     KMR_KVS *kvs3;
 
     for(int i = 0; i < 100; i++){
