@@ -15,10 +15,10 @@ read_ids_from_a_file(const struct kmr_kv_box kv0,
     // Map function
     assert(kvi == 0 && kv0.klen == 0 && kv0.vlen == 0 && kvo != 0);
     char buf[BUF_MAX];
-    FILE *f = fopen("web-NotreDame.txt", "r");
+    FILE *f = fopen((char *)p, "r");
     //  FILE *f = fopen("simple_graph.txt", "r");
     if (f == 0) {
-        perror("Cannot open a file \"web-NotreDame.txt\"; fopen(web-NotreDame.txt)");
+        fprintf(stderr, "Cannot open a file \"%s\"; fopen(%s)\n", (char *)p, (char *)p);
         MPI_Abort(MPI_COMM_WORLD, 1);
         return 0;
     }
@@ -208,6 +208,14 @@ main(int argc, char **argv)
     MPI_Init_thread(&argc, &argv, MPI_THREAD_SERIALIZED, &thlv);
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    if(argc != 2){
+        if(rank == 0){ fprintf(stderr, "Please set web-graph filename.\n"); }
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+    char filename[BUF_MAX];
+    strncpy(filename, argv[1], BUF_MAX);
+
     kmr_init();
     KMR *mr = kmr_create_context(MPI_COMM_WORLD, MPI_INFO_NULL, 0);
 
@@ -217,7 +225,7 @@ main(int argc, char **argv)
     //// initialize ////
     // load web-graph from file
     KMR_KVS *kvs0 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_INTEGER);
-    kmr_map_once(kvs0, 0, kmr_noopt, 1, read_ids_from_a_file);
+    kmr_map_once(kvs0, filename, kmr_noopt, 1, read_ids_from_a_file);
 
     // share local kvs to all node
     KMR_KVS *kvs1 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_INTEGER);
@@ -252,8 +260,12 @@ main(int argc, char **argv)
     KMR_KVS *kvs_fin = kmr_create_kvs(mr, KMR_KV_FLOAT8, KMR_KV_INTEGER);
     kmr_map(kvs2, kvs_fin, 0, kmr_noopt, convert_kvs_pagerank_and_fromid);
 
+    /* KMR_KVS *kvs_shuffled_fin = kmr_create_kvs(mr, KMR_KV_FLOAT8, KMR_KV_INTEGER); */
+    /* kmr_shuffle(kvs_fin, kvs_shuffled_fin, kmr_noopt); */
+
     // sort
     KMR_KVS *kvs_sorted_fin = kmr_create_kvs(mr, KMR_KV_FLOAT8, KMR_KV_INTEGER);
+    //    kmr_sort(kvs_shuffled_fin, kvs_sorted_fin, kmr_noopt);
     kmr_sort(kvs_fin, kvs_sorted_fin, kmr_noopt);
 
     // show top5 pagerank and FromId
