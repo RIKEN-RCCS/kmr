@@ -280,16 +280,13 @@ main(int argc, char **argv)
     KMR_KVS *kvs_fin = kmr_create_kvs(mr, KMR_KV_FLOAT8, KMR_KV_INTEGER);
     kmr_map(kvs2, kvs_fin, 0, kmr_noopt, convert_kvs_pagerank_and_fromid);
 
-    /* KMR_KVS *kvs_shuffled_fin = kmr_create_kvs(mr, KMR_KV_FLOAT8, KMR_KV_INTEGER); */
-    /* kmr_shuffle(kvs_fin, kvs_shuffled_fin, kmr_noopt); */
-
     // sort
     KMR_KVS *kvs_sorted_fin = kmr_create_kvs(mr, KMR_KV_FLOAT8, KMR_KV_INTEGER);
-    //    kmr_sort(kvs_shuffled_fin, kvs_sorted_fin, kmr_noopt);
     kmr_sort(kvs_fin, kvs_sorted_fin, kmr_noopt);
 
     // show top5 pagerank and FromId
-    kmr_map(kvs_sorted_fin, 0, 0, kmr_noopt, print_top_five);
+    struct kmr_option kmr_noth = {.nothreading = 1};
+    kmr_map(kvs_sorted_fin, 0, 0, kmr_noth, print_top_five);
 
 
     // finish
