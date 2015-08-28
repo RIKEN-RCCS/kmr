@@ -5,6 +5,10 @@
 #include "kmr.h"
 #include <ctype.h>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 #define BUF_MAX 512
 #define DAMPING_FACTOR 0.85
 
@@ -220,7 +224,7 @@ main(int argc, char **argv)
     KMR *mr = kmr_create_context(MPI_COMM_WORLD, MPI_INFO_NULL, 0);
 
     MPI_Barrier(MPI_COMM_WORLD);
-    if (rank == 0) {printf("Ranking words...\n");}
+    if (rank == 0) {printf("Ranking pages...\n");}
 
     //// initialize ////
     // load web-graph from file
@@ -240,6 +244,10 @@ main(int argc, char **argv)
     //// calculate pagerank ////
     KMR_KVS *kvs3;
 
+    // get start time
+    MPI_Barrier(MPI_COMM_WORLD);
+    double stime = MPI_Wtime();
+
     for(int i = 0; i < 100; i++){
         // set pagerank drain
         kvs3 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_OPAQUE);
@@ -254,6 +262,18 @@ main(int argc, char **argv)
         kmr_reduce(kvs4, kvs2, 0, kmr_noopt, sum_pagerank_for_a_toid);
     }
 
+    MPI_Barrier(MPI_COMM_WORLD);
+    double etime = MPI_Wtime();
+    if(rank == 0){
+        printf("///// Information /////\n");
+        printf("MPI nprocs\t\t\t: %d\n", nprocs);
+#ifdef _OPENMP
+        printf("OMP_MAX_THREADS\t\t: %d\n", (int)omp_get_max_threads());
+#endif
+        printf("calculation time\t: %lf seconds\n", etime - stime);
+        printf("\n");
+        printf("///// Top 5 pagerank /////\n");
+    }
   
     //// print result ////
     // convert [key:[FromId, pagerank], val: ToId list] to [key: pagerank, val: FromId]
