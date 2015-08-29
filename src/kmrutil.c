@@ -1128,6 +1128,7 @@ kmr_check_options(KMR *mr, MPI_Info info)
 	printf("[%05d] trace_file_io=%d\n", r, mr->trace_file_io);
 	printf("[%05d] trace_map_ms=%d\n", r, mr->trace_map_ms);
 	printf("[%05d] trace_map_spawn=%d\n", r, mr->trace_map_spawn);
+	printf("[%05d] trace_map_mp=%d\n", r, mr->trace_map_mp);
 	printf("[%05d] trace_alltoall=%d\n", r, mr->trace_alltoall);
 	printf("[%05d] trace_kmrdp=%d\n", r, mr->trace_kmrdp);
 	printf("[%05d] std_abort=%d\n", r, mr->std_abort);
@@ -1204,6 +1205,12 @@ kmr_set_option_by_strings(KMR *mr, char *k, char *v)
 	    mr->trace_map_spawn = (_Bool)x;
 	} else {
 	    kmr_warning(mr, 1, "option trace_map_spawn be boolean");
+	}
+    } else if (strcasecmp("trace_map_mp", k) == 0) {
+	if (kmr_parse_boolean(v, &x)) {
+	    mr->trace_map_mp = (_Bool)x;
+	} else {
+	    kmr_warning(mr, 1, "option trace_map_mp be boolean");
 	}
     } else if (strcasecmp("std_abort", k) == 0) {
 	if (kmr_parse_boolean(v, &x)) {

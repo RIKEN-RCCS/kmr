@@ -243,6 +243,7 @@ kmr_create_context(const MPI_Comm comm, const MPI_Info conf,
     mr->trace_file_io = 0;
     mr->trace_map_ms = 0;
     mr->trace_map_spawn = 0;
+    mr->trace_map_mp = 0;
     mr->trace_alltoall = 0;
     mr->trace_kmrdp = 0;
     mr->trace_iolb = 0;

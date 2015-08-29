@@ -240,6 +240,7 @@ kmr_map_multiprocess_by_key(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
 {
     kmr_assert_kvs_ok(kvi, kvo, 1, 0);
     KMR *mr = kvi->c.mr;
+    _Bool tracing5 = (mr->trace_map_mp && (5 <= mr->verbosity));
     struct kmr_option opt_supported = {.inspect = 1, .take_ckpt = 1};
     kmr_check_fn_options(mr, opt_supported, opt, __func__);
     int cc;
@@ -257,9 +258,11 @@ kmr_map_multiprocess_by_key(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
     enum kmr_kv_field kvi_keyf = kmr_unit_sized_or_opaque(kvi->c.key_data);
     enum kmr_kv_field kvi_valf = kmr_unit_sized_or_opaque(kvi->c.value_data);
     struct kmr_option inspect = {.inspect = 1};
+    double timestamp[7];
 
     /* gather key info. on rank0 in mr->comm to assign color */
 
+    timestamp[0] = MPI_Wtime();
     KMR_KVS *kvs0 = kmr_create_kvs(mr, kvi_keyf, KMR_KV_INTEGER);
     cc = kmr_map(kvi, kvs0, 0, inspect, kmr_remove_val_fn);
     KMR_KVS *kvs1 = kmr_create_kvs(mr, kvi_keyf, KMR_KV_INTEGER);
@@ -272,10 +275,14 @@ kmr_map_multiprocess_by_key(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
     KMR_KVS *kvs3 = kmr_create_kvs(mr, KMR_KV_INTEGER, kvi_keyf);
     cc = kmr_shuffle(kvs2, kvs3, kmr_noopt);
     assert(cc == MPI_SUCCESS);
+    timestamp[1] = MPI_Wtime();
+
     /* define comm colors to keys on a rank (rank0) */
     KMR_KVS *kvs4 = kmr_create_kvs(mr, kvi_keyf, KMR_KV_INTEGER);
     cc = kmr_map(kvs3, kvs4, 0, kmr_noopt, kmr_define_color_fn);
     assert(cc == MPI_SUCCESS);
+    timestamp[2] = MPI_Wtime();
+
     /* distribute the color assignment to all ranks */
     KMR_KVS *kvs5 = kmr_create_kvs(mr, kvi_keyf, KMR_KV_INTEGER);
     cc = kmr_replicate(kvs4, kvs5, kmr_noopt);
@@ -294,6 +301,7 @@ kmr_map_multiprocess_by_key(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
         task_color = (int)ko.v.i;
     }
     kmr_free_kvs(kvs5);
+    timestamp[3] = MPI_Wtime();
 
     /* split communicator */
     MPI_Comm task_comm;
@@ -313,11 +321,13 @@ kmr_map_multiprocess_by_key(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
         enum kmr_kv_field kvo_valf = kmr_unit_sized_or_opaque(kvo->c.value_data);
         task_kvs1 = kmr_create_kvs(task_mr, kvo_keyf, kvo_valf);
     }
+    timestamp[4] = MPI_Wtime();
 
     /* call map function */
     struct kmr_option nothreading = {.nothreading=1};
     cc = kmr_map(task_kvs0, task_kvs1, arg, nothreading, m);
     assert(cc == MPI_SUCCESS);
+    timestamp[5] = MPI_Wtime();
 
     /* copy results to kvo and post-process */
     if (kvo != 0) {
@@ -327,6 +337,21 @@ kmr_map_multiprocess_by_key(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
     cc = kmr_free_context(task_mr);
     assert(cc == MPI_SUCCESS);
     MPI_Comm_free(&task_comm);
+    timestamp[6] = MPI_Wtime();
+
+    if (tracing5) {
+	fprintf(stderr, (";;KMR [%05d] timing of kmr_map_multiprocess_by_key:"
+			 " collect=%f calc=%f share=%f setup=%f exec=%f"
+			 " clenup=%f (msec)\n"),
+		mr->rank,
+		timestamp[1] - timestamp[0],
+		timestamp[2] - timestamp[1],
+		timestamp[3] - timestamp[2],
+		timestamp[4] - timestamp[3],
+		timestamp[5] - timestamp[4],
+		timestamp[6] - timestamp[5]);
+	fflush(0);
+    }
 
     kmr_ckpt_enable_ckpt(mr, kcdc);
     if (kmr_ckpt_enabled(mr)) {

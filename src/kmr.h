@@ -183,7 +183,7 @@ struct kmr_code_line { const char *file; const char *func; int line; };
     disables a prior sorting step which sort on (packed/hashed)
     integer keys in local sorting.  STEP_SYNC is to call a barrier at
     each operation step for debugging.  TRACE_FILE_IO, TRACE_MAP_MS,
-    and TRACE_MAP_SPAWN let dump trace output for debugging.
+    TRACE_MAP_SPAWN and TRACE_MAP_MP let dump trace output for debugging.
     (TRACE_ALLTOALL lets dump trace output on communication for
     debugging internals).  TRACE_KMRDP lets dump timing information of
     run of KMR-DP.  STD_ABORT lets use abort() instead of MPI_Abort()
@@ -266,6 +266,7 @@ struct kmr_ctx {
     _Bool trace_file_io : 1;
     _Bool trace_map_ms : 1;
     _Bool trace_map_spawn : 1;
+    _Bool trace_map_mp : 1;
     _Bool trace_alltoall : 1;
     _Bool trace_kmrdp : 1;
     _Bool trace_iolb : 1;

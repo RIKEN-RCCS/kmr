@@ -114,6 +114,8 @@ test_map_multiprocess0(int rank)
     int cc;
     KMR *mr = kmr_create_context(MPI_COMM_WORLD, MPI_INFO_NULL, 0);
     assert(mr != 0);
+    mr->verbosity = 5;
+    mr->trace_map_mp = 1;
 
     /* Put key-value pairs. */
     int N = 10;
@@ -238,6 +240,8 @@ test_map_multiprocess1(int rank)
     int cc;
     KMR *mr = kmr_create_context(MPI_COMM_WORLD, MPI_INFO_NULL, 0);
     assert(mr != 0);
+    mr->verbosity = 5;
+    mr->trace_map_mp = 1;
 
     /* Put key-value pairs. */
     int N = 10;
@@ -366,6 +370,8 @@ test_map_multiprocess2(int rank)
     int cc;
     KMR *mr = kmr_create_context(MPI_COMM_WORLD, MPI_INFO_NULL, 0);
     assert(mr != 0);
+    mr->verbosity = 5;
+    mr->trace_map_mp = 1;
 
     /* Put key-value pairs. */
     int N = 10;
@@ -478,6 +484,8 @@ test_map_multiprocess_by_key0(int rank, int nprocs)
     int cc;
     KMR *mr = kmr_create_context(MPI_COMM_WORLD, MPI_INFO_NULL, 0);
     assert(mr != 0);
+    mr->verbosity = 5;
+    mr->trace_map_mp = 1;
 
     /* Put key-value pairs. */
     MPI_Barrier(mr->comm);
@@ -572,6 +580,8 @@ test_map_multiprocess_by_key1(int rank, int nprocs)
     int cc;
     KMR *mr = kmr_create_context(MPI_COMM_WORLD, MPI_INFO_NULL, 0);
     assert(mr != 0);
+    mr->verbosity = 5;
+    mr->trace_map_mp = 1;
 
     /* Put key-value pairs. */
     MPI_Barrier(mr->comm);
@@ -628,6 +638,8 @@ test_map_multiprocess_by_key2(int rank, int nprocs)
     int cc;
     KMR *mr = kmr_create_context(MPI_COMM_WORLD, MPI_INFO_NULL, 0);
     assert(mr != 0);
+    mr->verbosity = 5;
+    mr->trace_map_mp = 1;
 
     /* Put key-value pairs. */
     MPI_Barrier(mr->comm);
