@@ -98,8 +98,8 @@ def splitfile(nums, sep, odir, opref, infile) :
         endpos = getcuttingpoint(infile, sep, startpos, partsize)
 
         # compose output file name.
-        # ex: partXXX, where XXX is number of part.
-        suffix = '0' * (len(str(nums-1)) - len(str(i))) + str(i)
+        # ex: partXXXXXX, where XXXXXX is number of part.
+        suffix = "%06d" % i
         opath = os.path.join(odir, (opref + suffix))
         # output cutted part of input file.
         writefile(infile, opath, startpos, endpos)
@@ -108,7 +108,7 @@ def splitfile(nums, sep, odir, opref, infile) :
 	sys.stdout.flush()
 
     # output remain part of input file.
-    suffix = str(nums-1)
+    suffix = "%06d" % (nums-1)
     opath = os.path.join(odir, (opref + suffix))
     writefile(infile, opath, startpos, filesize)
     print "done."
