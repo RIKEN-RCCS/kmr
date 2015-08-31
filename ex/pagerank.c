@@ -12,19 +12,91 @@
 #define BUF_MAX 512
 #define DAMPING_FACTOR 0.85
 
+typedef struct {
+    char *filename;
+    int separate;
+} FILE_INFO;
+
+static void
+print_usage(void)
+{
+    fprintf(stdout, "Usage: ./a.out [options] inputfile\n");
+    fprintf(stdout, "Options:\n");
+    fprintf(stdout, "\t-n number( > 2 )\n");
+    fprintf(stdout, "\t\tnumber of file separation\n");
+    fprintf(stdout, "\t\tif you use this option, you should set indexed files\n");
+    fprintf(stdout, "\t\texample: [inputfile].000000, [inputfile].000001,..., [inputfile].[number]\n");
+}
+
+static int 
+isdigits(const char *str)
+{
+    unsigned int i;
+    for(i = 0; i < strlen(str); i++){
+        if(isdigit(str[i]) == 0){
+            return 0;
+        }
+    }
+    return 1;
+}
+
+static int
+parse_opt(int argc, char **argv, char *filename, int *sep)
+{
+    int ret = 0;
+    int result = 0;
+
+    *sep = -1;
+
+    while((result = getopt(argc, argv, "n:")) != -1){
+        switch(result){
+        case 'n':
+            if(isdigits(optarg)){
+                sscanf(optarg, "%d", sep);
+                break;
+            }
+        default:
+            ret = 1;
+        }
+    }
+
+    if(0 <= *sep && *sep < 2){
+        ret = 1;
+    }
+
+    // get filename
+    if(argv[optind] != NULL){
+        strncpy(filename, argv[optind], BUF_MAX);
+    }
+
+    return ret;
+}
+
 static int
 read_ids_from_a_file(const struct kmr_kv_box kv0,
                      const KMR_KVS *kvi, KMR_KVS *kvo, void *p, const long i)
 {
     // Map function
     assert(kvi == 0 && kv0.klen == 0 && kv0.vlen == 0 && kvo != 0);
+   
+    FILE_INFO *fi = (FILE_INFO *)p;
     char buf[BUF_MAX];
-    FILE *f = fopen((char *)p, "r");
-    //  FILE *f = fopen("simple_graph.txt", "r");
-    if (f == 0) {
+    int rank = kvo->c.mr->rank;
+
+    if(!(fi->separate == -1 || rank < fi->separate)){
+        // this rank does not have to read files.
+        return MPI_SUCCESS;
+    }
+
+    printf("i am %d, i read %s, sep = %d\n", rank, fi->filename, fi->separate);
+    fflush(0);
+
+    FILE *f = fopen(fi->filename, "r");
+
+    if (f == NULL) {
         fprintf(stderr, "Cannot open a file \"%s\"; fopen(%s)\n", (char *)p, (char *)p);
         MPI_Abort(MPI_COMM_WORLD, 1);
-        return 0;
+        return 1;
     }
     
     while(fgets(buf, BUF_MAX, f) != NULL){
@@ -205,6 +277,7 @@ print_top_five(const struct kmr_kv_box kv0,
 }
 
 
+
 int
 main(int argc, char **argv)
 {
@@ -213,12 +286,39 @@ main(int argc, char **argv)
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    if(argc != 2){
-        if(rank == 0){ fprintf(stderr, "Please set web-graph filename.\n"); }
+    if(argc < 2){
+        if(rank == 0){ print_usage(); }
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
+
     char filename[BUF_MAX];
-    strncpy(filename, argv[1], BUF_MAX);
+    int sep = -1; // -1: no separate
+    
+    if(parse_opt(argc, argv, filename, &sep) != 0){
+        // invaild option
+        if(rank == 0){
+            fprintf(stderr, "number has invaild digits\n");
+            print_usage();
+        }
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+
+    if( sep > nprocs ){
+        if(rank == 0){
+            fprintf(stderr, "MPI process is less than number of file separation!!");
+        }
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+
+    if(sep != -1 && rank < sep){
+        char tmp[BUF_MAX];
+        strncpy(tmp, filename, BUF_MAX);
+        // indexed filename example: web-graph.txt.000000
+        snprintf(filename, BUF_MAX, "%s.%06d", tmp, rank);
+    }
+
+    // set FILE_INFO structure
+    FILE_INFO fi = {.filename = filename, .separate = sep};
 
     kmr_init();
     KMR *mr = kmr_create_context(MPI_COMM_WORLD, MPI_INFO_NULL, 0);
@@ -229,7 +329,9 @@ main(int argc, char **argv)
     //// initialize ////
     // load web-graph from file
     KMR_KVS *kvs0 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_INTEGER);
-    kmr_map_once(kvs0, filename, kmr_noopt, 1, read_ids_from_a_file);
+    kmr_map_once(kvs0, &fi, kmr_noopt, sep == -1 ? 1:0, read_ids_from_a_file);
+
+    MPI_Barrier(MPI_COMM_WORLD);
 
     // share local kvs to all node
     KMR_KVS *kvs1 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_INTEGER);
@@ -240,7 +342,6 @@ main(int argc, char **argv)
     kmr_reduce(kvs1, kvs2, 0, kmr_noopt, sum_toids_for_a_fromid);
 
 
-
     //// calculate pagerank ////
     KMR_KVS *kvs3;
 
@@ -249,6 +350,7 @@ main(int argc, char **argv)
     double stime = MPI_Wtime();
 
     for(int i = 0; i < 100; i++){
+        if(rank == 0){ fprintf(stdout, "progress %d / 100\n", i); }
         // set pagerank drain
         kvs3 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_OPAQUE);
         kmr_map(kvs2, kvs3, 0, kmr_noopt, calc_pagerank_drain);
