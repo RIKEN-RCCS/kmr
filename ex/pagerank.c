@@ -349,7 +349,7 @@ main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
     double stime = MPI_Wtime();
 
-    for(int i = 0; i < 100; i++){
+    for(int i = 1; i <= 100; i++){
         if(rank == 0){ fprintf(stdout, "progress %d / 100\n", i); }
         // set pagerank drain
         kvs3 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_OPAQUE);
