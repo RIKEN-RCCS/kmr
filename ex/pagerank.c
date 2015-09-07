@@ -1,3 +1,30 @@
+/* Page Rank (2015-09-18) */
+
+/* 
+   It ranks the pages by their pagerank in the network-graph dataset.
+   You can download network-graph dataset from Stanford Univercity.
+      URL: http://snap.stanford.edu/data/index.html
+      Example:  Note Dame web graph(http://snap.stanford.edu/data/web-NotreDame.txt.gz)
+   Copy the file in the current directory and run it.
+
+   If you want to use large dataset(ex. com-friendster), 
+   you should split dataset and execute with addition of -n option.
+
+   ```
+      $ ../cmd/kmrfsplit.py -n <number_of_separation> -p <output_filename_prefix> <input_filename>
+      $ mpiexec -n <number_of_procs> ./a.out -n <number_of_separation> <output_filename_prefix>
+   ```
+
+   example:
+   ```
+      $ ../cmd/kmrfsplit.py -n 3 -p webgraph.txt webgraph.txt
+      $ ls webgraph.txt.*
+       webgraph.txt.000000 webgraph.txt.000001 webgraph.txt.000002
+      $ mpiexec -n 10 ./a.out -n 3 webgraph.txt
+   ```   
+*/
+
+
 #include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,6 +43,17 @@ typedef struct {
     char *filename;
     int separate;
 } FILE_INFO;
+
+typedef struct {
+    long node_id;
+    double pagerank;
+} NODE_PAGERANK;
+
+typedef struct {
+    enum {FROM_ID, TO_ID, TO_IDS, PAGERANK} type;
+    long size;
+} DATA_HEADER;
+
 
 static void
 print_usage(void)
@@ -119,17 +157,6 @@ read_ids_from_a_file(const struct kmr_kv_box kv0,
     fclose(f);
     return MPI_SUCCESS;
 }
-
-typedef struct {
-    long node_id;
-    double pagerank;
-} NODE_PAGERANK;
-
-typedef struct {
-    enum {FROM_ID, TO_ID, TO_IDS, PAGERANK} type;
-    long size;
-} DATA_HEADER;
-
 
 static int
 sum_toids_for_a_fromid(const struct kmr_kv_box kv[], const long n,
