@@ -10,10 +10,13 @@ LIBS += ../src/libkmr.a
 INCL=-I ../src/
 
 all::
-	@echo 'make one of wordcount, kmeans, graysort, tpch, mm, wordfreq, rmat, phoenix-kmeans'
+	@echo 'make one of wordcount, pagerank, kmeans, graysort, tpch, mm, wordfreq, rmat, phoenix-kmeans'
 
 wordcount:
 	$(mpicc) $(INCL) -g wordcount.c $(LIBS)
+
+pagerank:
+	$(mpicc) $(INCL) -g pagerank.c $(LIBS)
 
 kmeans:
 	$(mpicc) $(INCL) -g kmeans-kmr.c $(LIBS) -lm
