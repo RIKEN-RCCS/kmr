@@ -818,6 +818,7 @@ extern int kmr_sort_locally(KMR_KVS *kvi, KMR_KVS *kvo, _Bool shuffling,
 			    struct kmr_option opt);
 
 extern int kmr_shuffle(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt);
+extern int mykmr_shuffle(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt);
 extern int kmr_replicate(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt);
 
 extern int kmr_reduce9(_Bool stop_when_some_added,

@@ -2119,6 +2119,356 @@ kmr_shuffle(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
     return MPI_SUCCESS;
 }
 
+
+///////////////////////////////////////////////////
+///////   this is my kmr implementation. //////////
+//////////////////////////////////////////////////
+
+static int
+sum_counts_for_a_keys(const struct kmr_kv_box kv[], const long n,
+		      const KMR_KVS *kvs, KMR_KVS *kvo, void *p)
+{
+    // (-1 * count of keys, hash(key))
+    struct kmr_kv_box kvbox = {
+	.klen = sizeof(long),
+	.k.i = -1 * n,
+	.vlen = sizeof(long),
+	.v.i = (long)kmr_hash_key(kvs, kv[0])
+    };
+    kmr_add_kv(kvo, kvbox);
+    return MPI_SUCCESS;
+}
+
+static int
+sum_counts_for_a_keys_rev(const struct kmr_kv_box kv[], const long n,
+		      const KMR_KVS *kvs, KMR_KVS *kvo, void *p)
+{
+    // Input: (hash(key), -1 * count of keys)
+    // total count of keys
+    long total = 0;
+    for (long i = 0; i < n; i++) {
+	total += kv[i].v.i;
+    }
+    if (n != 2) {
+	printf("n is %d\n", n);
+	printf("kv[0].k.i = %d\n", kv[0].k.i);
+	printf("kv[0].v.i = %d\n", kv[0].v.i);
+	fflush(0);
+    }
+    struct kmr_kv_box kvbox = {
+	.klen = sizeof(long),
+	.k.i = kv[0].k.i,
+	.vlen = sizeof(long),
+	.v.i = total
+    };
+    kmr_add_kv(kvo, kvbox);
+    return MPI_SUCCESS;
+}
+
+int
+copy_to_array_topx(const struct kmr_kv_box kv,
+		     const KMR_KVS *kvi, KMR_KVS *kvo, void *arg, const long i)
+{
+    struct kmr_kv_box *info = (struct kmr_kv_box *)arg;
+    struct kmr_kv_box *kvbox = (struct kmr_kv_box *)info->v.p;
+    long topx = info->k.i;
+    struct kmr_kv_box kv2 = kv;
+    kv2.k.i = -1 * kv.k.i;
+    if (i < topx) {
+	kvbox[i] = kv2;
+    }
+    return MPI_SUCCESS;
+}
+
+static int
+kmr_put_integer_to_array_fn(const struct kmr_kv_box kv,
+                            const KMR_KVS *kvi, KMR_KVS *kvo,
+                            void *p, const long i)
+{
+    long *k = p;
+    k[i] = kv.k.i;
+    return MPI_SUCCESS;
+}
+
+int
+mykmr_shuffle(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
+{
+    kmr_assert_kvs_ok(kvi, kvo, 1, 1);
+    assert(kmr_shuffle_compatible_p(kvo, kvi));
+    KMR *mr = kvi->c.mr;
+    struct kmr_option kmr_supported = {.inspect = 1, .key_as_rank = 1,
+                                       .take_ckpt = 1};
+    kmr_check_fn_options(mr, kmr_supported, opt, __func__);
+    _Bool ranking = opt.key_as_rank;
+
+    /* SKIP SHUFFLING IF MARKED AS SHUFFLED. */
+
+    if (kvi->c.magic == KMR_KVS_PUSHOFF) {
+	kmr_pushoff_make_stationary(kvi);
+    }
+    if (kvi->c.shuffled_in_pushoff) {
+	assert(!mr->ckpt_enable);
+	int cc = kmr_move_kvs(kvi, kvo, opt);
+	return cc;
+    }
+
+    if (kmr_ckpt_enabled(mr)) {
+	if (kmr_ckpt_progress_init(kvi, kvo, opt)) {
+	    kmr_add_kv_done(kvo);
+	    if (!opt.inspect) {
+		kmr_free_kvs(kvi);
+	    }
+	    return MPI_SUCCESS;
+	}
+    }
+    int kcdc = kmr_ckpt_disable_ckpt(mr);
+
+    /* Sort for shuffling. */
+
+    enum kmr_kv_field keyf = kmr_unit_sized_or_opaque(kvi->c.key_data);
+    enum kmr_kv_field valf = kmr_unit_sized_or_opaque(kvi->c.value_data);
+    struct kmr_option n_opt = opt;
+    n_opt.inspect = 1;
+    KMR_KVS *kvs1 = kmr_create_kvs(mr, keyf, valf);
+    kmr_sort_locally(kvi, kvs1, 0, n_opt);
+    assert(kvs1->c.stowed);
+    /*kmr_dump_kvs(kvs1, 0);*/
+    /*kmr_guess_communication_pattern_(kvs1, opt);*/
+    assert(!kmr_fields_pointer_p(kvs1));
+    assert(kvs1->c.block_count <= 1);
+
+    int nprocs = mr->nprocs;
+    int rank = mr->rank;
+
+#define TOPX 100
+    // counting keys(using reduce)
+    // output ((-1)*counts of key, hash(key))
+    KMR_KVS *kvs_red = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_INTEGER);
+    //    n_opt.keep_open = 1;
+    struct kmr_option inspect_opt = {.inspect = 1};
+    kmr_reduce(kvi, kvs_red, 0, inspect_opt, sum_counts_for_a_keys);
+    //    n_opt.keep_open = 0;
+
+    // sort
+    KMR_KVS *kvs_sort = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_INTEGER);
+    kmr_sort_locally(kvs_red, kvs_sort, 0, kmr_noopt);
+    /* assert(kvs_sort->c.stowed); */
+    /* /\*kmr_dump_kvs(kvs1, 0);*\/ */
+    /* /\*kmr_guess_communication_pattern_(kvs1, opt);*\/ */
+    /* assert(!kmr_fields_pointer_p(kvs_sort)); */
+    /* assert(kvs_sort->c.block_count <= 1); */
+
+    /* printf("print kvs_sort\n"); */
+    /* kmr_dump_kvs(kvs_sort, 0); */
+    /* fflush(0); */
+
+    // extract top 100 kvbox and all gather
+    struct kmr_kv_box *kv_send = calloc(TOPX, sizeof(struct kmr_kv_box));
+    struct kmr_kv_box kvinfo = {.k.i = TOPX, .v.p = kv_send};
+    kmr_map(kvs_sort, 0, &kvinfo, kmr_noopt, copy_to_array_topx);
+
+    struct kmr_kv_box *kv_recv = malloc(sizeof(struct kmr_kv_box) * TOPX * nprocs);
+    MPI_Allgather(kv_send, sizeof(struct kmr_kv_box) * TOPX , MPI_BYTE, kv_recv, sizeof(struct kmr_kv_box) * TOPX, MPI_BYTE, mr->comm);
+    free(kv_send);
+
+    
+    // counts of all node keys
+    // all kv_box into one kvs
+    KMR_KVS *kvs_all = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_INTEGER);
+    for (long i = 0; i < nprocs; i++) {
+	for (long j = 0; j < TOPX; j++) {
+	    if (kv_recv[i*TOPX + j].vlen == 0) {
+		break;
+	    }
+	    kmr_add_kv(kvs_all, kv_recv[i*TOPX + j]);
+	}
+    }
+    kmr_add_kv_done(kvs_all);
+
+/*     for(long j = 0; j < TOPX; j++){ */
+/* //	for(long i = 0; i < nprocs; i++){ */
+/* 	if((kv_recv[j].k.i != kv_recv[1*TOPX + j].k.i || kv_recv[j].v.i != kv_recv[1*TOPX + j].v.i) */
+/* 	    && rank == 0) */
+/* 	{ */
+/* 	    printf("kv_recv[%d] != kv_recv[1*TOPX + %d]\n", j, j); */
+/* 	    fflush(0); */
+/* 	} */
+/* //	} */
+/*     } */
+
+
+    /* printf("print kvs_all\n"); */
+    /* kmr_dump_kvs(kvs_all, 0); */
+    /* fflush(0); */
+
+
+    // reverse (count of key, hash(key)) -> (hash(key), count of key)
+    KMR_KVS *kvs_rev2 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_INTEGER);
+    kmr_reverse(kvs_all, kvs_rev2, kmr_noopt);
+
+    // sort TODO:delete
+    KMR_KVS *kvs_sort2 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_INTEGER);
+    kmr_sort_locally(kvs_rev2, kvs_sort2, 0, kmr_noopt);
+
+    /*printf("print kvs_sort2\n"); */
+    /* kmr_dump_kvs(kvs_sort2, 0); */
+    /* fflush(0); */
+
+
+    // counting key
+    KMR_KVS *kvs_red2 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_INTEGER);
+    kmr_reduce(kvs_sort2, kvs_red2, 0, kmr_noopt, sum_counts_for_a_keys_rev);
+
+    if (rank == 0) {
+	printf("print kvs_red2\n");
+	kmr_dump_kvs(kvs_red2, 0);
+	fflush(0);
+    }
+
+
+    // make keyid list
+    KMR_KVS *kvs_sort3 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_INTEGER);
+    kmr_sort_locally(kvs_red2, kvs_sort3, 0, kmr_noopt);
+
+    /* printf("print kvs_sort3\n"); */
+    /* kmr_dump_kvs(kvs_sort3, 0); */
+    /* fflush(0); */
+
+
+    long key_count = kvs_sort3->c.element_count;
+    long *hash_table = malloc(sizeof(long) * key_count);
+    kmr_map(kvs_sort3, 0, hash_table, kmr_noopt, kmr_put_integer_to_array_fn);
+
+    /* for(long i=0;i<key_count;i++){ */
+    /* 	printf("%d ", hash_table[i]); */
+    /* } */
+    /* printf("\n"); */
+    /* fflush(0); */
+
+    // make Keys x nprocs matrix
+    long *kn_mat = calloc(key_count * nprocs, sizeof(long));
+    // insert keys
+    // find key index(TODO: Binary search, OpenMP parallel)
+    for (long k = 0; k < key_count; k++) {
+	long hash = hash_table[k];
+	for (long i = 0; i < nprocs; i++) {
+	    for (long j = 0; j < TOPX; j++) {
+		if (kv_recv[i*TOPX + j].vlen == 0) {
+		    break;
+		}
+		if (hash == kv_recv[i*TOPX + j].v.i) {
+		    kn_mat[i*key_count + k] = kv_recv[i*TOPX + j].k.i;
+		}
+	    }
+	}
+    }
+
+    if (rank == 0) {
+    for (long i=0;i<nprocs;i++) {
+	for (long k=0;k<key_count;k++) {
+	    printf("%d ", kn_mat[i*key_count + k]);
+	}
+	printf("\n");
+    }
+    fflush(0);
+    }
+
+    free(kv_recv);
+
+    // select node(using leen_algorithm)
+    // typedef struct {long keyid, long toNode} partition;
+    // partition *part = malloc(sizeof(partition) * key_count); // don't forget free!!
+    // leen(part, kn_mat)
+    
+
+    free(hash_table);
+    free(kn_mat);
+
+    return MPI_SUCCESS;
+
+
+    int cc;
+    long cnt = kvs1->c.element_count;
+    long *ssz = kmr_malloc(sizeof(long) * (size_t)nprocs);
+    long *sdp = kmr_malloc(sizeof(long) * (size_t)nprocs);
+    long *rsz = kmr_malloc(sizeof(long) * (size_t)nprocs);
+    long *rdp = kmr_malloc(sizeof(long) * (size_t)nprocs);
+    for (int r = 0; r < nprocs; r++) {
+	ssz[r] = 0;
+	rsz[r] = 0;
+    }
+//    int rank = 0;
+    rank = 0;
+    assert(kvs1->c.current_block == 0);
+    kvs1->c.current_block = kvs1->c.first_block;
+    struct kmr_kvs_entry *e = kmr_kvs_first_entry(kvs1, kvs1->c.first_block);
+    for (long i = 0; i < cnt; i++) {
+	assert(e != 0);
+	struct kmr_kv_box kv = kmr_pick_kv(e, kvs1);
+	int r = (ranking ? (int)kv.k.i : kmr_pitch_rank(kv, kvs1));
+	assert(0 <= r && r < nprocs);
+	if (ranking && !(0 <= r && r < nprocs)) {
+	    kmr_error(mr, "key entries are not ranks");
+	}
+	if (r < rank) {
+	    kmr_error(mr, "key-value entries are not sorted (internal error)");
+	}
+	ssz[r] += (long)kmr_kvs_entry_netsize(e);
+	rank = r;
+	e = kmr_kvs_next(kvs1, e, 0);
+    }
+    /* Exchange send-receive counts. */
+    cc = kmr_exchange_sizes(mr, ssz, rsz);
+    assert(cc == MPI_SUCCESS);
+    long sendsz = 0;
+    long recvsz = 0;
+    for (int r = 0; r < nprocs; r++) {
+	sdp[r] = sendsz;
+	sendsz += ssz[r];
+	rdp[r] = recvsz;
+	recvsz += rsz[r];
+    }
+    cc = kmr_allocate_block(kvo, (size_t)recvsz);
+    assert(cc == MPI_SUCCESS);
+    struct kmr_kvs_block *sb = kvs1->c.first_block;
+    struct kmr_kvs_entry *sbuf = kmr_kvs_first_entry(kvs1, sb);
+    struct kmr_kvs_block *rb = kvo->c.first_block;
+    struct kmr_kvs_entry *rbuf = kmr_kvs_first_entry(kvo, rb);
+    cc = kmr_alltoallv(mr, sbuf, ssz, sdp, rbuf, rsz, rdp);
+    assert(cc == MPI_SUCCESS);
+    long ocnt = kmr_count_entries(kvo, 1);
+    assert(kvo->c.sorted == 0);
+    kvo->c.element_count = ocnt;
+    if (recvsz != 0) {
+	assert(kvo->c.block_count == 1);
+	rb->partial_element_count = ocnt;
+	rb->fill_size = (size_t)recvsz;
+    }
+    kmr_kvs_adjust_adding_point(kvo);
+    kmr_add_kv_done(kvo);
+
+    kmr_ckpt_enable_ckpt(mr, kcdc);
+    if (kmr_ckpt_enabled(mr)) {
+	kmr_ckpt_save_kvo_whole(mr, kvo);
+    }
+
+    if (!opt.inspect) {
+	kmr_free_kvs(kvi);
+    }
+    assert(kvo->c.element_count == 0 || kvo->c.storage_netsize != 0);
+    xassert(!kmr_fields_pointer_p(kvo));
+    kmr_free_kvs(kvs1);
+    kmr_free(ssz, (sizeof(long) * (size_t)nprocs));
+    kmr_free(sdp, (sizeof(long) * (size_t)nprocs));
+    kmr_free(rsz, (sizeof(long) * (size_t)nprocs));
+    kmr_free(rdp, (sizeof(long) * (size_t)nprocs));
+    if (kmr_ckpt_enabled(mr)) {
+	kmr_ckpt_progress_fin(mr);
+    }
+    return MPI_SUCCESS;
+}
+
+
 /** Replicates key-value pairs to be visible on all ranks, that is, it
     has the effect of bcast or all-gather.  It gathers pairs on rank0
     only by the option RANK_ZERO.  It moves stably, keeping the
