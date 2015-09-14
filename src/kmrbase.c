@@ -1598,13 +1598,36 @@ kmr_stable_key(const struct kmr_kv_box kv, const KMR_KVS *kvs)
 /* Determines a rank to which this key-value entry is directed.  It is
    bases on the hashed keys. */
 
+long *pitch_hash_table = NULL;
+long *pitch_partition = NULL;
+long pitch_key_count = 0;
+
+
 int
 kmr_pitch_rank(const struct kmr_kv_box kv, KMR_KVS *kvs)
 {
     unsigned int nprocs = (unsigned int)kvs->c.mr->nprocs;
     unsigned long v = (unsigned long)kmr_hash_key(kvs, kv);
-    unsigned int h = (((v >> 32) ^ v) & ((1L << 32) - 1));
-    return (int)(h % nprocs);
+    int toNode = -1;
+    long *hash_table = pitch_hash_table;
+    long *partition = pitch_partition;
+    long key_count = pitch_key_count;
+
+    if(hash_table != NULL){
+	/* if hash in hash_table */
+	/* TODO: Binary Search   */
+	for (long key_i = 0; key_i < key_count; key_i++) {
+	    if (v == (unsigned long)hash_table[key_i]) {
+		/* use leen result */
+		toNode = (int)partition[key_i];
+	    }
+	}
+    }
+    if (toNode == -1) {
+	unsigned int h = (((v >> 32) ^ v) & ((1L << 32) - 1));
+	toNode = (int)(h % nprocs);
+    }
+    return toNode;
 }
 
 /* Compares in three-way, returning -1, 0, or 1. */
@@ -2303,6 +2326,29 @@ leen(long *partition, long *K, long key_count, long nprocs)
     return 0;
 }
 
+/* int */
+/* mykmr_pitch_rank(const struct kmr_kv_box kv, KMR_KVS *kvs, */
+/* 		 long *hash_table, long *partition, long key_count) */
+/* { */
+/*     unsigned int nprocs = (unsigned int)kvs->c.mr->nprocs; */
+/*     unsigned long v = (unsigned long)kmr_hash_key(kvs, kv); */
+/*     int toNode = -1; */
+
+/*     /\* if hash in hash_table *\/ */
+/*     /\* TODO: Binary Search   *\/ */
+/*     for (long key_i = 0; key_i < key_count; key_i++) { */
+/* 	if (v == (unsigned long)hash_table[key_i]) { */
+/* 	    /\* use leen result *\/ */
+/* 	    toNode = (int)partition[key_i]; */
+/* 	} */
+/*     } */
+/*     if (toNode == -1) { */
+/* 	unsigned int h = (((v >> 32) ^ v) & ((1L << 32) - 1)); */
+/* 	toNode = (int)(h % nprocs); */
+/*     } */
+/*     return toNode; */
+/* } */
+
 int
 mykmr_shuffle(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
 {
@@ -2336,20 +2382,6 @@ mykmr_shuffle(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
     }
     int kcdc = kmr_ckpt_disable_ckpt(mr);
 
-    /* Sort for shuffling. */
-
-    enum kmr_kv_field keyf = kmr_unit_sized_or_opaque(kvi->c.key_data);
-    enum kmr_kv_field valf = kmr_unit_sized_or_opaque(kvi->c.value_data);
-    struct kmr_option n_opt = opt;
-    n_opt.inspect = 1;
-    KMR_KVS *kvs1 = kmr_create_kvs(mr, keyf, valf);
-    kmr_sort_locally(kvi, kvs1, 0, n_opt);
-    assert(kvs1->c.stowed);
-    /*kmr_dump_kvs(kvs1, 0);*/
-    /*kmr_guess_communication_pattern_(kvs1, opt);*/
-    assert(!kmr_fields_pointer_p(kvs1));
-    assert(kvs1->c.block_count <= 1);
-
     int nprocs = mr->nprocs;
     int rank = mr->rank;
 
@@ -2357,10 +2389,8 @@ mykmr_shuffle(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
     // counting keys(using reduce)
     // output ((-1)*counts of key, hash(key))
     KMR_KVS *kvs_red = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_INTEGER);
-    //    n_opt.keep_open = 1;
     struct kmr_option inspect_opt = {.inspect = 1};
     kmr_reduce(kvi, kvs_red, 0, inspect_opt, sum_counts_for_a_keys);
-    //    n_opt.keep_open = 0;
 
     // sort
     KMR_KVS *kvs_sort = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_INTEGER);
@@ -2491,12 +2521,31 @@ mykmr_shuffle(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
     }
     }
 
-    free(partition);
-    free(hash_table);
+    // TODO: delete 
+    /* free(partition); */
+    /* free(hash_table); */
     free(kn_mat);
 
-    return MPI_SUCCESS;
+//    return MPI_SUCCESS;
 
+    pitch_partition = partition;
+    pitch_hash_table = hash_table;
+    pitch_key_count = key_count;
+
+
+    /* Sort for shuffling. */
+
+    enum kmr_kv_field keyf = kmr_unit_sized_or_opaque(kvi->c.key_data);
+    enum kmr_kv_field valf = kmr_unit_sized_or_opaque(kvi->c.value_data);
+    struct kmr_option n_opt = opt;
+    n_opt.inspect = 1;
+    KMR_KVS *kvs1 = kmr_create_kvs(mr, keyf, valf);
+    kmr_sort_locally_lo(kvi, kvs1, 1, ranking, n_opt);
+    assert(kvs1->c.stowed);
+    /*kmr_dump_kvs(kvs1, 0);*/
+    /*kmr_guess_communication_pattern_(kvs1, opt);*/
+    assert(!kmr_fields_pointer_p(kvs1));
+    assert(kvs1->c.block_count <= 1);
 
     int cc;
     long cnt = kvs1->c.element_count;
@@ -2528,6 +2577,12 @@ mykmr_shuffle(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
 	rank = r;
 	e = kmr_kvs_next(kvs1, e, 0);
     }
+
+    free(partition);
+    free(hash_table);
+    pitch_partition = NULL;
+    pitch_hash_table = NULL;
+
     /* Exchange send-receive counts. */
     cc = kmr_exchange_sizes(mr, ssz, rsz);
     assert(cc == MPI_SUCCESS);
