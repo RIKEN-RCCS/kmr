@@ -1602,6 +1602,8 @@ long *pitch_hash_table = NULL;
 long *pitch_partition = NULL;
 long pitch_key_count = 0;
 
+long
+binary_search(long target, long *search_array, long array_length);
 
 int
 kmr_pitch_rank(const struct kmr_kv_box kv, KMR_KVS *kvs)
@@ -1615,12 +1617,9 @@ kmr_pitch_rank(const struct kmr_kv_box kv, KMR_KVS *kvs)
 
     if(hash_table != NULL){
 	/* if hash in hash_table */
-	/* TODO: Binary Search   */
-	for (long key_i = 0; key_i < key_count; key_i++) {
-	    if (v == (unsigned long)hash_table[key_i]) {
-		/* use leen result */
-		toNode = (int)partition[key_i];
-	    }
+	long idx = binary_search((long)v, hash_table, key_count);
+	if ( idx != -1 ){
+	    toNode = (int)partition[idx];
 	}
     }
     if (toNode == -1) {
@@ -2326,28 +2325,35 @@ leen(long *partition, long *K, long key_count, long nprocs)
     return 0;
 }
 
-/* int */
-/* mykmr_pitch_rank(const struct kmr_kv_box kv, KMR_KVS *kvs, */
-/* 		 long *hash_table, long *partition, long key_count) */
-/* { */
-/*     unsigned int nprocs = (unsigned int)kvs->c.mr->nprocs; */
-/*     unsigned long v = (unsigned long)kmr_hash_key(kvs, kv); */
-/*     int toNode = -1; */
+long
+binary_search(long target, long *search_array, long array_length)
+{
+    /* return value */
+    /* find: index */
+    /* not find: -1*/
 
-/*     /\* if hash in hash_table *\/ */
-/*     /\* TODO: Binary Search   *\/ */
-/*     for (long key_i = 0; key_i < key_count; key_i++) { */
-/* 	if (v == (unsigned long)hash_table[key_i]) { */
-/* 	    /\* use leen result *\/ */
-/* 	    toNode = (int)partition[key_i]; */
-/* 	} */
-/*     } */
-/*     if (toNode == -1) { */
-/* 	unsigned int h = (((v >> 32) ^ v) & ((1L << 32) - 1)); */
-/* 	toNode = (int)(h % nprocs); */
-/*     } */
-/*     return toNode; */
-/* } */
+    long idx = -1;
+    long sindex = 0;
+    long mindex = array_length / 2;
+    long eindex = array_length - 1;
+
+    while (sindex <= eindex) {
+	if ( target < search_array[mindex] ) {
+	    /* left side */
+	    eindex = mindex - 1;
+	} else if ( search_array[mindex] < target ){
+	    /* right side */
+	    sindex = mindex + 1;
+	}
+	else {
+	    /* find */
+	    idx = mindex;
+	    break;
+	}
+	mindex = (eindex + sindex) / 2;
+    }
+    return idx;
+}
 
 int
 mykmr_shuffle(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
@@ -2482,18 +2488,19 @@ mykmr_shuffle(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
     // make Keys x nprocs matrix
     long *kn_mat = calloc((size_t)(key_count * nprocs), sizeof(long));
     // insert keys
-    // find key index(TODO: Binary search, OpenMP parallel)
+    // find key index
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
     for (long node_j = 0; node_j < nprocs; node_j++) {
 	for (long key_i = 0; key_i < TOPX; key_i++) {
 	    if (kv_recv[node_j * TOPX + key_i].vlen == 0) {
 		break;
 	    }
-	    for (long k = 0; k < key_count; k++) {
-		long hash = hash_table[k];
-
-		if (hash == kv_recv[node_j*TOPX + key_i].v.i) {
-		    kn_mat[node_j * key_count + k] = kv_recv[node_j * TOPX + key_i].k.i;
-		}
+	    long keyhash = kv_recv[node_j * TOPX + key_i].v.i;
+	    long idx = binary_search(keyhash, hash_table, key_count);
+	    if (idx != -1) {
+		kn_mat[node_j * key_count + idx] = kv_recv[node_j * TOPX + key_i].k.i;
 	    }
 	}
     }
