@@ -2128,7 +2128,7 @@ static int
 sum_counts_for_a_keys(const struct kmr_kv_box kv[], const long n,
 		      const KMR_KVS *kvs, KMR_KVS *kvo, void *p)
 {
-    // (-1 * count of keys, hash(key))
+    /* (-1 * count of keys, hash(key)) */
     struct kmr_kv_box kvbox = {
 	.klen = sizeof(long),
 	.k.i = -1 * n,
@@ -2143,18 +2143,18 @@ static int
 sum_counts_for_a_keys_rev(const struct kmr_kv_box kv[], const long n,
 		      const KMR_KVS *kvs, KMR_KVS *kvo, void *p)
 {
-    // Input: (hash(key), -1 * count of keys)
-    // total count of keys
+    /* Input: (hash(key), -1 * count of keys) */
+    /* total count of keys */
     long total = 0;
     for (long i = 0; i < n; i++) {
 	total += kv[i].v.i;
     }
-    if (n != 2) {
-	printf("n is %d\n", n);
-	printf("kv[0].k.i = %d\n", kv[0].k.i);
-	printf("kv[0].v.i = %d\n", kv[0].v.i);
-	fflush(0);
-    }
+    /* if (n != 2) { */
+    /* 	printf("n is %d\n", n); */
+    /* 	printf("kv[0].k.i = %d\n", kv[0].k.i); */
+    /* 	printf("kv[0].v.i = %d\n", kv[0].v.i); */
+    /* 	fflush(0); */
+    /* } */
     struct kmr_kv_box kvbox = {
 	.klen = sizeof(long),
 	.k.i = kv[0].k.i,
@@ -2165,9 +2165,10 @@ sum_counts_for_a_keys_rev(const struct kmr_kv_box kv[], const long n,
     return MPI_SUCCESS;
 }
 
-int
+
+static int
 copy_to_array_topx(const struct kmr_kv_box kv,
-		     const KMR_KVS *kvi, KMR_KVS *kvo, void *arg, const long i)
+		   const KMR_KVS *kvi, KMR_KVS *kvo, void *arg, const long i)
 {
     struct kmr_kv_box *info = (struct kmr_kv_box *)arg;
     struct kmr_kv_box *kvbox = (struct kmr_kv_box *)info->v.p;
@@ -2180,14 +2181,126 @@ copy_to_array_topx(const struct kmr_kv_box kv,
     return MPI_SUCCESS;
 }
 
+/* from kmrmoreops.c */
 static int
 kmr_put_integer_to_array_fn(const struct kmr_kv_box kv,
                             const KMR_KVS *kvi, KMR_KVS *kvo,
-                            void *p, const long i)
-{
+                            void *p, const long i){
     long *k = p;
     k[i] = kv.k.i;
     return MPI_SUCCESS;
+}
+
+
+static void
+calc_FKi(long *FKi, long *FKij, long key_count, long nprocs)
+{
+    for (long key_i = 0; key_i < key_count; key_i++) {
+        FKi[key_i] = 0;
+        for (long node_j = 0; node_j < nprocs; node_j++) {
+            FKi[key_i] += FKij[(node_j * key_count) + key_i];
+        }
+    }
+}
+
+static long
+calc_SumKNj(long *FKij, long key_count, long node_j)
+{
+    long sum = 0;
+    for (long key_i = 0; key_i < key_count; key_i++) {
+        sum += FKij[(node_j * key_count) + key_i];
+    }
+    return sum;
+}
+
+static double
+calc_FairnessScore(long *HostedDataNji,
+                   double Mean_of_HostedDataNi,
+                   long node_j)
+{
+    double score = (double)HostedDataNji[node_j] - Mean_of_HostedDataNi;
+    return score;
+}
+
+static void
+calc_HostedData_and_Mean(long *HostedDataNji,
+                         double *Mean_of_HostedDataNi, 
+                         long *FKij,
+                         long *FKi,
+                         long *partition,
+                         long key_count,
+                         long nprocs,
+                         long key_i)
+{
+    long toNode = partition[key_i];
+    *Mean_of_HostedDataNi = 0.0;
+
+    for (long node_j = 0; node_j < nprocs; node_j++){
+        long hd_before = HostedDataNji[node_j];
+        if (node_j == toNode) {
+            /* k_i is partationed to n_j */
+            HostedDataNji[node_j] = hd_before + (FKi[key_i] - FKij[node_j * key_count + key_i]);
+        } else{
+            /* k_i is not partationed to n_j */
+            HostedDataNji[node_j] = hd_before - FKij[node_j * key_count + key_i];
+        }
+        *Mean_of_HostedDataNi += (double)HostedDataNji[node_j];
+    }
+
+    *Mean_of_HostedDataNi = *Mean_of_HostedDataNi / (double)nprocs;
+}
+
+static int
+leen(long *partition, long *K, long key_count, long nprocs)
+{
+    long *FKij = K;
+
+    long *FKi = malloc(sizeof(long) * (size_t)key_count);
+    calc_FKi(FKi, FKij, key_count, nprocs);
+
+    // init HostedData
+    long *HostedDataNji = malloc(sizeof(long) * (size_t)nprocs);
+    for (long node_j = 0; node_j < nprocs; node_j++) {
+        HostedDataNji[node_j] = calc_SumKNj(FKij, key_count, node_j);
+    }
+    // avg(HostedDataNji)
+    double Mean_of_HostedDataNi = 0;
+    for (long node_j = 0; node_j < nprocs; node_j++) {
+        Mean_of_HostedDataNi += (double)HostedDataNji[node_j];
+    }
+    Mean_of_HostedDataNi = Mean_of_HostedDataNi / (double)nprocs;
+
+
+    for (long key_i = 0; key_i < key_count; key_i++) {
+        double min_score = calc_FairnessScore(HostedDataNji, Mean_of_HostedDataNi, 0);
+        long min_node_j = 0;
+
+        for (long node_j = 1; node_j < nprocs; node_j++) {
+            double score = calc_FairnessScore(HostedDataNji, Mean_of_HostedDataNi, node_j);
+            if (score < min_score) {
+                min_score = score;
+                min_node_j = node_j;
+            }
+        }
+
+        // set toNode
+        partition[key_i] = min_node_j;
+
+        // calculate HostedData and Mean
+        calc_HostedData_and_Mean(HostedDataNji,
+                                 &Mean_of_HostedDataNi,
+                                 FKij,
+                                 FKi,
+                                 partition,
+                                 key_count,
+                                 nprocs,
+                                 key_i);
+    }
+
+    free(HostedDataNji);
+    free(FKi);
+
+    return 0;
 }
 
 int
@@ -2264,23 +2377,23 @@ mykmr_shuffle(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
 
     // extract top 100 kvbox and all gather
     struct kmr_kv_box *kv_send = calloc(TOPX, sizeof(struct kmr_kv_box));
-    struct kmr_kv_box kvinfo = {.k.i = TOPX, .v.p = kv_send};
+    struct kmr_kv_box kvinfo = {.k.i = TOPX, .v.p = (char *)kv_send};
     kmr_map(kvs_sort, 0, &kvinfo, kmr_noopt, copy_to_array_topx);
 
-    struct kmr_kv_box *kv_recv = malloc(sizeof(struct kmr_kv_box) * TOPX * nprocs);
-    MPI_Allgather(kv_send, sizeof(struct kmr_kv_box) * TOPX , MPI_BYTE, kv_recv, sizeof(struct kmr_kv_box) * TOPX, MPI_BYTE, mr->comm);
+    struct kmr_kv_box *kv_recv = malloc(sizeof(struct kmr_kv_box) * (size_t)TOPX * (size_t)nprocs);
+    MPI_Allgather(kv_send, sizeof(struct kmr_kv_box) * (size_t)TOPX , MPI_BYTE, kv_recv, sizeof(struct kmr_kv_box) * (size_t)TOPX, MPI_BYTE, mr->comm);
     free(kv_send);
 
     
     // counts of all node keys
     // all kv_box into one kvs
     KMR_KVS *kvs_all = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_INTEGER);
-    for (long i = 0; i < nprocs; i++) {
-	for (long j = 0; j < TOPX; j++) {
-	    if (kv_recv[i*TOPX + j].vlen == 0) {
+    for (long node_j = 0; node_j < nprocs; node_j++) {
+	for (long key_i = 0; key_i < TOPX; key_i++) {
+	    if (kv_recv[node_j * TOPX + key_i].vlen == 0) {
 		break;
 	    }
-	    kmr_add_kv(kvs_all, kv_recv[i*TOPX + j]);
+	    kmr_add_kv(kvs_all, kv_recv[node_j * TOPX + key_i]);
 	}
     }
     kmr_add_kv_done(kvs_all);
@@ -2306,18 +2419,9 @@ mykmr_shuffle(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
     KMR_KVS *kvs_rev2 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_INTEGER);
     kmr_reverse(kvs_all, kvs_rev2, kmr_noopt);
 
-    // sort TODO:delete
-    KMR_KVS *kvs_sort2 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_INTEGER);
-    kmr_sort_locally(kvs_rev2, kvs_sort2, 0, kmr_noopt);
-
-    /*printf("print kvs_sort2\n"); */
-    /* kmr_dump_kvs(kvs_sort2, 0); */
-    /* fflush(0); */
-
-
     // counting key
     KMR_KVS *kvs_red2 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_INTEGER);
-    kmr_reduce(kvs_sort2, kvs_red2, 0, kmr_noopt, sum_counts_for_a_keys_rev);
+    kmr_reduce(kvs_rev2, kvs_red2, 0, kmr_noopt, sum_counts_for_a_keys_rev);
 
     if (rank == 0) {
 	printf("print kvs_red2\n");
@@ -2336,7 +2440,7 @@ mykmr_shuffle(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
 
 
     long key_count = kvs_sort3->c.element_count;
-    long *hash_table = malloc(sizeof(long) * key_count);
+    long *hash_table = malloc(sizeof(long) * (size_t)key_count);
     kmr_map(kvs_sort3, 0, hash_table, kmr_noopt, kmr_put_integer_to_array_fn);
 
     /* for(long i=0;i<key_count;i++){ */
@@ -2346,18 +2450,19 @@ mykmr_shuffle(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
     /* fflush(0); */
 
     // make Keys x nprocs matrix
-    long *kn_mat = calloc(key_count * nprocs, sizeof(long));
+    long *kn_mat = calloc((size_t)(key_count * nprocs), sizeof(long));
     // insert keys
     // find key index(TODO: Binary search, OpenMP parallel)
-    for (long k = 0; k < key_count; k++) {
-	long hash = hash_table[k];
-	for (long i = 0; i < nprocs; i++) {
-	    for (long j = 0; j < TOPX; j++) {
-		if (kv_recv[i*TOPX + j].vlen == 0) {
-		    break;
-		}
-		if (hash == kv_recv[i*TOPX + j].v.i) {
-		    kn_mat[i*key_count + k] = kv_recv[i*TOPX + j].k.i;
+    for (long node_j = 0; node_j < nprocs; node_j++) {
+	for (long key_i = 0; key_i < TOPX; key_i++) {
+	    if (kv_recv[node_j * TOPX + key_i].vlen == 0) {
+		break;
+	    }
+	    for (long k = 0; k < key_count; k++) {
+		long hash = hash_table[k];
+
+		if (hash == kv_recv[node_j*TOPX + key_i].v.i) {
+		    kn_mat[node_j * key_count + k] = kv_recv[node_j * TOPX + key_i].k.i;
 		}
 	    }
 	}
@@ -2376,11 +2481,17 @@ mykmr_shuffle(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
     free(kv_recv);
 
     // select node(using leen_algorithm)
-    // typedef struct {long keyid, long toNode} partition;
-    // partition *part = malloc(sizeof(partition) * key_count); // don't forget free!!
-    // leen(part, kn_mat)
-    
+    long *partition = malloc(sizeof(long) * (size_t)key_count);
+    leen(partition, kn_mat, key_count, nprocs);
 
+    if (rank == 0){
+    printf("nprocs = %ld\n", nprocs);
+    for (long key_i = 0; key_i < key_count; key_i++) {
+        printf("partition[%ld] = %ld\n", key_i, partition[key_i]);
+    }
+    }
+
+    free(partition);
     free(hash_table);
     free(kn_mat);
 
