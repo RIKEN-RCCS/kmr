@@ -2453,11 +2453,11 @@ mykmr_shuffle(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
     KMR_KVS *kvs_red2 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_INTEGER);
     kmr_reduce(kvs_rev2, kvs_red2, 0, kmr_noopt, sum_counts_for_a_keys_rev);
 
-    if (rank == 0) {
-	printf("print kvs_red2\n");
-	kmr_dump_kvs(kvs_red2, 0);
-	fflush(0);
-    }
+    /* if (rank == 0) { */
+    /* 	printf("print kvs_red2\n"); */
+    /* 	kmr_dump_kvs(kvs_red2, 0); */
+    /* 	fflush(0); */
+    /* } */
 
 
     // make keyid list
@@ -2498,28 +2498,28 @@ mykmr_shuffle(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
 	}
     }
 
-    if (rank == 0) {
-    for (long i=0;i<nprocs;i++) {
-	for (long k=0;k<key_count;k++) {
-	    printf("%d ", kn_mat[i*key_count + k]);
-	}
-	printf("\n");
-    }
-    fflush(0);
-    }
+    /* if (rank == 0) { */
+    /* for (long i=0;i<nprocs;i++) { */
+    /* 	for (long k=0;k<key_count;k++) { */
+    /* 	    printf("%d ", kn_mat[i*key_count + k]); */
+    /* 	} */
+    /* 	printf("\n"); */
+    /* } */
+    /* fflush(0); */
+    /* } */
 
-    free(kv_recv);
+    /* free(kv_recv); */
 
     // select node(using leen_algorithm)
     long *partition = malloc(sizeof(long) * (size_t)key_count);
     leen(partition, kn_mat, key_count, nprocs);
 
-    if (rank == 0){
-    printf("nprocs = %ld\n", nprocs);
-    for (long key_i = 0; key_i < key_count; key_i++) {
-        printf("partition[%ld] = %ld\n", key_i, partition[key_i]);
-    }
-    }
+    /* if (rank == 0){ */
+    /* printf("nprocs = %ld\n", nprocs); */
+    /* for (long key_i = 0; key_i < key_count; key_i++) { */
+    /*     printf("partition[%ld] = %ld\n", key_i, partition[key_i]); */
+    /* } */
+    /* } */
 
     // TODO: delete 
     /* free(partition); */
