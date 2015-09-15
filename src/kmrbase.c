@@ -2150,14 +2150,29 @@ static int
 sum_counts_for_a_keys(const struct kmr_kv_box kv[], const long n,
 		      const KMR_KVS *kvs, KMR_KVS *kvo, void *p)
 {
-    /* (-1 * count of keys, hash(key)) */
-    struct kmr_kv_box kvbox = {
-	.klen = sizeof(long),
-	.k.i = -1 * n,
-	.vlen = sizeof(long),
-	.v.i = (long)kmr_hash_key(kvs, kv[0])
-    };
-    kmr_add_kv(kvo, kvbox);
+    if (1) {
+	/* counting kv_box size*/
+	long total_size = 0;
+	for (int i = 0; i < n; i++) {
+	    total_size += kv[i].klen + kv[i].vlen;
+	}
+	struct kmr_kv_box kvbox = {
+	    .klen = sizeof(long),
+	    .k.i = -1 * total_size,
+	    .vlen = sizeof(long),
+	    .v.i = (long)kmr_hash_key(kvs, kv[0])
+	};
+	kmr_add_kv(kvo, kvbox);
+    } else { 
+        /* (-1 * count of keys, hash(key)) */
+	struct kmr_kv_box kvbox = {
+	    .klen = sizeof(long),
+	    .k.i = -1 * n,
+	    .vlen = sizeof(long),
+	    .v.i = (long)kmr_hash_key(kvs, kv[0])
+	};
+	kmr_add_kv(kvo, kvbox);
+    }
     return MPI_SUCCESS;
 }
 
