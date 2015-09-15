@@ -17,8 +17,9 @@ wordcount:
 
 pagerank:
 	$(mpicc) $(INCL) -g pagerank.c $(LIBS)
+
 leenpagerank:
-	$(mpicc) $(INCL) -g pagerank.c $(LIBS)
+	$(mpicc) $(INCL) -g leenpagerank.c $(LIBS)
 
 
 mykmr_shuffle:
