@@ -2150,7 +2150,7 @@ static int
 sum_counts_for_a_keys(const struct kmr_kv_box kv[], const long n,
 		      const KMR_KVS *kvs, KMR_KVS *kvo, void *p)
 {
-    if (1) {
+    if (0) {
 	/* counting kv_box size*/
 	long total_size = 0;
 	for (int i = 0; i < n; i++) {

@@ -421,6 +421,8 @@ main(int argc, char **argv)
         // renew pagegraph
         kvs2 = kmr_create_kvs(mr, KMR_KV_OPAQUE, KMR_KV_OPAQUE);
         kmr_reduce(kvs4, kvs2, 0, kmr_noopt, sum_pagerank_for_a_toid);
+
+	break;
     }
 
     MPI_Barrier(MPI_COMM_WORLD);
