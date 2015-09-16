@@ -377,6 +377,7 @@ main(int argc, char **argv)
     // get start time
     MPI_Barrier(MPI_COMM_WORLD);
     double stime = MPI_Wtime();
+    double reduce_time = 0.0;
 
     for(int i = 1; i <= 100; i++){
         if(rank == 0){ fprintf(stdout, "progress %d / 100\n", i); }
@@ -387,46 +388,53 @@ main(int argc, char **argv)
         // share local kvs to all node
         KMR_KVS *kvs4 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_OPAQUE);
         mykmr_shuffle(kvs3, kvs4, kmr_noopt);
-	if ( i == 1 ){
-	    long kc = 0;
-	    kmr_local_element_count(kvs4, &kc);
-	    long *akc = malloc(sizeof(long)*nprocs);
-	    MPI_Gather(&kc, sizeof(long), MPI_BYTE, akc, sizeof(long), MPI_BYTE, 0, MPI_COMM_WORLD);
-	    /* if (rank == 0){ */
-	    /* 	for (long j = 0; j < nprocs; j++){ */
-	    /* 	    printf("node %3ld = %d\n", j, akc[j]); */
-	    /* 	} */
-	    /* } */
-	    long s = 0;
-	    long min = 0, max = 0;
-	    MPI_Reduce(&kc, &s, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
-	    MPI_Reduce(&kc, &min, 1, MPI_LONG, MPI_MIN, 0, MPI_COMM_WORLD);
-	    MPI_Reduce(&kc, &max, 1, MPI_LONG, MPI_MAX, 0, MPI_COMM_WORLD);
-	    double mean = s / nprocs;
-	    double sd = 0.0;
-	    for (long n = 0; n < nprocs; n++) {
-		sd += pow(akc[n] - mean, 2);
-	    }
-	    sd = sd / nprocs;
-	    sd = sqrt(sd);
-	    if (rank == 0){
-		printf("sd  = %lf\n", sd);
-		printf("max = %ld\n", max);
-		printf("min = %ld\n", min);
-		printf("min-max-ratio = %lf\n", (double)min / (double)max * 100.0);
-	    }
-	    free(akc);
-	}
-
+	/* if ( i == 1 ){ */
+	/*     long kc = 0; */
+	/*     kmr_local_element_count(kvs4, &kc); */
+	/*     long *akc = malloc(sizeof(long)*nprocs); */
+	/*     MPI_Gather(&kc, sizeof(long), MPI_BYTE, akc, sizeof(long), MPI_BYTE, 0, MPI_COMM_WORLD); */
+	/*     /\* if (rank == 0){ *\/ */
+	/*     /\* 	for (long j = 0; j < nprocs; j++){ *\/ */
+	/*     /\* 	    printf("node %3ld = %d\n", j, akc[j]); *\/ */
+	/*     /\* 	} *\/ */
+	/*     /\* } *\/ */
+	/*     long s = 0; */
+	/*     long min = 0, max = 0; */
+	/*     MPI_Reduce(&kc, &s, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD); */
+	/*     MPI_Reduce(&kc, &min, 1, MPI_LONG, MPI_MIN, 0, MPI_COMM_WORLD); */
+	/*     MPI_Reduce(&kc, &max, 1, MPI_LONG, MPI_MAX, 0, MPI_COMM_WORLD); */
+	/*     double mean = s / nprocs; */
+	/*     double sd = 0.0; */
+	/*     for (long n = 0; n < nprocs; n++) { */
+	/* 	sd += pow(akc[n] - mean, 2); */
+	/*     } */
+	/*     sd = sd / nprocs; */
+	/*     sd = sqrt(sd); */
+	/*     if (rank == 0){ */
+	/* 	printf("sd  = %lf\n", sd); */
+	/* 	printf("max = %ld\n", max); */
+	/* 	printf("min = %ld\n", min); */
+	/* 	printf("min-max-ratio = %lf\n", (double)min / (double)max * 100.0); */
+	/*     } */
+	/*     free(akc); */
+	/* } */
+	
         // renew pagegraph
         kvs2 = kmr_create_kvs(mr, KMR_KV_OPAQUE, KMR_KV_OPAQUE);
+	double reduce_stime = MPI_Wtime();
         kmr_reduce(kvs4, kvs2, 0, kmr_noopt, sum_pagerank_for_a_toid);
+	reduce_time += MPI_Wtime() - reduce_stime;
 
-	break;
+	/* break; */
     }
 
     MPI_Barrier(MPI_COMM_WORLD);
     double etime = MPI_Wtime();
+    // max(reduce_time)
+    double max_reduce_time;
+    MPI_Reduce(&reduce_time, &max_reduce_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    
+
     if(rank == 0){
         printf("///// Information /////\n");
         printf("MPI nprocs\t\t\t: %d\n", nprocs);
@@ -434,10 +442,11 @@ main(int argc, char **argv)
         printf("OMP_MAX_THREADS\t\t: %d\n", (int)omp_get_max_threads());
 #endif
         printf("calculation time\t: %lf seconds\n", etime - stime);
+	printf("max reduce time\t: %lf seconds\n", max_reduce_time);
         printf("\n");
         printf("///// Top 5 pagerank /////\n");
     }
-  
+    
     //// print result ////
     // convert [key:[FromId, pagerank], val: ToId list] to [key: pagerank, val: FromId]
     KMR_KVS *kvs_fin = kmr_create_kvs(mr, KMR_KV_FLOAT8, KMR_KV_INTEGER);
