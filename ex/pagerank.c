@@ -31,6 +31,7 @@
 #include <unistd.h>
 #include "kmr.h"
 #include <ctype.h>
+#include <math.h>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -385,6 +386,38 @@ main(int argc, char **argv)
         // share local kvs to all node
         KMR_KVS *kvs4 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_OPAQUE);
         kmr_shuffle(kvs3, kvs4, kmr_noopt);
+
+	if ( i == 1 ){
+	    long kc = 0;
+	    kmr_local_element_count(kvs4, &kc);
+	    long *akc = malloc(sizeof(long)*nprocs);
+	    MPI_Gather(&kc, sizeof(long), MPI_BYTE, akc, sizeof(long), MPI_BYTE, 0, MPI_COMM_WORLD);
+	    /* if (rank == 0){ */
+	    /* 	for (long j = 0; j < nprocs; j++){ */
+	    /* 	    printf("node %3ld = %d\n", j, akc[j]); */
+	    /* 	} */
+	    /* } */
+	    long s = 0;
+	    long min = 0, max = 0;
+	    MPI_Reduce(&kc, &s, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
+	    MPI_Reduce(&kc, &min, 1, MPI_LONG, MPI_MIN, 0, MPI_COMM_WORLD);
+	    MPI_Reduce(&kc, &max, 1, MPI_LONG, MPI_MAX, 0, MPI_COMM_WORLD);
+	    double mean = s / nprocs;
+	    double sd = 0.0;
+	    for (long n = 0; n < nprocs; n++) {
+		sd += pow(akc[n] - mean, 2);
+	    }
+	    sd = sd / nprocs;
+	    sd = sqrt(sd);
+	    if (rank == 0){
+		printf("sd  = %lf\n", sd);
+		printf("max = %ld\n", max);
+		printf("min = %ld\n", min);
+		printf("min-max-ratio = %lf\n", (double)min / (double)max * 100.0);
+	    }
+	    free(akc);
+	}
+
 
         // renew pagegraph
         kvs2 = kmr_create_kvs(mr, KMR_KV_OPAQUE, KMR_KV_OPAQUE);

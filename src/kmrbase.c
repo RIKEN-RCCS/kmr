@@ -2444,7 +2444,7 @@ mykmr_shuffle(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
 	    if (kv_recv[node_j * TOPX + key_i].vlen == 0) {
 		break;
 	    }
-	    kmr_add_kv(kvs_all, kv_recv[node_j * TOPX + key_i]);
+	    kmr_add_kv_nomutex(kvs_all, kv_recv[node_j * TOPX + key_i], 0, 0);
 	}
     }
     kmr_add_kv_done(kvs_all);
