@@ -2406,7 +2406,7 @@ mykmr_shuffle(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
     int nprocs = mr->nprocs;
     int rank = mr->rank;
 
-#define TOPX 100
+#define TOPX 20
     // counting keys(using reduce)
     // output ((-1)*counts of key, hash(key))
     KMR_KVS *kvs_red = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_INTEGER);
@@ -2473,6 +2473,18 @@ mykmr_shuffle(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
     // counting key
     KMR_KVS *kvs_red2 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_INTEGER);
     kmr_reduce(kvs_rev2, kvs_red2, 0, kmr_noopt, sum_counts_for_a_keys_rev);
+
+
+    // check kvs element count
+    long kc = 0;
+    static int call_time = 0;
+    kmr_local_element_count(kvs_red2, &kc);
+    if ( rank == 0 ) {
+	printf("call time %d: element_count = %d\n", call_time, kc);
+	fflush(0);
+    }
+    call_time += 1;
+
 
     /* if (rank == 0) { */
     /* 	printf("print kvs_red2\n"); */
