@@ -633,7 +633,7 @@ kmr_make_product_fn(const struct kmr_kv_box kv[], const long n,
 	struct kmr_kvs_entry *e = (void *)kv[i].v.p;
 	struct kmr_kv_box vkv0 = kmr_pick_kv2(e, keyf, dummyf);
 	/*assert(vkv0.klen == sizeof(long));*/
-	long tag = vkv0.v.i;
+	long tag = vkv0.k.i;
 	assert(tag == 0 || tag == 1);
 	if (tag == 0) {
 	    kcnt++;
