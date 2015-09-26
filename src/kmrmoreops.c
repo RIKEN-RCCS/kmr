@@ -1338,10 +1338,10 @@ kmr_histogram_count_by_ranks(KMR_KVS *kvs, long *frq, double *var,
     struct kmr_option opt = {.rank_zero = rankzeroonly};
     cc = kmr_replicate(kvs0, kvs1, opt);
     assert(cc == MPI_SUCCESS);
-    KMR_KVS *kvs2 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_INTEGER);
-    cc = kmr_sort_locally(kvs1, kvs2, 0, opt);
-    assert(cc == MPI_SUCCESS);
-    cc = kmr_map(kvs2, 0, vec, opt, kmr_put_integer_to_array_fn);
+    /*KMR_KVS *kvs2 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_INTEGER);*/
+    /*cc = kmr_sort_locally(kvs1, kvs2, 0, kmr_noopt);*/
+    /*assert(cc == MPI_SUCCESS);*/
+    cc = kmr_map(kvs1, 0, vec, kmr_noopt, kmr_put_integer_to_array_fn);
     assert(cc == MPI_SUCCESS);
 
     if (var != 0 && (!rankzeroonly || mr->rank == 0)) {
