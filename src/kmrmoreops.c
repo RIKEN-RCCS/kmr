@@ -812,24 +812,24 @@ kmr_ranking_to_rank_fn(const struct kmr_kv_box kv,
 {
     struct kmr_ranking_to_rank *u = p;
     int cc;
-    struct kmr_kv_box kv1 = {.klen = kv.klen,
+    struct kmr_kv_box nkv = {.klen = kv.klen,
 			     .vlen = kv.vlen,
 			     .k.i = (u->cyclic
 				     ? (kv.k.i % u->factor)
 				     : (kv.k.i / u->factor)),
 			     .v = kv.v};
-    cc = kmr_add_kv(kvo, kv1);
+    cc = kmr_add_kv(kvo, nkv);
     assert(cc == MPI_SUCCESS);
     return MPI_SUCCESS;
 }
 
-/** Distributes key-value pairs approximately evenly to ranks.  It is
-    used to level the load of mapping among ranks by calling it before
-    mapping.  kmr_shuffle() can be sufficient to distribute pairs in
-    most cases, but sometimes it results in uneven distribution
-    because shuffling is based on hashing on the keys.
-    Effective-options: NOTHREADING, INSPECT, KEEP_OPEN.  See struct
-    kmr_option.  */
+/** Distributes key-values so that each rank has approximately the
+    same number of pairs.  It is used to level the load of mapping
+    among ranks by calling it before mapping.  kmr_shuffle() can be
+    sufficient to distribute pairs in most cases, but sometimes it
+    results in uneven distribution because shuffling is based on
+    hashing on the keys.  Effective-options: NOTHREADING, INSPECT,
+    KEEP_OPEN.  See struct kmr_option.  */
 
 int
 kmr_distribute(KMR_KVS *kvi, KMR_KVS *kvo, _Bool cyclic, struct kmr_option opt)
@@ -860,6 +860,263 @@ kmr_distribute(KMR_KVS *kvi, KMR_KVS *kvo, _Bool cyclic, struct kmr_option opt)
     cc = kmr_shuffle(kvs1, kvs2, ranking);
     assert(cc == MPI_SUCCESS);
     cc = kmr_unpairing(kvs2, kvo, o_opt);
+    assert(cc == MPI_SUCCESS);
+    return MPI_SUCCESS;
+}
+
+/* Prefix-scans on one key-value from each rank.  It is used to
+   calculate the start value of a scan on each rank.  IT CURRENTLY
+   RUNS SEQUENTIALLY BY COLLECTING ENTRIES ON RANK0. */
+
+static int
+kmr_scan_across_ranks_sequentially(KMR_KVS *kvi, KMR_KVS *kvo,
+				   KMR_KVS *total, kmr_redfn_t r)
+{
+    int cc;
+    KMR *mr = kvo->c.mr;
+    enum kmr_kv_field keyf = kvi->c.key_data;
+    enum kmr_kv_field valf = kvi->c.value_data;
+
+    /* Collect partial scans (on each rank) to rank zero. */
+
+    KMR_KVS *kvs0 = kmr_create_kvs(mr, keyf, valf);
+    struct kmr_option rankzero = {.rank_zero = 1};
+    cc = kmr_replicate(kvi, kvs0, rankzero);
+    assert(cc == MPI_SUCCESS);
+
+    /* Scan on rank zero. */
+
+    KMR_KVS *kvs1 = kmr_create_kvs(mr, keyf, valf);
+    KMR_KVS *kvo1 = kmr_create_kvs(mr, keyf, valf);
+    if (mr->rank == 0) {
+	KMR_KVS *zero = kmr_create_kvs(mr, keyf, valf);
+	cc = (*r)(0, 0, kvs0, zero, 0);
+	assert(cc == MPI_SUCCESS);
+	cc = kmr_add_kv_done(zero);
+	assert(cc == MPI_SUCCESS);
+
+	cc = kmr_scan_locally(kvs0, zero, kvs1, kvo1, r);
+	assert(cc == MPI_SUCCESS);
+    } else {
+	kmr_free_kvs(kvs0);
+	cc = kmr_add_kv_done(kvs1);
+	assert(cc == MPI_SUCCESS);
+	cc = kmr_add_kv_done(kvo1);
+	assert(cc == MPI_SUCCESS);
+    }
+
+    /* Scatter scan value from rank zero (by replacing keys with ranks).  */
+
+    KMR_KVS *kvs2 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_OPAQUE);
+    long rankingbase = 0;
+    cc = kmr_map(kvs1, kvs2, &rankingbase, kmr_noopt, kmr_ranking_fn);
+    assert(cc == MPI_SUCCESS);
+
+    KMR_KVS *kvs3 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_OPAQUE);
+    struct kmr_option keyasrank = {.key_as_rank = 1};
+    cc = kmr_shuffle(kvs2, kvs3, keyasrank);
+    assert(cc == MPI_SUCCESS);
+
+    cc = kmr_unpairing(kvs3, kvo, kmr_noopt);
+    assert(cc == MPI_SUCCESS);
+
+    /* Copy carryover value (in total). */
+
+    cc = kmr_replicate(kvo1, total, kmr_noopt);
+    assert(cc == MPI_SUCCESS);
+
+    return MPI_SUCCESS;
+}
+
+/** Prefix-scans every key-value with a reduce-function
+    (non-self-inclusively) and generates the final value in TOTAL (it
+    generates the same value on all the ranks in the TOTAL).  The
+    key-values are scanned in the order in the KVS as they are
+    concatenated in the rank-order.  The reduce-function should be
+    associative and free of side-effects (because it is called
+    multiple times on the same data).  The reduce-function should
+    output a single key-value when given any number of key-value
+    pairs.  Furthermore, it should output an identity element when it
+    is given zero key-value pairs. */
+
+int
+kmr_scan_on_values(KMR_KVS *kvi, KMR_KVS *kvo, KMR_KVS *total, kmr_redfn_t r)
+{
+    int cc;
+    KMR *mr = kvo->c.mr;
+    enum kmr_kv_field keyf = kvi->c.key_data;
+    enum kmr_kv_field valf = kvi->c.value_data;
+
+    /* Scan whole data on each rank. */
+
+    KMR_KVS *kvs0 = kmr_create_kvs(mr, keyf, valf);
+    struct kmr_option inspect = {.inspect = 1};
+    cc = kmr_reduce_as_one(kvi, kvs0, 0, inspect, r);
+    assert(cc == MPI_SUCCESS);
+    assert(kvs0->c.element_count == 1);
+
+    /* Scan among ranks. */
+
+    KMR_KVS *kvs1 = kmr_create_kvs(mr, keyf, valf);
+    cc = kmr_scan_across_ranks_sequentially(kvs0, kvs1, total, r);
+    assert(cc == MPI_SUCCESS);
+    assert(kvs1->c.element_count == 1);
+    assert(total->c.element_count == 1);
+
+    /* Scan with global initial values on each rank. */
+
+    cc = kmr_scan_locally(kvi, kvs1, kvo, 0, r);
+    assert(cc == MPI_SUCCESS);
+
+    return MPI_SUCCESS;
+}
+
+static int
+kmr_count_key_fn(const struct kmr_kv_box kv[], const long n,
+		 const KMR_KVS *kvs, KMR_KVS *kvo, void *p)
+{
+    struct kmr_kv_box nkv = {
+	.klen = kv[0].klen,
+	.k = kv[0].k,
+	.vlen = sizeof(long),
+	.v.i = n};
+    kmr_add_kv(kvo, nkv);
+    return MPI_SUCCESS;
+}
+
+static int
+kmr_sum_key_counts_fn(const struct kmr_kv_box kv[], const long n,
+		      const KMR_KVS *kvs, KMR_KVS *kvo, void *p)
+{
+    long c = 0;
+    for (long i = 0; i < n; i++) {
+	c += kv[i].v.i;
+    }
+    struct kmr_kv_box nkv = {
+	.klen = kv[0].klen,
+	.k = kv[0].k,
+	.vlen = sizeof(long),
+	.v.i = c};
+    kmr_add_kv(kvo, nkv);
+    return MPI_SUCCESS;
+}
+
+/* Counts appearances of keys in KVI and returns key-count pairs in
+   KVO, in the same way running a word-count.  It implies inspect on
+   the input KVI. */
+
+static int
+kmr_count_keys(KMR_KVS *kvi, KMR_KVS *kvo)
+{
+    int cc;
+    KMR *mr = kvi->c.mr;
+    enum kmr_kv_field keyf = kvi->c.key_data;
+    struct kmr_option inspect = {.inspect = 1};
+    KMR_KVS *kvs0 = kmr_create_kvs(mr, keyf, KMR_KV_INTEGER);
+    cc = kmr_reduce(kvi, kvs0, 0, inspect, kmr_count_key_fn);
+    assert(cc == MPI_SUCCESS);
+    KMR_KVS *kvs1 = kmr_create_kvs(mr, keyf, KMR_KV_INTEGER);
+    cc = kmr_shuffle(kvs0, kvs1, kmr_noopt);
+    assert(cc == MPI_SUCCESS);
+    cc = kmr_reduce(kvs1, kvo, 0, kmr_noopt, kmr_sum_key_counts_fn);
+    assert(cc == MPI_SUCCESS);
+    return MPI_SUCCESS;
+}
+
+/* Sums the value part for scan.  The key field is unknown when n=0,
+   assuming the keys are not used in scanning. */
+
+static int
+kmr_scan_sum_fn(const struct kmr_kv_box kv[], const long n,
+		const KMR_KVS *kvs, KMR_KVS *kvo, void *p)
+{
+    long sum = 0;
+    for (long i = 0; i < n; i++) {
+	sum += kv[i].v.i;
+    }
+    KMR *mr = kvs->c.mr;
+    int keylen = kmr_legal_minimum_field_size(mr, kvs->c.key_data);
+    struct kmr_kv_box nkv = {.klen = ((n != 0) ? (kv[0].klen) : keylen),
+			     .vlen = sizeof(long),
+			     .k.i = ((n != 0) ? (kv[0].k.i) : 0),
+			     .v.i = sum};
+    kmr_add_kv(kvo, nkv);
+    return MPI_SUCCESS;
+}
+
+/* Determines a target rank of a key from the partial sums of pair
+   counts which are equally divided to the ranks. */
+
+static int
+kmr_partition_by_count_fn(const struct kmr_kv_box kv,
+			  const KMR_KVS *kvs, KMR_KVS *kvo, void *p,
+			  const long i)
+{
+    KMR *mr = kvs->c.mr;
+    const int nprocs = mr->nprocs;
+    long nentries = *(long *)p;
+    long partialsum = kv.v.i;
+    assert(partialsum < nentries);
+    long rank = (partialsum * nprocs) / nentries;
+    struct kmr_kv_box nkv = {.klen = kv.klen,
+			     .vlen = kv.vlen,
+			     .k = kv.k,
+			     .v.i = rank};
+    kmr_add_kv(kvo, nkv);
+    return MPI_SUCCESS;
+}
+
+/** Shuffles key-values so that each rank has approximately the same
+    number of pairs.  It collects the same keys on a rank
+    (cf. kmr_distribute()). */
+
+int
+kmr_shuffle_leveling_pair_count(KMR_KVS *kvi, KMR_KVS *kvo)
+{
+    int cc;
+    KMR *mr = kvi->c.mr;
+    enum kmr_kv_field keyf = kvi->c.key_data;
+    KMR_KVS *kvs0 = kmr_create_kvs(mr, keyf, KMR_KV_INTEGER);
+    cc = kmr_count_keys(kvi, kvs0);
+    assert(cc == MPI_SUCCESS);
+
+    /* kvs0 holds (key, count). */
+
+    KMR_KVS *kvs1 = kmr_create_kvs(mr, keyf, KMR_KV_INTEGER);
+    KMR_KVS *total = kmr_create_kvs(mr, keyf, KMR_KV_INTEGER);
+    cc = kmr_scan_on_values(kvs0, kvs1, total, kmr_scan_sum_fn);
+    assert(cc == MPI_SUCCESS);
+
+    /* kvs1 holds (key, prefix-sum-of-counts). */
+
+    struct kmr_kv_box kv;
+    cc = kmr_take_one(total, &kv);
+    long nentries = kv.v.i;
+    kmr_free_kvs(total);
+
+    KMR_KVS *kvs2 = kmr_create_kvs(mr, keyf, KMR_KV_INTEGER);
+    cc = kmr_map(kvs1, kvs2, &nentries, kmr_noopt, kmr_partition_by_count_fn);
+    assert(cc == MPI_SUCCESS);
+
+    /* kvs2 holds (key, rank). */
+
+    KMR_KVS *kvs3 = kmr_create_kvs(mr, keyf, KMR_KV_OPAQUE);
+    cc = kmr_pairing(kvi, kvs3, kmr_noopt);
+    assert(cc == MPI_SUCCESS);
+
+    /* kvs3 holds (key, (key, value)). */
+
+    KMR_KVS *kvs4 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_OPAQUE);
+    cc = kmr_match(kvs2, kvs3, kvs4, kmr_noopt);
+    assert(cc == MPI_SUCCESS);
+
+    /* kvs4 holds (rank, (key, value)). */
+
+    struct kmr_option ranking = {.key_as_rank = 1};
+    KMR_KVS *kvs5 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_OPAQUE);
+    cc = kmr_shuffle(kvs4, kvs5, ranking);
+    assert(cc == MPI_SUCCESS);
+    cc = kmr_unpairing(kvs5, kvo, kmr_noopt);
     assert(cc == MPI_SUCCESS);
     return MPI_SUCCESS;
 }

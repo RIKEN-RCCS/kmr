@@ -2765,6 +2765,105 @@ kmr_retrieve_keyed_records(KMR_KVS *kvs, struct kmr_keyed_record *ev,
     return MPI_SUCCESS;
 }
 
+/** Returns a minimum byte size of the field: 8 for INTEGER and
+    FLOAT8, 0 for others. */
+
+int
+kmr_legal_minimum_field_size(KMR *mr, enum kmr_kv_field f)
+{
+    switch (f) {
+    case KMR_KV_BAD:
+	kmr_error(mr, "kmr_legal_minimum_field_size: Bad field");
+	return 0;
+    case KMR_KV_INTEGER:
+	return sizeof(long);
+    case KMR_KV_FLOAT8:
+	return sizeof(double);
+    case KMR_KV_OPAQUE:
+    case KMR_KV_CSTRING:
+    case KMR_KV_POINTER_OWNED:
+    case KMR_KV_POINTER_UNMANAGED:
+	return 0;
+    default:
+	kmr_error(mr, "kmr_legal_minimum_field_size: Bad field");
+	return 0;
+    }
+}
+
+/** Scans every key-value with a reduce-function locally
+    (independently on each rank).  It works in the order in the KVS.
+    It ignores differences of the keys.  It gets the start value from
+    CARRYIN and puts the final value to CARRYOUT.  The output has the
+    same number of entries as the input.  The carry-in and carry-out
+    have one entry.  The carry-out can be null.  The reduce-function
+    is called on each key-value pair as the right operand with the
+    previous value as the left operand, and it should output a single
+    value.  The key part of the output is ignored and a pair is stored
+    under the original key. */
+
+int
+kmr_scan_locally(KMR_KVS *kvi, KMR_KVS *carryin,
+		 KMR_KVS *kvo, KMR_KVS *carryout, kmr_redfn_t r)
+{
+    int cc;
+    KMR *mr = kvo->c.mr;
+    enum kmr_kv_field keyf = kvi->c.key_data;
+    enum kmr_kv_field valf = kvi->c.value_data;
+
+    long cnt = kvi->c.element_count;
+    size_t evsz = (sizeof(struct kmr_keyed_record) * (size_t)cnt);
+    struct kmr_keyed_record *ev = kmr_malloc(evsz);
+    cc = kmr_retrieve_keyed_records(kvi, ev, cnt, 0, 0);
+    assert(cc == MPI_SUCCESS);
+
+    KMR_KVS *lastvalue = carryin;
+    for (long i = 0; i < cnt; i++) {
+	struct kmr_kv_box kv;
+	cc = kmr_take_one(lastvalue, &kv);
+	assert(cc == MPI_SUCCESS);
+	struct kmr_kv_box bx[2];
+	bx[0] = kv;
+	bx[1] = kmr_pick_kv(ev[i].e, kvi);
+	KMR_KVS *xs = kmr_create_kvs(mr, keyf, valf);
+	cc = (*r)(bx, 2, kvi, xs, 0);
+	if (cc != MPI_SUCCESS) {
+	    char ee[80];
+	    snprintf(ee, sizeof(ee),
+		     "Reduce-fn returned with error cc=%d", cc);
+	    kmr_error(mr, ee);
+	}
+	cc = kmr_add_kv_done(xs);
+	assert(cc == MPI_SUCCESS);
+	/* Put the last value as it is a non-inclusive scan. */
+	bx[0].klen = bx[1].klen;
+	bx[0].k = bx[1].k;
+	cc = kmr_add_kv(kvo, bx[0]);
+	assert(cc == MPI_SUCCESS);
+	kmr_free_kvs(lastvalue);
+	lastvalue = xs;
+    }
+    cc = kmr_add_kv_done(kvo);
+    assert(cc == MPI_SUCCESS);
+
+    if (carryout != 0) {
+	struct kmr_kv_box kv;
+	cc = kmr_take_one(lastvalue, &kv);
+	assert(cc == MPI_SUCCESS);
+	cc = kmr_add_kv(carryout, kv);
+	assert(cc == MPI_SUCCESS);
+	cc = kmr_add_kv_done(carryout);
+	assert(cc == MPI_SUCCESS);
+    }
+    kmr_free_kvs(lastvalue);
+    kmr_free_kvs(kvi);
+
+    if (ev != 0) {
+	kmr_free(ev, evsz);
+    }
+
+    return MPI_SUCCESS;
+}
+
 /*
 Copyright (C) 2012-2015 RIKEN AICS
 This library is distributed WITHOUT ANY WARRANTY.  This library can be

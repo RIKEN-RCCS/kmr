@@ -879,8 +879,14 @@ extern int kmr_ranking(KMR_KVS *kvi, KMR_KVS *kvo, long *count,
 		       struct kmr_option opt);
 extern int kmr_distribute(KMR_KVS *kvi, KMR_KVS *kvo, _Bool cyclic,
 			  struct kmr_option opt);
+extern int kmr_shuffle_leveling_pair_count(KMR_KVS *kvi, KMR_KVS *kvo);
+extern int kmr_scan_locally(KMR_KVS *kvi, KMR_KVS *carryin,
+			    KMR_KVS *kvo, KMR_KVS *carryout, kmr_redfn_t r);
+extern int kmr_scan_on_values(KMR_KVS *kvi, KMR_KVS *kvo,
+			      KMR_KVS *total, kmr_redfn_t r);
 extern int kmr_choose_first_part(KMR_KVS *kvi, KMR_KVS *kvo,
 				 long n, struct kmr_option opt);
+extern int kmr_legal_minimum_field_size(KMR *mr, enum kmr_kv_field f);
 extern int kmr_histogram_count_by_ranks(KMR_KVS *kvs, long *frq, double *var,
 					_Bool rankzeroonly);
 

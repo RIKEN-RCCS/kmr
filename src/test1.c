@@ -1153,11 +1153,11 @@ simple6(int nprocs, int rank)
     fflush(0);
     usleep(50 * 1000);
 
-    const long ONE = 1;    
+    const long ONE = 1;
 
     KMR_KVS *kvs4 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_INTEGER);
     kmr_map_once(kvs4, (void *)&ONE, kmr_noopt, 0, addkeys6);
-    
+
     struct kmr_kv_box kv;
     kmr_take_one(kvs4, &kv);
     assert(kv.k.i == 0 && kv.v.i == 0);
@@ -1220,10 +1220,11 @@ simple7(int nprocs, int rank)
 	//fflush(0);
     }
 
-    /* Check with length 100M. */
+    /* Check with length 3M. */
 
     if (1) {
-	long n1 = 100000000; /*100M*/
+	//long n1 = 100000000; /*100M*/
+	long n1 = 3000000; /*3M*/
 	long *a1 = malloc(sizeof(long) * (size_t)n1);
 	if (a1 == 0) {
 	    perror("malloc");
@@ -1280,7 +1281,8 @@ simple7(int nprocs, int rank)
 
     if (1) {
 #ifdef _OPENMP
-	long n5 = 100000000; /*100M*/
+	//long n5 = 100000000; /*100M*/
+	long n5 = 3000000; /*3M*/
 	long *a5 = malloc(sizeof(long) * (size_t)n5);
 	if (a5 == 0) {
 	    perror("malloc");
@@ -1338,6 +1340,175 @@ simple7(int nprocs, int rank)
     }
 }
 
+/* Tests kmr_shuffle_leveling_pair_count().  makemanyintegerkeys8()
+   generate random pairs.  copynegate8() makes a copy negating the
+   value in the KVS for later checking. */
+
+static int
+makemanyintegerkeys8(const struct kmr_kv_box kv0,
+		     const KMR_KVS *kvs0, KMR_KVS *kvo, void *p, const long i_)
+{
+    /* (N: Same keys are generated upto N times). */
+    int N = 4;
+    long MM = *(long *)p;
+    KMR *mr = kvo->c.mr;
+    int rank = mr->rank;
+    int nprocs = mr->nprocs;
+    long cnt = (MM * (nprocs - rank) / nprocs);
+    for (long i = 0; i < cnt; i++) {
+	long j = (i / N);
+	struct kmr_kv_box kv = {
+	    .klen = sizeof(long),
+	    .vlen = sizeof(long),
+	    .k.i = (rank + (j * nprocs)),
+	    .v.i = (i + 1)
+	};
+	kmr_add_kv(kvo, kv);
+    }
+    return MPI_SUCCESS;
+}
+
+static int
+makemanystringkeys8(const struct kmr_kv_box kv0,
+		    const KMR_KVS *kvs0, KMR_KVS *kvo, void *p, const long i_)
+{
+    /* (N: Same keys are generated upto N times). */
+    int N = 4;
+    long MM = *(long *)p;
+    KMR *mr = kvo->c.mr;
+    int rank = mr->rank;
+    int nprocs = mr->nprocs;
+    long cnt = (MM * (nprocs - rank) / nprocs);
+    for (long i = 0; i < cnt; i++) {
+	long j = (i / N);
+	char k[80];
+	snprintf(k, 80, "key%ld", (rank + (j * nprocs)));
+	struct kmr_kv_box kv = {
+	    .klen = (int)(strlen(k) + 1),
+	    .vlen = sizeof(long),
+	    .k.p = k,
+	    .v.i = (i + 1)
+	};
+	kmr_add_kv(kvo, kv);
+    }
+    return MPI_SUCCESS;
+}
+
+static int
+copynegate8(const struct kmr_kv_box kv0,
+	    const KMR_KVS *kvs0, KMR_KVS *kvo, void *p, const long i_)
+{
+    assert(kv0.v.i > 0);
+    struct kmr_kv_box kv = {
+	.klen = kv0.klen,
+	.vlen = kv0.vlen,
+	.k = kv0.k,
+	.v.i = (- kv0.v.i),
+    };
+    kmr_add_kv(kvo, kv);
+    return MPI_SUCCESS;
+}
+
+static int
+comparebycanceling8(const struct kmr_kv_box kv[], const long n,
+		    const KMR_KVS *kvs, KMR_KVS *kvo, void *p)
+{
+    long values[n];
+    for (long i = 0; i < n; i++) {
+	assert(kv[i].v.i != 0);
+	values[i] = kv[i].v.i;
+    }
+    for (long i = 0; i < n; i++) {
+	if (values[i] == 0) {
+	    continue;
+	} else {
+	    assert(i < (n - 1));
+	    for (long j = (i + 1); j < n; j++) {
+		if (values[i] == (- values[j])) {
+		    values[i] = 0;
+		    values[j] = 0;
+		    break;
+		}
+		assert(j != (n - 1));
+	    }
+	}
+    }
+    for (long i = 0; i < n; i++) {
+	assert(values[i] == 0);
+    }
+    return MPI_SUCCESS;
+}
+
+static void
+simple8(int nprocs, int rank)
+{
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (rank == 0) {printf("PSEUDO-SCAN\n");}
+    fflush(0);
+    usleep(50 * 1000);
+
+    /* Check with (MM * (nprocs - rank) / nprocs) keys on ranks. */
+
+    const long MM = 100;
+
+    KMR *mr = kmr_create_context(MPI_COMM_WORLD, MPI_INFO_NULL, 0);
+
+    /* DO ONCE ON INTEGER KEYS AND ONCE ON STRING KEYS. */
+
+    for (int i = 0; i < 2; i++) {
+	assert(i == 0 || i == 1);
+	kmr_mapfn_t makedatafn = ((i == 0)
+				  ? makemanyintegerkeys8
+				  : makemanystringkeys8);
+	enum kmr_kv_field keyf = ((i == 0)
+				  ? KMR_KV_INTEGER
+				  : KMR_KV_OPAQUE);
+
+	KMR_KVS *kvs0 = kmr_create_kvs(mr, keyf, KMR_KV_INTEGER);
+	kmr_map_once(kvs0, (void *)&MM, kmr_noopt, 0, makedatafn);
+
+	KMR_KVS *kvs1 = kmr_create_kvs(mr, keyf, KMR_KV_INTEGER);
+	struct kmr_option inspect = {.inspect = 1};
+	kmr_map(kvs0, kvs1, 0, inspect, copynegate8);
+
+	KMR_KVS *kvs2 = kmr_create_kvs(mr, keyf, KMR_KV_INTEGER);
+	kmr_shuffle_leveling_pair_count(kvs0, kvs2);
+
+	long counts[nprocs];
+	double stat[4];
+	kmr_histogram_count_by_ranks(kvs2, counts, stat, 1);
+
+	if (rank == 0) {
+	    printf("number of pairs on ranks:\n");
+	    for (int r = 0; r < nprocs; r++) {
+		printf("%ld", counts[r]);
+		if (r == (nprocs - 1)) {
+		    printf("\n");
+		} else if (r == 10) {
+		    printf("\n");
+		} else {
+		    printf(",");
+		}
+	    }
+	    fflush(0);
+	}
+	//kmr_dump_kvs(kvs2, 0);
+
+	/* Check the shuffled KVS is a rearrangement of the original KVS. */
+
+	KMR_KVS *kvs3 = kmr_create_kvs(mr, keyf, KMR_KV_INTEGER);
+	KMR_KVS *kvsvec[2] = {kvs1, kvs2};
+	kmr_concatenate_kvs(kvsvec, 2, kvs3, kmr_noopt);
+
+	KMR_KVS *kvs4 = kmr_create_kvs(mr, keyf, KMR_KV_INTEGER);
+	kmr_shuffle(kvs3, kvs4, kmr_noopt);
+
+	kmr_reduce(kvs4, 0, 0, kmr_noopt, comparebycanceling8);
+    }
+
+    kmr_free_context(mr);
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -1370,6 +1541,7 @@ main(int argc, char *argv[])
     simple5(nprocs, rank);
     simple6(nprocs, rank);
     simple7(nprocs, rank);
+    simple8(nprocs, rank);
 
     MPI_Barrier(MPI_COMM_WORLD);
     usleep(50 * 1000);
