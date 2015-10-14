@@ -76,6 +76,14 @@ kmr_trace_fini() {
   }
 }
 
+/*
+static inline void
+kmr_trace_set_rank(int rank) {
+  kmr_trace_t * kt = KT;
+  kt->rank = rank;  
+}
+*/
+
 static inline void
 kmr_trace_start() {
   kmr_trace_t * kt = KT;
@@ -113,11 +121,12 @@ kmr_trace_dump_txt(kmr_trace_t * kt, char * filename) {
   if (!wp) { 
     fprintf(stderr, "error: fopen: %s (%s)\n", strerror(errno), filename);
   }
-  fprintf(wp, "rank: %d\nstart_t: %.0lf\nend_t: %.0lf\n", kt->rank, kt->start_t, kt->end_t);
+  double base_t = kt->start_t;
+  fprintf(wp, "rank: %d\nstart_t: %.0lf\nend_t: %.0lf\n", kt->rank, kt->start_t - base_t, kt->end_t - base_t);
   kmr_trace_entry_t * en = kt->head;
   while (en) {
     kmr_trace_entry_t * enn = en->next;
-    fprintf(wp, "event %d at t=%.0lf\n", en->e, en->t);
+    fprintf(wp, "event %d at t=%.0lf\n", en->e, en->t - base_t);
     en = enn;
   }
   fclose(wp);
@@ -127,8 +136,11 @@ kmr_trace_dump_txt(kmr_trace_t * kt, char * filename) {
 static inline void
 kmr_trace_dump() {
   kmr_trace_t * kt = KT;
-  kmr_trace_dump_bin(kt, "00kt.bin");
-  kmr_trace_dump_txt(kt, "00kt.txt");
+  char filename[100];
+  sprintf(filename, "00kt_rank%d.bin", kt->rank);
+  kmr_trace_dump_bin(kt, filename);
+  sprintf(filename, "00kt_rank%d.txt", kt->rank);
+  kmr_trace_dump_txt(kt, filename);
 }
 
 #endif
