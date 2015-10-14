@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <time.h>
 #include <errno.h>
 
@@ -109,10 +108,32 @@ kmr_trace_add_entry(kmr_trace_event_t ev) {
     kt->tail->next = en;
     kt->tail = en;
   }
+  kt->n++;
 }
 
 static inline void
 kmr_trace_dump_bin(kmr_trace_t * kt, char * filename) {
+  FILE * wp = fopen(filename, "wb");
+  if (!wp) { 
+    fprintf(stderr, "error: fopen: %s (%s)\n", strerror(errno), filename);
+  }
+  if (fwrite(&kt->rank, sizeof(kt->rank), 1, wp) != 1
+      || fwrite(&kt->start_t, sizeof(kt->start_t), 1, wp) != 1
+      || fwrite(&kt->end_t, sizeof(kt->end_t), 1, wp) != 1
+      || fwrite(&kt->n, sizeof(kt->n), 1, wp) != 1) {
+    fprintf(stderr, "error: fwrite: %s (%s)\n", strerror(errno), filename);
+  }
+  kmr_trace_entry_t * en = kt->head;
+  while (en) {
+    kmr_trace_entry_t * enn = en->next;
+    if (fwrite(&en->t, sizeof(en->t), 1, wp) != 1
+        || fwrite(&en->e, sizeof(en->e), 1, wp) != 1) {
+      fprintf(stderr, "error: fwrite: %s (%s)\n", strerror(errno), filename);
+    }
+    en = enn;
+  }
+  fclose(wp);
+  printf("rank %d's trace written to %s\n", kt->rank, filename);
 }
 
 static inline void
@@ -130,7 +151,7 @@ kmr_trace_dump_txt(kmr_trace_t * kt, char * filename) {
     en = enn;
   }
   fclose(wp);
-  printf("trace written to %s\n", filename);
+  printf("rank %d's trace written to %s\n", kt->rank, filename);
 }
 
 static inline void
