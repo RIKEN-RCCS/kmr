@@ -24,12 +24,12 @@ libkmr.a: $(KMRTARGET)
 
 kmr_c: kmr_c.a kmr_c.so
 
-kmr_c.a: kmr.h kmrimpl.h kmrckpt.h $(SRCS_C) $(KMRWATCH)
+kmr_c.a: kmr.h kmrimpl.h kmrckpt.h kmrtrace.h $(SRCS_C) $(KMRWATCH)
 	$(mpicc) -c $(SRCS_C)
 	ar csr kmr_c.a $(OBJS_C) $(KMRWATCH)
 	cp kmr_c.a libkmr.a
 
-kmr_c.so: kmr.h kmrimpl.h kmrckpt.h $(SRCS_C) $(KMRWATCH)
+kmr_c.so: kmr.h kmrimpl.h kmrckpt.h kmrtrace.h $(SRCS_C) $(KMRWATCH)
 	$(mpicc) $(SO_CCFLAGS) -c $(SRCS_C)
 	$(mpicc) $(SO_LDFLAGS) -Wl,-soname,libkmr.so.$(KMRVER) \
 		-o kmr_c.so $(OBJS_C) $(KMRWATCH)
@@ -37,7 +37,7 @@ kmr_c.so: kmr.h kmrimpl.h kmrckpt.h $(SRCS_C) $(KMRWATCH)
 
 kmr_f: kmr_f.a kmr_c.so
 
-kmr_f.a: kmr.h kmrimpl.h kmrckpt.h $(SRCS_C) $(SRCS_F) $(KMRWATCH)
+kmr_f.a: kmr.h kmrimpl.h kmrckpt.h kmrtrace.h $(SRCS_C) $(SRCS_F) $(KMRWATCH)
 	$(mpicc) -c $(SRCS_C)
 	$(mpif90) -c $(SRCS_F)
 	ar csr kmr_f.a $(OBJS_C) $(OBJS_F) $(KMRWATCH)
