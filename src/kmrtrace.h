@@ -3,15 +3,13 @@
 #include <time.h>
 #include <errno.h>
 
-#define KMR_TRACE_ENABLE 0
+#define KMR_TRACE_ENABLE 1
 
 #if KMR_TRACE_ENABLE
 
 typedef enum {
-  kmr_trace_event_start, /* trace starts */
-  kmr_trace_event_end, /* trace ends */
-  kmr_trace_event_map_start,
-  kmr_trace_event_map_end,
+  kmr_trace_event_map_start, /* map phase starts */
+  kmr_trace_event_map_end, /* map phase ends */
   kmr_trace_event_shuffle_start,
   kmr_trace_event_shuffle_end,
   kmr_trace_event_reduce_start,
@@ -61,10 +59,33 @@ kmr_trace_free(void * p) {
 static inline void
 kmr_trace_init() {
   kmr_trace_t * kt = KT;
-  MPI_Comm_rank(MPI_COMM_WORLD, &kt->rank);
+  MPI_Comm_rank(MPI_COMM_WORLD, &(kt->rank));
   kt->start_t = kt->end_t = 0.0;
   kt->n = 0;
   kt->head = kt->tail = NULL;
+}
+
+static inline void
+kmr_trace_fini() {
+  kmr_trace_t * kt = KT;
+  kmr_trace_entry_t * en = kt->head;
+  while (en) {
+    kmr_trace_entry_t * enn = en->next;
+    kmr_trace_free(en);
+    en = enn;
+  }
+}
+
+static inline void
+kmr_trace_start() {
+  kmr_trace_t * kt = KT;
+  kt->start_t = kmr_gettime();
+}
+
+static inline void
+kmr_trace_stop() {
+  kmr_trace_t * kt = KT;
+  kt->end_t = kmr_gettime();
 }
 
 static inline void
@@ -79,23 +100,6 @@ kmr_trace_add_entry(kmr_trace_event_t ev) {
   } else {
     kt->tail->next = en;
     kt->tail = en;
-  }
-}
-
-static inline void
-kmr_trace_init_and_start() {
-  kmr_trace_init();
-  kmr_trace_add_entry(kmr_trace_event_start);
-}
-
-static inline void
-kmr_trace_fini() {
-  kmr_trace_t * kt = KT;
-  kmr_trace_entry_t * en = kt->head;
-  while (en) {
-    kmr_trace_entry_t * enn = en->next;
-    kmr_trace_free(en);
-    en = enn;
   }
 }
 
