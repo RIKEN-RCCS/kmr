@@ -143,7 +143,7 @@ kmr_trace_dump_txt(kmr_trace_t * kt, char * filename) {
     fprintf(stderr, "error: fopen: %s (%s)\n", strerror(errno), filename);
   }
   double base_t = kt->start_t;
-  fprintf(wp, "rank: %d\nstart_t: %.0lf\nend_t: %.0lf\n", kt->rank, kt->start_t - base_t, kt->end_t - base_t);
+  fprintf(wp, "rank: %d\nstart_t: %.0lf\nend_t: %.0lf\nn: %ld\n", kt->rank, kt->start_t - base_t, kt->end_t - base_t, kt->n);
   kmr_trace_entry_t * en = kt->head;
   while (en) {
     kmr_trace_entry_t * enn = en->next;
