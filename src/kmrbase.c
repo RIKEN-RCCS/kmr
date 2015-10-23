@@ -24,7 +24,10 @@
 #include "kmr.h"
 #include "kmrimpl.h"
 
+#define KMR_TRACE_ENABLE 1
+
 #if KMR_TRACE_ENABLE
+#include "kmrtrace.h"
 kmr_trace_t KT[1];
 #endif
 

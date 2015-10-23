@@ -19,8 +19,6 @@
 #include <string.h>
 #include <assert.h>
 
-#include "kmrtrace.h"
-
 /* Poor guess of K or Fujitsu FX10. */
 #if defined(__sparc) && defined(__HPC_ACE__)
 #define __K 1

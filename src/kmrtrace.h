@@ -1,10 +1,13 @@
-#include <stdio.h>
-#include <time.h>
-#include <errno.h>
-
-#define KMR_TRACE_ENABLE 1
+#ifndef _KMRTRACE_H
+#define _KMRTRACE_H
+#pragma once
 
 #if KMR_TRACE_ENABLE
+
+#include <stdint.h>
+#include <time.h>
+
+#define KT_ENDIAN_CHECKER 0xdeadbeef
 
 typedef enum {
   kmr_trace_event_map_start, /* map phase starts */
@@ -13,11 +16,12 @@ typedef enum {
   kmr_trace_event_shuffle_end,
   kmr_trace_event_reduce_start,
   kmr_trace_event_reduce_end,
-  
+  /*  
   kmr_trace_event_mapper_start,
   kmr_trace_event_mapper_end,
   kmr_trace_event_reducer_start,
   kmr_trace_event_reducer_end,
+  */
 } kmr_trace_event_t;
 
 typedef struct kmr_trace_entry {
@@ -45,17 +49,12 @@ kmr_gettime() {
   return ((double) ts.tv_sec) * 10E9 + ((double) ts.tv_nsec);
 }
 
-static inline void *
-kmr_trace_malloc(size_t sz) {
-  return malloc(sz);
-}
+/*
+void * kmr_trace_malloc(size_t);
+void kmr_trace_free(void *);
+*/
 
-static inline void
-kmr_trace_free(void * p) {
-  free(p);
-}
-
-static inline void
+void
 kmr_trace_init() {
   kmr_trace_t * kt = KT;
   MPI_Comm_rank(MPI_COMM_WORLD, &(kt->rank));
@@ -64,40 +63,32 @@ kmr_trace_init() {
   kt->head = kt->tail = NULL;
 }
 
-static inline void
+void
 kmr_trace_fini() {
   kmr_trace_t * kt = KT;
   kmr_trace_entry_t * en = kt->head;
   while (en) {
     kmr_trace_entry_t * enn = en->next;
-    kmr_trace_free(en);
+    kmr_free(en, sizeof(en));
     en = enn;
   }
 }
 
-/*
-static inline void
-kmr_trace_set_rank(int rank) {
-  kmr_trace_t * kt = KT;
-  kt->rank = rank;  
-}
-*/
-
-static inline void
+void
 kmr_trace_start() {
   kmr_trace_t * kt = KT;
   kt->start_t = kmr_gettime();
 }
 
-static inline void
+void
 kmr_trace_stop() {
   kmr_trace_t * kt = KT;
   kt->end_t = kmr_gettime();
 }
 
-static inline void
+void
 kmr_trace_add_entry(kmr_trace_event_t ev) {
-  kmr_trace_entry_t * en = (kmr_trace_entry_t *) kmr_trace_malloc( sizeof(kmr_trace_entry_t) );
+  kmr_trace_entry_t * en = (kmr_trace_entry_t *) kmr_malloc( sizeof(kmr_trace_entry_t) );
   en->t = kmr_gettime();
   en->e = ev;
   en->next = NULL;
@@ -111,13 +102,15 @@ kmr_trace_add_entry(kmr_trace_event_t ev) {
   kt->n++;
 }
 
-static inline void
+static void
 kmr_trace_dump_bin(kmr_trace_t * kt, char * filename) {
   FILE * wp = fopen(filename, "wb");
   if (!wp) { 
     fprintf(stderr, "error: fopen: %s (%s)\n", strerror(errno), filename);
   }
-  if (fwrite(&kt->rank, sizeof(kt->rank), 1, wp) != 1
+  uint32_t endian_checker = KT_ENDIAN_CHECKER;
+  if (fwrite(&endian_checker, sizeof(endian_checker), 1, wp) != 1
+      || fwrite(&kt->rank, sizeof(kt->rank), 1, wp) != 1
       || fwrite(&kt->start_t, sizeof(kt->start_t), 1, wp) != 1
       || fwrite(&kt->end_t, sizeof(kt->end_t), 1, wp) != 1
       || fwrite(&kt->n, sizeof(kt->n), 1, wp) != 1) {
@@ -136,7 +129,7 @@ kmr_trace_dump_bin(kmr_trace_t * kt, char * filename) {
   printf("rank %d's trace written to %s\n", kt->rank, filename);
 }
 
-static inline void
+static void
 kmr_trace_dump_txt(kmr_trace_t * kt, char * filename) {
   FILE * wp = fopen(filename, "wb");
   if (!wp) { 
@@ -154,7 +147,7 @@ kmr_trace_dump_txt(kmr_trace_t * kt, char * filename) {
   printf("rank %d's trace written to %s\n", kt->rank, filename);
 }
 
-static inline void
+void
 kmr_trace_dump() {
   kmr_trace_t * kt = KT;
   char filename[100];
@@ -164,4 +157,6 @@ kmr_trace_dump() {
   kmr_trace_dump_txt(kt, filename);
 }
 
-#endif
+#endif /* KMR_TRACE_ENABLE */
+
+#endif /* _KMRTRACE_H */
