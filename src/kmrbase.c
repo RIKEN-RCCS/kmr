@@ -1303,7 +1303,9 @@ kmr_map9(_Bool stop_when_some_added,
 	 void *arg, struct kmr_option opt, kmr_mapfn_t m,
 	 const char *file, const int line, const char *func)
 {
-    kmr_trace_add_entry(kmr_trace_event_map_start);  
+#if KMR_TRACE_ENABLE
+    kmr_trace_add_entry(kmr_trace_event_map_start, kvi, kvo);
+#endif
     int cc;
     kmr_assert_kvs_ok(kvi, kvo, 1, 0);
     KMR *mr = kvi->c.mr;
@@ -1328,7 +1330,9 @@ kmr_map9(_Bool stop_when_some_added,
     if (mr->atwork == &info) {
 	mr->atwork = 0;
     }
-    kmr_trace_add_entry(kmr_trace_event_map_end);
+#if KMR_TRACE_ENABLE
+    kmr_trace_add_entry(kmr_trace_event_map_end, kvi, kvo);
+#endif    
     return cc;
 }
 
@@ -1403,7 +1407,7 @@ kmr_map_once(KMR_KVS *kvo, void *arg, struct kmr_option opt,
 	     _Bool rank_zero_only, kmr_mapfn_t m)
 {
 #if KMR_TRACE_ENABLE
-    kmr_trace_add_entry(kmr_trace_event_map_start);
+    kmr_trace_add_entry(kmr_trace_event_map_once_start, NULL, kvo);
 #endif
     kmr_assert_kvs_ok(0, kvo, 0, 1);
     KMR *mr = kvo->c.mr;
@@ -1440,7 +1444,7 @@ kmr_map_once(KMR_KVS *kvo, void *arg, struct kmr_option opt,
     }
 
 #if KMR_TRACE_ENABLE
-    kmr_trace_add_entry(kmr_trace_event_map_end);
+    kmr_trace_add_entry(kmr_trace_event_map_once_end, NULL, kvo);
 #endif
     return MPI_SUCCESS;
 }
@@ -1823,6 +1827,9 @@ static int
 kmr_sort_locally_lo(KMR_KVS *kvi, KMR_KVS *kvo, _Bool shuffling,
 		    _Bool ranking, struct kmr_option opt)
 {
+#if KMR_TRACE_ENABLE
+    kmr_trace_add_entry(kmr_trace_event_sort_start, kvi, kvo);
+#endif  
     kmr_assert_kvs_ok(kvi, kvo, 1, 1);
     assert(kmr_shuffle_compatible_p(kvo, kvi));
     KMR *mr = kvi->c.mr;
@@ -1957,6 +1964,9 @@ kmr_sort_locally_lo(KMR_KVS *kvi, KMR_KVS *kvo, _Bool shuffling,
     if (kmr_ckpt_enabled(mr)) {
 	kmr_ckpt_progress_fin(mr);
     }
+#if KMR_TRACE_ENABLE
+    kmr_trace_add_entry(kmr_trace_event_sort_end, kvi, kvo);
+#endif  
     return MPI_SUCCESS;
 }
 
@@ -2024,7 +2034,7 @@ int
 kmr_shuffle(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
 {
 #if KMR_TRACE_ENABLE
-    kmr_trace_add_entry(kmr_trace_event_shuffle_start);
+    kmr_trace_add_entry(kmr_trace_event_shuffle_start, kvi, kvo);
 #endif
     kmr_assert_kvs_ok(kvi, kvo, 1, 1);
     assert(kmr_shuffle_compatible_p(kvo, kvi));
@@ -2149,7 +2159,7 @@ kmr_shuffle(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
 	kmr_ckpt_progress_fin(mr);
     }
 #if KMR_TRACE_ENABLE
-    kmr_trace_add_entry(kmr_trace_event_shuffle_end);
+    kmr_trace_add_entry(kmr_trace_event_shuffle_end, kvi, kvo);
 #endif
     return MPI_SUCCESS;
 }
@@ -2522,7 +2532,9 @@ kmr_reduce9(_Bool stop_when_some_added,
 	    void *arg, struct kmr_option opt, kmr_redfn_t r,
 	    const char *file, const int line, const char *func)
 {
-    kmr_trace_add_entry(kmr_trace_event_reduce_start);
+#if KMR_TRACE_ENABLE
+    kmr_trace_add_entry(kmr_trace_event_reduce_start, kvi, kvo);
+#endif    
     kmr_assert_kvs_ok(kvi, kvo, 1, 0);
     KMR *mr = kvi->c.mr;
     struct kmr_option kmr_supported = {.nothreading = 1, .inspect = 1,
@@ -2575,7 +2587,9 @@ kmr_reduce9(_Bool stop_when_some_added,
 	kmr_ckpt_lock_finish(mr);
     }
 
-    kmr_trace_add_entry(kmr_trace_event_reduce_end);
+#if KMR_TRACE_ENABLE
+    kmr_trace_add_entry(kmr_trace_event_reduce_end, kvi, kvo);
+#endif    
     return cc;
 }
 
