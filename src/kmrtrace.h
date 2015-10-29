@@ -10,6 +10,14 @@
 #define KT_ENDIAN_CHECKER 0xdeadbeef
 
 typedef enum {
+  kmr_trace_event_start,
+  kmr_trace_event_end,
+  kmr_trace_event_map,
+  kmr_trace_event_map_once,
+  kmr_trace_event_shuffle,
+  kmr_trace_event_reduce,
+  kmr_trace_event_sort,
+
   kmr_trace_event_map_start, /* map phase starts */
   kmr_trace_event_map_end, /* map phase ends */
   kmr_trace_event_shuffle_start,
@@ -31,7 +39,9 @@ typedef enum {
 typedef struct kmr_trace_entry {
   double t;
   kmr_trace_event_t e;
-  long kvi_element_count, kvo_element_count;
+  long kvi_element_count;
+  long kvo_element_count;
+  struct kmr_trace_entry * pair;
   struct kmr_trace_entry * next;
 } kmr_trace_entry_t;
 
@@ -91,8 +101,9 @@ kmr_trace_stop() {
   kt->end_t = kmr_gettime();
 }
 
-void
-kmr_trace_add_entry(kmr_trace_event_t ev, KMR_KVS * kvi, KMR_KVS * kvo) {
+kmr_trace_entry_t *
+kmr_trace_add_entry(kmr_trace_event_t ev, kmr_trace_entry_t * pre, KMR_KVS * kvi, KMR_KVS * kvo) {
+  /* Create */
   kmr_trace_entry_t * en = (kmr_trace_entry_t *) kmr_malloc( sizeof(kmr_trace_entry_t) );
   en->t = kmr_gettime();
   en->e = ev;
@@ -104,7 +115,9 @@ kmr_trace_add_entry(kmr_trace_event_t ev, KMR_KVS * kvi, KMR_KVS * kvo) {
     en->kvo_element_count = kvo->c.element_count;
   else
     en->kvo_element_count = -1;
+  en->pair = NULL;
   en->next = NULL;
+  /* Append */
   kmr_trace_t * kt = KT;
   if (!kt->head) {
     kt->head = kt->tail = en;
@@ -113,6 +126,25 @@ kmr_trace_add_entry(kmr_trace_event_t ev, KMR_KVS * kvi, KMR_KVS * kvo) {
     kt->tail = en;
   }
   kt->n++;
+  /* Pair */
+  if (pre)
+    pre->pair = en;
+  /* Return */
+  return en;
+}
+
+static int
+kmr_trace_count(kmr_trace_entry_t * e1, kmr_trace_entry_t * e2) {
+  if (!e1 || !e2) return -1;
+  kmr_trace_entry_t * e = e1;
+  int count = 0;
+  while (e != e2 && e != NULL) {
+    e = e->next;
+    count++;
+  }
+  if (e == e2)
+    return count;
+  return -1;  
 }
 
 static void
@@ -132,10 +164,12 @@ kmr_trace_dump_bin(kmr_trace_t * kt, char * filename) {
   kmr_trace_entry_t * en = kt->head;
   while (en) {
     kmr_trace_entry_t * enn = en->next;
+    int offset = kmr_trace_count(en, en->pair);
     if (fwrite(&en->t, sizeof(en->t), 1, wp) != 1
         || fwrite(&en->kvi_element_count, sizeof(en->kvi_element_count), 1, wp) != 1
         || fwrite(&en->kvo_element_count, sizeof(en->kvo_element_count), 1, wp) != 1
-        || fwrite(&en->e, sizeof(en->e), 1, wp) != 1) {
+        || fwrite(&en->e, sizeof(en->e), 1, wp) != 1
+        || fwrite(&offset, sizeof(offset), 1, wp) != 1) {
       fprintf(stderr, "error: fwrite: %s (%s)\n", strerror(errno), filename);
     }
     en = enn;
@@ -155,7 +189,8 @@ kmr_trace_dump_txt(kmr_trace_t * kt, char * filename) {
   kmr_trace_entry_t * en = kt->head;
   while (en) {
     kmr_trace_entry_t * enn = en->next;
-    fprintf(wp, "event %d at t=%.0lf, element count=(%ld,%ld)\n", en->e, en->t - base_t, en->kvi_element_count, en->kvo_element_count);
+    int offset = kmr_trace_count(en, en->pair);
+    fprintf(wp, "event %d at t=%.0lf, element count=(%ld,%ld), offset to pair: %d\n", en->e, en->t - base_t, en->kvi_element_count, en->kvo_element_count, offset);
     en = enn;
   }
   fclose(wp);
