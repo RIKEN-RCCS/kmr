@@ -135,7 +135,7 @@ kmr_trace_add_entry(kmr_trace_event_t ev, kmr_trace_entry_t * pre, KMR_KVS * kvi
 
 static int
 kmr_trace_count(kmr_trace_entry_t * e1, kmr_trace_entry_t * e2) {
-  if (!e1 || !e2) return -1;
+  if (!e1 || !e2 || e1 == e2) return 0; // to pair with itself
   kmr_trace_entry_t * e = e1;
   int count = 0;
   while (e != e2 && e != NULL) {
@@ -144,7 +144,7 @@ kmr_trace_count(kmr_trace_entry_t * e1, kmr_trace_entry_t * e2) {
   }
   if (e == e2)
     return count;
-  return -1;  
+  return 0;
 }
 
 static void
