@@ -297,6 +297,8 @@ struct kmr_ctx {
     } pushoff_statistics;
 
     char identifying_name[KMR_JOB_NAME_LEN];
+
+    int trace_enable;
 };
 
 /** Datatypes of Keys or Values.  It indicates the field data of keys
