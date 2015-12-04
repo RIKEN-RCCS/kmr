@@ -36,8 +36,6 @@
 #include <omp.h>
 #endif
 
-#define USE_BARRIERS 1
-
 #define BUF_MAX 512
 #define DAMPING_FACTOR 0.85
 
@@ -352,9 +350,7 @@ main(int argc, char **argv)
     kmr_init();
     KMR *mr = kmr_create_context(MPI_COMM_WORLD, MPI_INFO_NULL, 0);
 
-#if USE_BARRIERS
     MPI_Barrier(MPI_COMM_WORLD);
-#endif    
     if (rank == 0) {printf("Ranking pages...\n");}
 
     //// initialize ////
@@ -362,9 +358,7 @@ main(int argc, char **argv)
     KMR_KVS *kvs0 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_INTEGER);
     kmr_map_once(kvs0, &fi, kmr_noopt, sep == -1 ? 1:0, read_ids_from_a_file);
 
-#if USE_BARRIERS
     MPI_Barrier(MPI_COMM_WORLD);
-#endif    
 
     // share local kvs to all node
     KMR_KVS *kvs1 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_INTEGER);
@@ -379,12 +373,10 @@ main(int argc, char **argv)
     KMR_KVS *kvs3;
 
     // get start time
-#if USE_BARRIERS
     MPI_Barrier(MPI_COMM_WORLD);
     double stime = MPI_Wtime();
-#endif
 
-    for(int i = 1; i <= 10; i++){
+    for(int i = 1; i <= 100; i++){
         if(rank == 0){ fprintf(stdout, "progress %d / 100\n", i); }
         // set pagerank drain
         kvs3 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_OPAQUE);
@@ -399,19 +391,15 @@ main(int argc, char **argv)
         kmr_reduce(kvs4, kvs2, 0, kmr_noopt, sum_pagerank_for_a_toid);
     }
 
-#if USE_BARRIERS
     MPI_Barrier(MPI_COMM_WORLD);
     double etime = MPI_Wtime();
-#endif    
     if(rank == 0){
         printf("///// Information /////\n");
         printf("MPI nprocs\t\t\t: %d\n", nprocs);
 #ifdef _OPENMP
         printf("OMP_MAX_THREADS\t\t: %d\n", (int)omp_get_max_threads());
 #endif
-#if USE_BARRIERS
         printf("calculation time\t: %lf seconds\n", etime - stime);
-#endif        
         printf("\n");
         printf("///// Top 5 pagerank /////\n");
     }
