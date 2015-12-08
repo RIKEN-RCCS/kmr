@@ -148,7 +148,7 @@ kmr_trace_dump(KMR *mr) {
 }
 
 
-/* Initialize a trace */
+/** Initialize a trace */
 void kmr_trace_initialize(KMR *mr)
 {
     /* inialized irrespective of mr->kmrviz_trace */

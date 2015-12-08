@@ -1,3 +1,11 @@
+## 1.8.0 (2015-12-XX)
+
+- Add a function tracing option for KMRViz, a KMR visualizer
+- Add a simple scan function, kmr_scan_on_value()
+- Add a load-leveling shuffle, kmr_shuffle_leveling_pair_count()
+- Add a new kmr example, pagerank.c
+- BUGFIX: kmr_match(), kmr_histogram_count_by_ranks()
+
 ## 1.7.1 (2015-06-29)
 
 - BUGFIX: kmr_take_one()

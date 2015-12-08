@@ -22,12 +22,13 @@ Contents (in this page):
 <li><a href="#masterslavemapper">Master-Slave Mapper</a>
 <li><a href="#fileaccesssupport">File Access Support</a>
 <li><a href="#checkpointrestart">Checkpoint/Restart</a>
-<li><a href="#kmrrun">Run Arbitrary Programs in MapReduce Model (KMRRUN)</a>
+<li><a href="#kmrrun">Command Line Utility (KMRRUN)</a>
 <li><a href="#shellcommandpipeline">Shell Command Pipeline</a>
 <li><a href="#auxiliary">Auxiliary Functions</a>
 <li><a href="#spawning">Spawning Mappers</a>
 <li><a href="#examplecode">Example Code</a>
 <li><a href="#appendixkmrbasics">Appendix: KMR Basics</a>
+<li><a href="#appendixkmrviz">Appendix: KMRViz Visualisation Tool</a>
 <li><a href="#appendixconfigurechanges">Appendix: Configure Changes</a>
 </ul>
 
@@ -696,7 +697,7 @@ We plan to support checkpoint/restart in other kmr functions in the near
 future releases.
 
 <a name="kmrrun"></a>
-<h1>Run Arbitrary Programs in MapReduce Model (KMRRUN)</h1>
+<h1>Command Line Utility (KMRRUN)</h1>
 
 <p>
 KMR provides a simple command line tool, named kmrrun, that can run
@@ -1083,6 +1084,37 @@ A key-value stream (KVS) in KMR is a vector of pairs of a key and a
 value, where keys and values are byte arrays with their lengths.  A
 key-value stream is actually ordered, especially so after sorting, but
 normally the ordering is irrelevant.
+
+<a name="appendixkmrviz"></a>
+<h1>Appendix: KMRViz Visualisation Tool</h1>
+
+<p>
+KMRViz is a visualisation tool for KMR.  KMRViz shows timestamps of start
+and finish, number of key-values in KVS of major KMR functions graphically.
+KMRViz can be downloaded from
+<a href="https://github.com/pf-aics-riken/kmrviz">KMRViz github page</a>.
+
+<p>
+To use KMRViz, you need to run your KMR program with tracing option ON to
+generate trace files for KMRViz.  The name of the option is "kmrviz_trace".
+By default, the option is set OFF.  To enable the option through an
+environment variable without code modification, add "kmrviz_trace=1" line
+to your configuration file.
+<pre class="fragment">
+echo "kmrviz_trace=1" >> kmrrc
+KMROPTION=kmrrc mpiexec -np 12 ./a.out
+</pre>
+To enable with code modification, just adding "mr->kmrviz_trace = 1;" line
+to your main function is enough.
+<pre class="fragment">
+KMR *mr = kmr_create_context(MPI_COMM_WORLD, MPI_INFO_NULL, 0);
+mr->kmrviz_trace = 1;
+</pre>
+
+<p>
+With this option ON, two types of traces will be generated for each process
+after running a KMR program: text and binary.  The binary files are used for
+viewing in KMRViz.
 
 <a name="appendixconfigurechanges"></a>
 <h1>Appendix: Configure Changes</h1>
