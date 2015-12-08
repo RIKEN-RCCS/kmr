@@ -1138,6 +1138,7 @@ kmr_check_options(KMR *mr, MPI_Info info)
 	printf("[%05d] pushoff_block_size=%zd\n", r, mr->pushoff_block_size);
 	printf("[%05d] pushoff_poll_rate=%d\n", r, mr->pushoff_poll_rate);
 	printf("[%05d] pushoff_fast_notice=%d\n", r, mr->pushoff_fast_notice);
+	printf("[%05d] kmrviz_trace=%d\n", r, mr->kmrviz_trace);
     }
     return MPI_SUCCESS;
 }
@@ -1263,6 +1264,12 @@ kmr_set_option_by_strings(KMR *mr, char *k, char *v)
 	    mr->pushoff_fast_notice = (_Bool)x;
 	} else {
 	    kmr_warning(mr, 1, "option pushoff_fast_notice be boolean");
+	}
+    } else if (strcasecmp("kmrviz_trace", k) == 0) {
+	if (kmr_parse_boolean(v, &x)) {
+	    mr->kmrviz_trace = (_Bool)x;
+	} else {
+	    kmr_warning(mr, 1, "option kmrviz_trace be boolean");
 	}
     } else {
 	char ee[80];

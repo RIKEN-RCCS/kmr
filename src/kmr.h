@@ -97,6 +97,7 @@ struct kmr_kvs_list_head {
 };
 
 struct kmr_ckpt_ctx;
+struct kmr_trace;
 
 /** Information of Source Code Line. */
 
@@ -212,7 +213,8 @@ struct kmr_code_line { const char *file; const char *func; int line; };
     mapping/reducing.  PUSHOFF_FAST_NOTICE enables use of RDMA put for
     event notification in push-off key-value streams.  PUSHOFF_STAT
     enables collecting statistics of communication in push-off
-    key-value streams.  IDENTIFYING_NAME is just a note. */
+    key-value streams.  KMRVIZ_TRACE enables tracing kmr function calls
+    for KMRViz.  IDENTIFYING_NAME is just a note. */
 
 struct kmr_ctx {
     MPI_Comm comm;
@@ -223,6 +225,8 @@ struct kmr_ctx {
 
     long ckpt_kvs_id_counter;
     struct kmr_ckpt_ctx *ckpt_ctx;
+
+    struct kmr_trace *kvt_ctx;
 
     FILE *log_traces;
     struct kmr_code_line *atwork;
@@ -296,9 +300,10 @@ struct kmr_ctx {
 	long counts[10];
     } pushoff_statistics;
 
+    _Bool kmrviz_trace : 1;
+
     char identifying_name[KMR_JOB_NAME_LEN];
 
-    int trace_enable;
 };
 
 /** Datatypes of Keys or Values.  It indicates the field data of keys
