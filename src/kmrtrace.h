@@ -12,6 +12,8 @@
 
 /** Current supported trace events */
 typedef enum {
+    KMR_TRACE_EVENT_START,    /* dummy for KMRViz */
+    KMR_TRACE_EVENT_END,      /* dummy for KMRViz */
     KMR_TRACE_EVENT_MAP,
     KMR_TRACE_EVENT_MAP_ONCE,
     KMR_TRACE_EVENT_SHUFFLE,
