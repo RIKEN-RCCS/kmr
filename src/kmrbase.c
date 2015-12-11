@@ -2191,6 +2191,13 @@ kmr_replicate(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
     int rank = mr->rank;
     int cc;
     KMR_KVS *kvs1;
+
+    kmr_trace_entry_t * kte_start = 0;
+    if (mr->kmrviz_trace) {
+        kte_start = kmr_trace_add_entry(mr, KMR_TRACE_EVENT_REPLICATE, 0,
+					kvi, kvo);
+    }
+
     if (kmr_fields_pointer_p(kvi) || kvi->c.block_count > 1) {
 	enum kmr_kv_field keyf = kvi->c.key_data;
 	enum kmr_kv_field valf = kvi->c.value_data;
@@ -2270,12 +2277,17 @@ kmr_replicate(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
     if (!opt.inspect) {
 	cc = kmr_free_kvs(kvi);
 	assert(cc == MPI_SUCCESS);
+	kvi = 0;
     }
     kmr_free(rsz, (sizeof(long) * (size_t)nprocs));
     kmr_free(rdp, (sizeof(long) * (size_t)nprocs));
 
     if (kmr_ckpt_enabled(mr)) {
 	kmr_ckpt_progress_fin(mr);
+    }
+    if (mr->kmrviz_trace) {
+        kmr_trace_add_entry(mr, KMR_TRACE_EVENT_REPLICATE, kte_start,
+			    kvi, kvo);
     }
     return MPI_SUCCESS;
 }
