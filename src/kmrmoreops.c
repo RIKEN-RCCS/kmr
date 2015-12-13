@@ -42,7 +42,7 @@ kmr_find_key_fn(const struct kmr_kv_box kv,
 int
 kmr_find_key(KMR_KVS *kvi, struct kmr_kv_box ki, struct kmr_kv_box *ko)
 {
-    enum kmr_kv_field keyf = kvi->c.key_data;
+    enum kmr_kv_field keyf = kmr_unit_sized_with_unmanaged(kvi->c.key_data);
     enum kmr_kv_field valf = kmr_unit_sized_with_unmanaged(kvi->c.value_data);
     KMR_KVS *kvs0 = kmr_create_kvs(kvi->c.mr, keyf, valf);
     struct kmr_option insepct = {.inspect = 1};
