@@ -1,4 +1,4 @@
-## 1.8.0 (2015-12-XX)
+## 1.8.0 (2015-12-25)
 
 - Add a function tracing option for KMRViz, a KMR visualizer
 - Add a simple scan function, kmr_scan_on_value()
