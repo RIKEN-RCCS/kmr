@@ -1,14 +1,14 @@
 /* Page Rank (2015-09-18) */
 
-/* 
-   It ranks the pages by their pagerank in the network-graph dataset.
-   You can download network-graph dataset from Stanford Univercity.
+/*
+   It ranks the pages by their pagerank in the network graph dataset.
+   You can download network graph dataset from Stanford University.
       URL: http://snap.stanford.edu/data/index.html
-      Example:  Note Dame web graph(http://snap.stanford.edu/data/web-NotreDame.txt.gz)
+      Example: Notre Dame web graph (http://snap.stanford.edu/data/web-NotreDame.txt.gz)
    Copy the file in the current directory and run it.
 
-   If you want to use large dataset(ex. com-friendster), 
-   you should split dataset and execute with addition of -n option.
+   If you want to use a large dataset (ex. com-friendster),
+   you should split the dataset and execute with -n option.
 
    ```
       $ ../cmd/kmrfsplit.py -n <number_of_separation> -p <output_filename_prefix> <input_filename>
@@ -21,9 +21,8 @@
       $ ls webgraph.txt.*
        webgraph.txt.000000 webgraph.txt.000001 webgraph.txt.000002
       $ mpiexec -n 10 ./a.out -n 3 webgraph.txt
-   ```   
+   ```
 */
-
 
 #include <mpi.h>
 #include <stdio.h>
@@ -50,28 +49,27 @@ typedef struct {
 } NODE_PAGERANK;
 
 typedef struct {
-    enum {FROM_ID, TO_ID, TO_IDS, PAGERANK} type;
+    enum {TO_IDS, PAGERANK} type;
     long size;
 } DATA_HEADER;
-
 
 static void
 print_usage(void)
 {
     fprintf(stdout, "Usage: ./a.out [options] inputfile\n");
     fprintf(stdout, "Options:\n");
-    fprintf(stdout, "\t-n number( > 2 )\n");
+    fprintf(stdout, "\t-n number (>2)\n");
     fprintf(stdout, "\t\tnumber of file separation\n");
-    fprintf(stdout, "\t\tif you use this option, you should set indexed files\n");
-    fprintf(stdout, "\t\texample: [inputfile].000000, [inputfile].000001,..., [inputfile].[number]\n");
+    fprintf(stdout, "\t\tif you use this option, you should setup indexed files\n");
+    fprintf(stdout, "\t\texample: [inputfile].000000, [inputfile].000001,..., [inputfile].number-1\n");
 }
 
-static int 
+static int
 isdigits(const char *str)
 {
-    unsigned int i;
-    for(i = 0; i < strlen(str); i++){
-        if(isdigit(str[i]) == 0){
+    size_t len = strlen(str);
+    for (unsigned int i = 0; i < len; i++) {
+        if (!isdigit(str[i])) {
             return 0;
         }
     }
@@ -81,33 +79,34 @@ isdigits(const char *str)
 static int
 parse_opt(int argc, char **argv, char *filename, int *sep)
 {
-    int ret = 0;
+    int badoption = 0;
     int result = 0;
 
     *sep = -1;
 
-    while((result = getopt(argc, argv, "n:")) != -1){
-        switch(result){
+    while ((result = getopt(argc, argv, "n:")) != -1) {
+        switch (result) {
         case 'n':
-            if(isdigits(optarg)){
+            if (isdigits(optarg)) {
                 sscanf(optarg, "%d", sep);
                 break;
             }
+	    /*(fallthru)*/
         default:
-            ret = 1;
+            badoption = 1;
         }
     }
 
-    if(0 <= *sep && *sep < 2){
-        ret = 1;
+    if (0 <= *sep && *sep < 2) {
+        badoption = 1;
     }
 
     // get filename
-    if(argv[optind] != NULL){
+    if (argv[optind] != NULL) {
         strncpy(filename, argv[optind], BUF_MAX);
     }
 
-    return ret;
+    return badoption;
 }
 
 static int
@@ -116,12 +115,12 @@ read_ids_from_a_file(const struct kmr_kv_box kv0,
 {
     // Map function
     assert(kvi == 0 && kv0.klen == 0 && kv0.vlen == 0 && kvo != 0);
-   
+
     FILE_INFO *fi = (FILE_INFO *)p;
     char buf[BUF_MAX];
     int rank = kvo->c.mr->rank;
 
-    if(!(fi->separate == -1 || rank < fi->separate)){
+    if (!(fi->separate == -1 || rank < fi->separate)) {
         // this rank does not have to read files.
         return MPI_SUCCESS;
     }
@@ -136,11 +135,11 @@ read_ids_from_a_file(const struct kmr_kv_box kv0,
         MPI_Abort(MPI_COMM_WORLD, 1);
         return 1;
     }
-    
-    while(fgets(buf, BUF_MAX, f) != NULL){
+
+    while (fgets(buf, BUF_MAX, f) != NULL) {
         int FromNodeId, ToNodeId;
         // skip comment or space or something...
-        if(!isdigit(buf[0])){
+        if (!isdigit(buf[0])) {
             continue;
         }
         // read FromNodeId and ToNodeId
@@ -153,7 +152,7 @@ read_ids_from_a_file(const struct kmr_kv_box kv0,
         };
         kmr_add_kv(kvo, kv);
     }
-    
+
     fclose(f);
     return MPI_SUCCESS;
 }
@@ -168,15 +167,15 @@ sum_toids_for_a_fromid(const struct kmr_kv_box kv[], const long n,
     NODE_PAGERANK np = {
         .node_id = kv[0].k.i,
         .pagerank = 1.0
-    };    
+    };
 
     // make val: outlink_list
     long *ToNodeIds = malloc((size_t)((long)sizeof(long) * n));
-    for(int i = 0;i < n; i++){
+    for (int i = 0; i < n; i++) {
         ToNodeIds[i] = kv[i].v.i;
     }
 
-    // key: [url, pagerank], value: outlink_list 
+    // key: [url, pagerank], value: outlink_list
     struct kmr_kv_box nkv = {
         .klen = sizeof(NODE_PAGERANK),
         .k.p  = (char *)&np,
@@ -195,15 +194,15 @@ calc_pagerank_drain(const struct kmr_kv_box kv0,
                     const KMR_KVS *kvi, KMR_KVS *kvo, void *p, const long i)
 {
     // Map function
-    // get key: [url, pagerank], value: outlink_list 
-    long  n = kv0.vlen / (long)sizeof(long);
+    // get key: [url, pagerank], value: outlink_list
+    long n = kv0.vlen / (long)sizeof(long);
     NODE_PAGERANK *np = (NODE_PAGERANK *)(kv0.k.p);
 
-    for(int j = 0; j < n; j++){
+    int vlen0 = sizeof(DATA_HEADER) + sizeof(double);
+    DATA_HEADER *drain_header = malloc((size_t)vlen0);
+    for (int j = 0; j < n; j++) {
         double pagerank_drain = np->pagerank / (double)n;
         long ToNodeId = ((long *)(kv0.v.p))[j];
-        int vlen = sizeof(DATA_HEADER) + sizeof(double);
-        DATA_HEADER *drain_header = malloc((size_t)vlen);
         drain_header->type = PAGERANK;
         drain_header->size = sizeof(double);
         *((double *)(drain_header + 1)) = pagerank_drain;
@@ -212,18 +211,18 @@ calc_pagerank_drain(const struct kmr_kv_box kv0,
         struct kmr_kv_box kv = {
             .klen = sizeof(long),
             .k.i = (long)ToNodeId,
-            .vlen = vlen,
+            .vlen = vlen0,
             .v.p = (char *)drain_header
         };
         kmr_add_kv(kvo, kv);
-        free(drain_header);
     }
+    free(drain_header);
 
     // emit( key: url, value: outlink_list )
     long FromNodeId = np->node_id;
 
-    int vlen = (int)sizeof(DATA_HEADER) + (int)kv0.vlen;
-    DATA_HEADER *header = malloc((size_t)vlen);
+    int vlen1 = (int)sizeof(DATA_HEADER) + (int)kv0.vlen;
+    DATA_HEADER *header = malloc((size_t)vlen1);
     header->type = TO_IDS;
     header->size = kv0.vlen;
     memcpy((char *)(header + 1), kv0.v.p, (size_t)kv0.vlen);
@@ -231,7 +230,7 @@ calc_pagerank_drain(const struct kmr_kv_box kv0,
     struct kmr_kv_box kv = {
         .klen = sizeof(long),
         .k.i = (long)FromNodeId,
-        .vlen = vlen,
+        .vlen = vlen1,
         .v.p = (char *)header
     };
     kmr_add_kv(kvo, kv);
@@ -250,20 +249,19 @@ sum_pagerank_for_a_toid(const struct kmr_kv_box kv[], const long n,
     struct kmr_kv_box kvn = {.klen = 0};
     np.node_id = kv[0].k.i;
 
-    for(int i = 0; i < n; i++){
+    for (int i = 0; i < n; i++) {
         DATA_HEADER *h = (DATA_HEADER *)(kv[i].v.p);
-        if(h->type == TO_IDS){
+        if (h->type == TO_IDS) {
             kvn.vlen = (int)h->size;
             kvn.v.p  = (char *)(h + 1);
-        }
-        else{
+        } else {
             // pagerank
-            pagerank += *((double *)(h+1));
+            pagerank += *((double *)(h + 1));
         }
     }
-    
+
     pagerank = 1.0 - DAMPING_FACTOR + ( DAMPING_FACTOR * pagerank );
-    
+
     np.pagerank = pagerank;
     kvn.klen = sizeof(NODE_PAGERANK);
     kvn.k.p  = (char *)&np;
@@ -272,7 +270,6 @@ sum_pagerank_for_a_toid(const struct kmr_kv_box kv[], const long n,
 
     return MPI_SUCCESS;
 }
-
 
 static int
 convert_kvs_pagerank_and_fromid(const struct kmr_kv_box kv0,
@@ -290,7 +287,6 @@ convert_kvs_pagerank_and_fromid(const struct kmr_kv_box kv0,
     return MPI_SUCCESS;
 }
 
-
 static int
 print_top_five(const struct kmr_kv_box kv0,
                const KMR_KVS *kvi, KMR_KVS *kvo, void *p, const long i)
@@ -303,8 +299,6 @@ print_top_five(const struct kmr_kv_box kv0,
     return MPI_SUCCESS;
 }
 
-
-
 int
 main(int argc, char **argv)
 {
@@ -313,31 +307,31 @@ main(int argc, char **argv)
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    if(argc < 2){
-        if(rank == 0){ print_usage(); }
+    if (argc < 2) {
+        if (rank == 0) {print_usage();}
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
     char filename[BUF_MAX];
     int sep = -1; // -1: no separate
-    
-    if(parse_opt(argc, argv, filename, &sep) != 0){
+
+    if (parse_opt(argc, argv, filename, &sep) != 0) {
         // invaild option
-        if(rank == 0){
+        if (rank == 0) {
             fprintf(stderr, "number has invaild digits\n");
             print_usage();
         }
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
-    if( sep > nprocs ){
-        if(rank == 0){
+    if (sep > nprocs) {
+        if (rank == 0) {
             fprintf(stderr, "MPI process is less than number of file separation!!");
         }
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
-    if(sep != -1 && rank < sep){
+    if (sep != -1 && rank < sep) {
         char tmp[BUF_MAX];
         strncpy(tmp, filename, BUF_MAX);
         // indexed filename example: web-graph.txt.000000
@@ -351,7 +345,7 @@ main(int argc, char **argv)
     KMR *mr = kmr_create_context(MPI_COMM_WORLD, MPI_INFO_NULL, 0);
 
     MPI_Barrier(MPI_COMM_WORLD);
-    if (rank == 0) {printf("Ranking pages...\n");}
+    if (rank == 0) {printf("Ranking pages...\n"); fflush(0);}
 
     //// initialize ////
     // load web-graph from file
@@ -368,7 +362,6 @@ main(int argc, char **argv)
     KMR_KVS *kvs2 = kmr_create_kvs(mr, KMR_KV_OPAQUE, KMR_KV_OPAQUE);
     kmr_reduce(kvs1, kvs2, 0, kmr_noopt, sum_toids_for_a_fromid);
 
-
     //// calculate pagerank ////
     KMR_KVS *kvs3;
 
@@ -376,8 +369,8 @@ main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
     double stime = MPI_Wtime();
 
-    for(int i = 1; i <= 100; i++){
-        if(rank == 0){ fprintf(stdout, "progress %d / 100\n", i); }
+    for (int i = 1; i <= 100; i++) {
+        if (rank == 0) {fprintf(stdout, "progress %d / 100\n", i);}
         // set pagerank drain
         kvs3 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_OPAQUE);
         kmr_map(kvs2, kvs3, 0, kmr_noopt, calc_pagerank_drain);
@@ -393,7 +386,7 @@ main(int argc, char **argv)
 
     MPI_Barrier(MPI_COMM_WORLD);
     double etime = MPI_Wtime();
-    if(rank == 0){
+    if (rank == 0) {
         printf("///// Information /////\n");
         printf("MPI nprocs\t\t\t: %d\n", nprocs);
 #ifdef _OPENMP
@@ -403,7 +396,7 @@ main(int argc, char **argv)
         printf("\n");
         printf("///// Top 5 pagerank /////\n");
     }
-  
+
     //// print result ////
     // convert [key:[FromId, pagerank], val: ToId list] to [key: pagerank, val: FromId]
     KMR_KVS *kvs_fin = kmr_create_kvs(mr, KMR_KV_FLOAT8, KMR_KV_INTEGER);
@@ -416,7 +409,6 @@ main(int argc, char **argv)
     // show top5 pagerank and FromId
     struct kmr_option kmr_noth = {.nothreading = 1};
     kmr_map(kvs_sorted_fin, 0, 0, kmr_noth, print_top_five);
-
 
     // finish
     kmr_free_context(mr);
