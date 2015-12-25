@@ -60,7 +60,8 @@ kmr_trace_stop(kmr_trace_t *kt)
 }
 
 static int
-kmr_trace_count(kmr_trace_entry_t * e1, kmr_trace_entry_t * e2) {
+kmr_trace_count(kmr_trace_entry_t * e1, kmr_trace_entry_t * e2)
+{
     if (!e1 || !e2 || e1 == e2) return 0; // to pair with itself
     kmr_trace_entry_t * e = e1;
     int count = 0;
@@ -76,7 +77,8 @@ kmr_trace_count(kmr_trace_entry_t * e1, kmr_trace_entry_t * e2) {
 
 /* Dump the trace to a binary file */
 static void
-kmr_trace_dump_bin(kmr_trace_t * kt, char * filename) {
+kmr_trace_dump_bin(kmr_trace_t * kt, char * filename)
+{
     FILE * wp = fopen(filename, "wb");
     if (!wp) {
         fprintf(stderr, "error: fopen: %s (%s)\n", strerror(errno), filename);
@@ -109,7 +111,8 @@ kmr_trace_dump_bin(kmr_trace_t * kt, char * filename) {
 
 /* Dump the trace to a text file */
 static void
-kmr_trace_dump_txt(kmr_trace_t * kt, char * filename) {
+kmr_trace_dump_txt(kmr_trace_t * kt, char * filename)
+{
     FILE * wp = fopen(filename, "wb");
     if (!wp) {
         fprintf(stderr, "error: fopen: %s (%s)\n", strerror(errno), filename);
@@ -132,7 +135,8 @@ kmr_trace_dump_txt(kmr_trace_t * kt, char * filename) {
 
 /* Dump the trace to files */
 static void
-kmr_trace_dump(KMR *mr) {
+kmr_trace_dump(KMR *mr)
+{
     char *prefix = 0;
     if (strlen(mr->identifying_name) > 0) {
 	prefix = mr->identifying_name;

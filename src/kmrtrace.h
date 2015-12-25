@@ -19,6 +19,7 @@ typedef enum {
     KMR_TRACE_EVENT_SHUFFLE,
     KMR_TRACE_EVENT_REDUCE,
     KMR_TRACE_EVENT_SORT,
+    KMR_TRACE_EVENT_REPLICATE,
 } kmr_trace_event_t;
 
 /* A trace entry is a point in time of the trace,
