@@ -1,5 +1,5 @@
 /* kmrmapmp.c (2015-06-04) */
-/* Copyright (C) 2012-2015 RIKEN AICS */
+/* Copyright (C) 2012-2016 RIKEN AICS */
 
 /** \file kmrmapmp.c MPI Parallel Mapping on Key-Value Stream. */
 
@@ -199,8 +199,10 @@ kmr_compact_ranks_fn(const struct kmr_kv_box kv[], const long n,
 
 static int
 kmr_map_comm_split(long comm_color, struct kmr_kv_box *key_kv, KMR_KVS *kvi,
-		   KMR_KVS *kvo, void *arg, int rank_hint, kmr_mapfn_t m)
+		   KMR_KVS *kvo, void *arg, int rank_hint, kmr_mapfn_t m,
+		   double *accumulated_time)
 {
+    double timestamp0 = MPI_Wtime();
     KMR *mr = kvi->c.mr;
     int cc;
 
@@ -244,6 +246,9 @@ kmr_map_comm_split(long comm_color, struct kmr_kv_box *key_kv, KMR_KVS *kvi,
     cc = kmr_free_context(task_mr);
     assert(cc == MPI_SUCCESS);
     MPI_Comm_free(&task_comm);
+
+    double timestamp1 = MPI_Wtime();
+    *accumulated_time += timestamp1 - timestamp0;
     return MPI_SUCCESS;
 }
 
@@ -365,6 +370,8 @@ kmr_map_multiprocess_by_key(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
 	ranks[i] = key_cnt;
     }
 
+    int call_count = 0;
+    double call_time_sum = 0;
     for (long i = 0; i < key_cnt; i++) {
 	_Bool launch = 0;
 	memcpy(ranks_prev, ranks, ranks_siz);
@@ -394,8 +401,10 @@ kmr_map_multiprocess_by_key(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
 #endif
 	    long key_idx = ranks_prev[mr->rank];
 	    struct kmr_kv_box *tkv = (key_idx == key_cnt)? 0 : &table[key_idx];
-	    cc = kmr_map_comm_split(key_idx, tkv, kvi, kvo, arg, rank_key, m);
+	    cc = kmr_map_comm_split(key_idx, tkv, kvi, kvo, arg, rank_key, m,
+				    &call_time_sum);
 	    assert(cc == MPI_SUCCESS);
+	    call_count += 1;
 
 	    /* post process */
 	    for (long j = 0; j < mr->nprocs; j++) {
@@ -421,8 +430,10 @@ kmr_map_multiprocess_by_key(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
 #endif
     long key_idx = ranks[mr->rank];
     struct kmr_kv_box *tkv = (key_idx == key_cnt)? 0 : &table[key_idx];
-    cc = kmr_map_comm_split(key_idx, tkv, kvi, kvo, arg, rank_key, m);
+    cc = kmr_map_comm_split(key_idx, tkv, kvi, kvo, arg, rank_key, m,
+			    &call_time_sum);
     assert(cc == MPI_SUCCESS);
+    call_count += 1;
 
     kmr_free(table, table_siz);
     kmr_free(ranks, ranks_siz);
@@ -432,10 +443,13 @@ kmr_map_multiprocess_by_key(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
 
     if (tracing5) {
 	fprintf(stderr, (";;KMR [%05d] timing of kmr_map_multiprocess_by_key:"
-			 " collect=%f exec=%f (msec)\n"),
+			 " collect=%f total_exec=%f each_exec=%f (sec),"
+			 " count of task execution: %d\n"),
 		mr->rank,
 		timestamp[1] - timestamp[0],
-		timestamp[2] - timestamp[1]);
+		timestamp[2] - timestamp[1],
+		call_time_sum / call_count,
+		call_count);
 	fflush(0);
     }
 
@@ -453,7 +467,7 @@ kmr_map_multiprocess_by_key(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
 }
 
 /*
-Copyright (C) 2012-2015 RIKEN AICS
+Copyright (C) 2012-2016 RIKEN AICS
 This library is distributed WITHOUT ANY WARRANTY.  This library can be
 redistributed and/or modified under the terms of the BSD 2-Clause License.
 */
