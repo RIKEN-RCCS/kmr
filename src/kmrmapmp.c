@@ -252,7 +252,7 @@ kmr_map_comm_split(long comm_color, struct kmr_kv_box *key_kv, KMR_KVS *kvi,
     return MPI_SUCCESS;
 }
 
-#define KMR_MAP_MP_NO_SORT 1
+#define KMR_MAP_MP_SORT 1
 
 /** Group processes by key-value pairs that have the same keys, create
     an MPI sub-communicators that contain the processes with the same
@@ -321,18 +321,18 @@ kmr_map_multiprocess_by_key(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
     KMR_KVS *kvs2 = kmr_create_kvs(mr, kvi_keyf, KMR_KV_OPAQUE);
     cc = kmr_reduce(kvs1, kvs2, 0, kmr_noopt, kmr_compact_ranks_fn);
     assert(cc == MPI_SUCCESS);
-#if KMR_MAP_MP_NO_SORT
-    /* no sort */
-    KMR_KVS *kvs3 = kmr_create_kvs(mr, kvi_keyf, KMR_KV_OPAQUE);
-    cc = kmr_replicate(kvs2, kvs3, kmr_noopt);
-    assert(cc == MPI_SUCCESS);
-#else
+#if KMR_MAP_MP_SORT
     /* with sort */
     KMR_KVS *kvs2_5 = kmr_create_kvs(mr, kvi_keyf, KMR_KV_OPAQUE);
     cc = kmr_replicate(kvs2, kvs2_5, kmr_noopt);
     assert(cc == MPI_SUCCESS);
     KMR_KVS *kvs3 = kmr_create_kvs(mr, kvi_keyf, KMR_KV_OPAQUE);
     cc = kmr_sort_locally(kvs2_5, kvs3, 0, kmr_noopt);
+    assert(cc == MPI_SUCCESS);
+#else
+    /* without sort */
+    KMR_KVS *kvs3 = kmr_create_kvs(mr, kvi_keyf, KMR_KV_OPAQUE);
+    cc = kmr_replicate(kvs2, kvs3, kmr_noopt);
     assert(cc == MPI_SUCCESS);
 #endif
     /* copy key-values to an array */
@@ -366,9 +366,10 @@ kmr_map_multiprocess_by_key(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
     size_t ranks_siz = (size_t)mr->nprocs * sizeof(long);
     long *ranks = (long*)kmr_malloc(ranks_siz);
     long *ranks_prev = (long*)kmr_malloc(ranks_siz);
-    for (long i = 0; i < mr->nprocs; i++) {
-	ranks[i] = key_cnt;
-    }
+    KMR_OMP_PARALLEL_FOR_
+	for (long i = 0; i < mr->nprocs; i++) {
+	    ranks[i] = key_cnt;
+	}
 
     int call_count = 0;
     double call_time_sum = 0;
