@@ -200,10 +200,11 @@ kmr_compact_ranks_fn(const struct kmr_kv_box kv[], const long n,
 static int
 kmr_map_comm_split(long comm_color, struct kmr_kv_box *key_kv, KMR_KVS *kvi,
 		   KMR_KVS *kvo, void *arg, int rank_hint, kmr_mapfn_t m,
-		   double *accumulated_time)
+		   int i_, double *accumulated_time)
 {
     double timestamp0 = MPI_Wtime();
     KMR *mr = kvi->c.mr;
+    _Bool tracing7 = (mr->trace_map_mp && (7 <= mr->verbosity));
     int cc;
 
     /* split communicator and create a KMR for the communicator */
@@ -249,6 +250,13 @@ kmr_map_comm_split(long comm_color, struct kmr_kv_box *key_kv, KMR_KVS *kvi,
 
     double timestamp1 = MPI_Wtime();
     *accumulated_time += timestamp1 - timestamp0;
+    if (tracing7) {
+	fprintf(stderr, (";;KMR [%05d] timing of Task[%05d] of "
+			 "kmr_map_multiprocess_by_key: %f (sec)\n"),
+		mr->rank, i_, timestamp1 - timestamp0);
+	fflush(0);
+    }
+
     return MPI_SUCCESS;
 }
 
@@ -403,7 +411,7 @@ kmr_map_multiprocess_by_key(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
 	    long key_idx = ranks_prev[mr->rank];
 	    struct kmr_kv_box *tkv = (key_idx == key_cnt)? 0 : &table[key_idx];
 	    cc = kmr_map_comm_split(key_idx, tkv, kvi, kvo, arg, rank_key, m,
-				    &call_time_sum);
+				    call_count, &call_time_sum);
 	    assert(cc == MPI_SUCCESS);
 	    call_count += 1;
 
@@ -432,7 +440,7 @@ kmr_map_multiprocess_by_key(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
     long key_idx = ranks[mr->rank];
     struct kmr_kv_box *tkv = (key_idx == key_cnt)? 0 : &table[key_idx];
     cc = kmr_map_comm_split(key_idx, tkv, kvi, kvo, arg, rank_key, m,
-			    &call_time_sum);
+			    call_count, &call_time_sum);
     assert(cc == MPI_SUCCESS);
     call_count += 1;
 
