@@ -1,5 +1,5 @@
 # kmr4py.py
-# Copyright (C) 2012-2015 RIKEN AICS
+# Copyright (C) 2012-2016 RIKEN AICS
 
 """Python Binding for KMR Map-Reduce Library.  This provides
 straightforward wrappers to the C routines.  See more abort KMR at
@@ -1235,6 +1235,6 @@ def _check_passing_options():
                 if (o != s):
                     raise Exception("BAD: %s != %s" % (str(o), str(s)))
 
-# Copyright (C) 2012-2015 RIKEN AICS
+# Copyright (C) 2012-2016 RIKEN AICS
 # This library is distributed WITHOUT ANY WARRANTY.  This library can be
 # redistributed and/or modified under the terms of the BSD 2-Clause License.

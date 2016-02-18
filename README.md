@@ -1,7 +1,7 @@
 KMR
 ===
 
-Copyright (C) 2012-2015 RIKEN AICS
+Copyright (C) 2012-2016 RIKEN AICS
 
 KMR comes with ABSOLUTELY NO WARRANTY.
 

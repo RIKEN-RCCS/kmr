@@ -1,5 +1,5 @@
 /* kmrtrace.c (2015-12-07) */
-/* Copyright (C) 2012-2015 RIKEN AICS */
+/* Copyright (C) 2012-2016 RIKEN AICS */
 
 /** \file kmrtrace.c KMRViz tracing Support. */
 
@@ -213,7 +213,7 @@ kmr_trace_add_entry(KMR *mr, kmr_trace_event_t ev, kmr_trace_entry_t *pre,
 
 
 /*
-Copyright (C) 2012-2015 RIKEN AICS
+Copyright (C) 2012-2016 RIKEN AICS
 This library is distributed WITHOUT ANY WARRANTY.  This library can be
 redistributed and/or modified under the terms of the BSD 2-Clause License.
 */

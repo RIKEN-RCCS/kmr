@@ -1,5 +1,5 @@
 /* kmratoa.c (2014-02-04) */
-/* Copyright (C) 2012-2015 RIKEN AICS */
+/* Copyright (C) 2012-2016 RIKEN AICS */
 
 /** \file kmratoa.c Communication Routines.  KMR makes almost all data
     exchanges through this.  Some exceptions are "kmrmapms.c" and
@@ -414,7 +414,7 @@ kmr_exscan(void *sbuf, void *rbuf, int cnt, MPI_Datatype dt, MPI_Op op,
 #endif
 
 /*
-Copyright (C) 2012-2015 RIKEN AICS
+Copyright (C) 2012-2016 RIKEN AICS
 This library is distributed WITHOUT ANY WARRANTY.  This library can be
 redistributed and/or modified under the terms of the BSD 2-Clause License.
 */

@@ -1,5 +1,5 @@
 /* kmrshell.c */
-/* Copyright (C) 2012-2015 RIKEN AICS */
+/* Copyright (C) 2012-2016 RIKEN AICS */
 
 /** \file kmrshell.c KMR-Shell for Streaming.  It forks processes of a
     mapper, a shuffler, and a reducer, then, it reads a number of
@@ -387,7 +387,7 @@ main(int argc, char *argv[])
 }
 
 /*
-Copyright (C) 2012-2015 RIKEN AICS
+Copyright (C) 2012-2016 RIKEN AICS
 This library is distributed WITHOUT ANY WARRANTY.  This library can be
 redistributed and/or modified under the terms of the BSD 2-Clause License.
 */
