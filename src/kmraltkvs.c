@@ -1,5 +1,5 @@
 /* kmraltkvs.c (2014-02-04) */
-/* Copyright (C) 2012-2015 RIKEN AICS */
+/* Copyright (C) 2012-2016 RIKEN AICS */
 
 /** \file kmraltkvs.c Other Key-Value Stream Implementations.  A
     "push-off" key-value stream performs shuffling at key-value
@@ -935,7 +935,7 @@ kmr_pushoff_notice(KMR *mr, int peer)
 }
 
 /*
-Copyright (C) 2012-2015 RIKEN AICS
+Copyright (C) 2012-2016 RIKEN AICS
 This library is distributed WITHOUT ANY WARRANTY.  This library can be
 redistributed and/or modified under the terms of the BSD 2-Clause License.
 */

@@ -1,5 +1,5 @@
 /* kmriolb.c (2014-08-08) */
-/* Copyright (C) 2012-2015 RIKEN AICS */
+/* Copyright (C) 2012-2016 RIKEN AICS */
 
 /** \file kmriolb.c load balanced MapReduce based on data locality */
 
@@ -430,7 +430,7 @@ kmr_assign_file(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt)
 }
 
 /*
-Copyright (C) 2012-2015 RIKEN AICS
+Copyright (C) 2012-2016 RIKEN AICS
 This library is distributed WITHOUT ANY WARRANTY.  This library can be
 redistributed and/or modified under the terms of the BSD 2-Clause License.
 */

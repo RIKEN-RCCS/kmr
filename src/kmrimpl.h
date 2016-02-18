@@ -1,5 +1,5 @@
 /* kmrimpl.h (2014-02-04) */
-/* Copyright (C) 2012-2015 RIKEN AICS */
+/* Copyright (C) 2012-2016 RIKEN AICS */
 
 #ifndef _KMRIMPL_H
 #define	_KMRIMPL_H
@@ -1114,7 +1114,7 @@ extern void kmr_ckpt_progress_fin(KMR *);
 extern long kmr_ckpt_first_unprocessed_kv(KMR *);
 
 /*
-Copyright (C) 2012-2015 RIKEN AICS
+Copyright (C) 2012-2016 RIKEN AICS
 This library is distributed WITHOUT ANY WARRANTY.  This library can be
 redistributed and/or modified under the terms of the BSD 2-Clause License.
 */
