@@ -93,9 +93,12 @@ k20 = read_commands(args[0])
 k21 = k20.map_ms_commands(identitymap, nothreading=(not threading),
                           separator_space=False, value="cstring")
 
+k21.free()
+kmr0.dismiss()
+
 sys.stdout.flush()
 sys.stderr.flush()
 #time.sleep(1)
-if (RANK == 0):
-    #print "kmreprun OK"
-sys.stdout.flush()
+#if (RANK == 0):
+#    print "kmreprun OK"
+#sys.stdout.flush()
