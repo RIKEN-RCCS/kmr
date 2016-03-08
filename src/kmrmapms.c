@@ -244,7 +244,9 @@ kmr_map_slave(KMR_KVS *kvi, KMR_KVS *kvo,
 		cc = MPI_Recv(e, sz, MPI_BYTE, 0, peer_tag, comm, &st);
 	    assert(cc == MPI_SUCCESS);
 	    /* Invoke mapper. */
-	    KMR_KVS *kvx = kmr_create_kvs(mr, keyf, valf);
+	    KMR_KVS *kvx;
+	    KMR_OMP_CRITICAL_
+		kvx = kmr_create_kvs(mr, keyf, valf);
 	    struct kmr_kv_box kv = kmr_pick_kv(e, kvi);
 	    cc = (*m)(kv, kvi, kvx, arg, id);
 	    if (cc != MPI_SUCCESS) {
@@ -269,7 +271,8 @@ kmr_map_slave(KMR_KVS *kvi, KMR_KVS *kvo,
 		cc = MPI_Send(packed, sz, MPI_BYTE, 0, peer_tag, comm);
 	    assert(cc == MPI_SUCCESS);
 	    /* Cleanup. */
-	    cc = kmr_free_kvs(kvx);
+	    KMR_OMP_CRITICAL_
+		cc = kmr_free_kvs(kvx);
 	    assert(cc == MPI_SUCCESS);
 	    kmr_free(packed, packsz);
 	}
