@@ -31,6 +31,9 @@ extern "C" KMR_BR0
 #endif
 
 #ifdef __cplusplus
+#ifdef _Bool
+#undef _Bool
+#endif
 typedef unsigned char _Bool;
 #endif
 
