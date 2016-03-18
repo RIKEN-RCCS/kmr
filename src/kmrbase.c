@@ -348,10 +348,7 @@ kmr_free_context(KMR *mr)
     kmr_trace_finalize(mr);
 
     /* Free checkpoint context. */
-    if (kmr_ckpt_enabled(mr)) {
-	MPI_Barrier(mr->comm);
-	kmr_ckpt_free_context(mr);
-    }
+    kmr_ckpt_free_context(mr);
 
     if (mr->log_traces != 0) {
 	cc = fclose(mr->log_traces);

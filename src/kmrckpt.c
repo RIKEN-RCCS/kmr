@@ -162,10 +162,13 @@ void
 kmr_ckpt_free_context(KMR *mr)
 {
     struct kmr_ckpt_ctx *ckptctx = mr->ckpt_ctx;
-    kmr_ckpt_fin_log(mr);
-    kmr_ckpt_delete_ckpt_files(mr, ckptctx->ckpt_dname, mr->rank);
-    kmr_free(ckptctx->kv_positions,
-	     sizeof(struct kv_position) * (size_t)ckptctx->kv_positions_count);
+    if (kmr_ckpt_enabled(mr)) {
+	MPI_Barrier(mr->comm);
+	kmr_ckpt_fin_log(mr);
+	kmr_ckpt_delete_ckpt_files(mr, ckptctx->ckpt_dname, mr->rank);
+	kmr_free(ckptctx->kv_positions,
+		 sizeof(struct kv_position) * (size_t)ckptctx->kv_positions_count);
+    }
     if (mr->ckpt_selective) {
 	kmr_ckpt_int_list_free(ckptctx->slct_skip_ops);
 	kmr_free(ckptctx->slct_skip_ops, sizeof(struct kmr_ckpt_list));
