@@ -41,3 +41,4 @@ clean::
 	rm -f kmrshell kmrshuffler wc.mapper wc.reducer
 	rm -f kmrshell_mpi
 	rm -f *.o a.out core core.*
+	rm -rf *.dSYM

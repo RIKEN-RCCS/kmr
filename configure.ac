@@ -333,6 +333,18 @@ else
   KMRWATCH=""
 fi
 
+# TARGET OS
+AC_SUBST(KMRSOLIB)
+case ${target_os} in
+darwin*)
+    KMRSOLIB="kmr_c.dylib"
+    ;;
+*)
+    KMRSOLIB="kmr_c.so"
+    ;;
+esac
+
+
 #AC_ARG_VAR(LDEMULATION, [BDF binary target (used as ld -m option)])
 #AC_SUBST(KMRLDBDF)
 #if test "$LDEMULATION" != ""; then

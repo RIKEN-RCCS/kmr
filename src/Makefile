@@ -22,7 +22,7 @@ all:: libkmr.a
 
 libkmr.a: $(KMRTARGET)
 
-kmr_c: kmr_c.a kmr_c.so
+kmr_c: kmr_c.a $(KMRSOLIB)
 
 kmr_c.a: kmr.h kmrimpl.h kmrckpt.h kmrtrace.h $(SRCS_C) $(KMRWATCH)
 	$(mpicc) -c $(SRCS_C)
@@ -35,7 +35,13 @@ kmr_c.so: kmr.h kmrimpl.h kmrckpt.h kmrtrace.h $(SRCS_C) $(KMRWATCH)
 		-o kmr_c.so $(OBJS_C) $(KMRWATCH)
 	cp kmr_c.so libkmr.so.$(KMRVER)
 
-kmr_f: kmr_f.a kmr_c.so
+kmr_c.dylib: kmr.h kmrimpl.h kmrckpt.h kmrtrace.h $(SRCS_C) $(KMRWATCH)
+	$(mpicc) $(SO_CCFLAGS) -c $(SRCS_C)
+	$(mpicc) $(SO_LDFLAGS) -install_name libkmr.$(KMRVER).dylib \
+		-o kmr_c.dylib $(OBJS_C) $(KMRWATCH)
+	cp kmr_c.dylib libkmr.$(KMRVER).dylib
+
+kmr_f: kmr_f.a $(KMRSOLIB)
 
 kmr_f.a: kmr.h kmrimpl.h kmrckpt.h kmrtrace.h $(SRCS_C) $(SRCS_F) $(KMRWATCH)
 	$(mpicc) -c $(SRCS_C)
@@ -131,8 +137,9 @@ distclean:: clean
 
 clean::
 	rm -f *.o *.mod kmr_c.a kmr_f.a kmr_c.so kmr_f.so \
-		libkmr.a libkmr.so.$(KMRVER) kmrwatch0 kmrwatch0.bin.c
+		libkmr.a libkmr.so.$(KMRVER) kmrwatch0 kmrwatch0.bin.c \
+		kmr_c.dylib libkmr.$(KMRVER).dylib
 	rm -f properties option mpidp.log out.* dat.*
-	rm -rf dir.*
+	rm -rf dir.* *.dSYM
 	rm -f a.out core core.*
 	rm -fr ckptdir00* tmp_ckptdir00* kmeans_ckpt*

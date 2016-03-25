@@ -57,3 +57,4 @@ distclean:: clean
 clean::
 	rm -f matrix_file_A.txt matrix_file_B.txt
 	rm -f *.o a.out core core.*
+	rm -rf *.dSYM

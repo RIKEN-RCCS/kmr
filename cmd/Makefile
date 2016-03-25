@@ -42,3 +42,4 @@ distclean:: clean
 clean::
 	rm -f kmrckptdump kmrgenscript.py kmrrungenscript.py
 	rm -f a.out core core.*
+	rm -rf *.dSYM

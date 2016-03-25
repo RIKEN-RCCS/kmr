@@ -41,3 +41,4 @@ clean::
 	rm -f pi.mapper pi.reducer
 	rm -f *.o a.out core core.*
 	rm -f pi.out mpi_pi.out
+	rm -rf *.dSYM
