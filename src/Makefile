@@ -18,6 +18,14 @@ OBJS_C = kmrbase.o kmrutil.o kmrmapms.o kmrmoreops.o kmrisort.o kmratoa.o \
 SRCS_F = kmrf.F90
 OBJS_F = kmrf.o
 
+ifeq ($(KMRSOLIB), kmr_c.so)
+	SOLIB_VER = libkmr.so.$(KMRVER)
+	SOLIB     = libkmr.so
+else
+	SOLIB_VER = libkmr.$(KMRVER).dylib
+	SOLIB     = libkmr.dylib
+endif
+
 all:: libkmr.a
 
 libkmr.a: $(KMRTARGET)
@@ -62,9 +70,9 @@ install::
 	$(INSTALL) -m 644 kmr.h $(INCDIR)
 	if [ -f kmrf.mod ]; then $(INSTALL) -m 644 kmrf.mod $(INCDIR); fi
 	$(INSTALL) -m 644 libkmr.a $(LIBDIR)
-	$(INSTALL) -m 755 libkmr.so.$(KMRVER) $(LIBDIR)
-	if [ -e $(LIBDIR)/libkmr.so ]; then rm $(LIBDIR)/libkmr.so; fi
-	$(LN) -s $(LIBDIR)/libkmr.so.$(KMRVER) $(LIBDIR)/libkmr.so
+	$(INSTALL) -m 755 $(SOLIB_VER) $(LIBDIR)
+	if [ -e $(LIBDIR)/$(SOLIB) ]; then rm $(LIBDIR)/$(SOLIB); fi
+	$(LN) -s $(LIBDIR)/$(SOLIB_VER) $(LIBDIR)/$(SOLIB)
 	$(INSTALL) -m 755 kmrwatch0 $(LIBDIR)
 	$(INSTALL) -m 644 ../README $(ETCDIR)
 	$(INSTALL) -m 644 ../LICENSE $(ETCDIR)
