@@ -5,7 +5,6 @@
 
 #include <mpi.h>
 #include <stdint.h>
-#include <time.h>
 #include <assert.h>
 #include "../config.h"
 #include "kmr.h"
@@ -16,11 +15,9 @@ typedef struct kmr_trace kmr_trace_t;
 
 /* Time getting function used by the tracer */
 static inline double
-kmr_gettime()
+kmr_trace_gettime()
 {
-    struct timespec ts;
-    clock_gettime(CLOCK_REALTIME, &ts);
-    return ((double) ts.tv_sec) * 10E9 + ((double) ts.tv_nsec);
+    return kmr_wtime() * 10E9;
 }
 
 /* Initialize */
@@ -49,14 +46,14 @@ kmr_trace_fini(kmr_trace_t *kt)
 static void
 kmr_trace_start(kmr_trace_t *kt)
 {
-    kt->start_t = kmr_gettime();
+    kt->start_t = kmr_trace_gettime();
 }
 
 /* Stop tracing */
 static void
 kmr_trace_stop(kmr_trace_t *kt)
 {
-    kt->end_t = kmr_gettime();
+    kt->end_t = kmr_trace_gettime();
 }
 
 static int
@@ -180,7 +177,7 @@ kmr_trace_add_entry(KMR *mr, kmr_trace_event_t ev, kmr_trace_entry_t *pre,
     /* Create */
     kmr_trace_entry_t * en =
 	(kmr_trace_entry_t *) kmr_malloc( sizeof(kmr_trace_entry_t) );
-    en->t = kmr_gettime();
+    en->t = kmr_trace_gettime();
     en->e = ev;
     if (kvi) {
         en->kvi_element_count = kvi->c.element_count;
