@@ -33,10 +33,11 @@ module kmrf
 
   integer(c_int), parameter :: &
        kmr_kv_opaque = 1, &
-       kmr_kv_integer = 2, &
-       kmr_kv_float8 = 3, &
-       kmr_kv_pointer_owned = 4, &
-       kmr_kv_pointer_unmanaged = 5
+       kmr_kv_cstring = 2, &
+       kmr_kv_integer = 3, &
+       kmr_kv_float8 = 4, &
+       kmr_kv_pointer_owned = 5, &
+       kmr_kv_pointer_unmanaged = 6
 
   !> Option bits (OR'ed) to mapping and reduction (see ::kmr_option).
 
