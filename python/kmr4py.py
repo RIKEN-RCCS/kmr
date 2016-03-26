@@ -76,6 +76,7 @@ _c_bool = ctypes.c_bool
 _c_int = ctypes.c_int
 _c_uint = ctypes.c_uint
 _c_long = ctypes.c_long
+_c_uint8 = ctypes.c_uint8
 _c_uint32 = ctypes.c_uint32
 _c_uint64 = ctypes.c_uint64
 _c_double = ctypes.c_double
@@ -112,13 +113,13 @@ class _c_option(ctypes.Structure):
     """kmr_option."""
 
     _fields_ = [
-        ("nothreading", _c_uint, 1),
-        ("inspect", _c_uint, 1),
-        ("keep_open", _c_uint, 1),
-        ("key_as_rank", _c_uint, 1),
-        ("rank_zero", _c_uint, 1),
-        ("collapse", _c_uint, 1),
-        ("take_ckpt", _c_uint, 1),
+        ("nothreading", _c_uint8, 1),
+        ("inspect", _c_uint8, 1),
+        ("keep_open", _c_uint8, 1),
+        ("key_as_rank", _c_uint8, 1),
+        ("rank_zero", _c_uint8, 1),
+        ("collapse", _c_uint8, 1),
+        ("take_ckpt", _c_uint8, 1),
         ("gap16", _c_uint, 16),
         ("gap32", _c_uint, 32)]
 
@@ -158,10 +159,10 @@ class _c_file_option(ctypes.Structure):
     """kmr_file_option."""
 
     _fields_ = [
-        ("each_rank", _c_uint, 1),
-        ("subdirectories", _c_uint, 1),
-        ("list_file", _c_uint, 1),
-        ("shuffle_names", _c_uint, 1),
+        ("each_rank", _c_uint8, 1),
+        ("subdirectories", _c_uint8, 1),
+        ("list_file", _c_uint8, 1),
+        ("shuffle_names", _c_uint8, 1),
         ("gap16", _c_uint, 16),
         ("gap32", _c_uint, 32)]
 
@@ -195,10 +196,11 @@ class _c_spawn_option(ctypes.Structure):
     """kmr_spawn_option."""
 
     _fields_ = [
-        ("separator_space", _c_uint, 1),
-        ("reply_each", _c_uint, 1),
-        ("reply_root", _c_uint, 1),
-        ("one_by_one", _c_uint, 1),
+        ("separator_space", _c_uint8, 1),
+        ("reply_each", _c_uint8, 1),
+        ("reply_root", _c_uint8, 1),
+        ("one_by_one", _c_uint8, 1),
+        ("take_ckpt", _c_uint8, 1),
         ("gap16", _c_uint, 16),
         ("gap32", _c_uint, 32)]
 
@@ -221,6 +223,8 @@ class _c_spawn_option(ctypes.Structure):
                 self.reply_root = v
             elif (o == "one_by_one"):
                 self.one_by_one = v
+            elif (o == "take_ckpt"):
+                self.take_ckpt = v
             else:
                 raise Exception("Bad option: %s" % o)
         return
