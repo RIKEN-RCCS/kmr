@@ -23,7 +23,7 @@ ifeq ($(KMRSOLIB), kmr_c.so)
 	SOLIB     = libkmr.so
 else
 	SOLIB_VER = libkmr.$(KMRVER).dylib
-	SOLIB     = libkmr.dylib
+	SOLIB     = libkmr.so
 endif
 
 all:: libkmr.a

@@ -1,3 +1,9 @@
+## 1.8.1 (2016-04-XX)
+
+- Add ex/kmreprun.py, an example of simple shell command invoker
+- Improve support of Mac OS X
+- Several small bug fixes
+
 ## 1.8.0 (2015-12-25)
 
 - Add a function tracing option for KMRViz, a KMR visualizer
