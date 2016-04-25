@@ -37,7 +37,7 @@ kmr_trace_fini(kmr_trace_t *kt)
     kmr_trace_entry_t * en = kt->head;
     while (en) {
         kmr_trace_entry_t * enn = en->next;
-        kmr_free(en, sizeof(en));
+        kmr_free(en, sizeof(kmr_trace_entry_t));
         en = enn;
     }
 }
