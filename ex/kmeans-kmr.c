@@ -488,7 +488,7 @@ main(int argc, char **argv)
 	for (int i = 0; i < kmeans.n_means * kmeans.dim; i += kmeans.dim) {
 	    printf("    ( ");
 	    for (int j = 0; j < kmeans.dim; j++) {
-		printf("%d, ", kmeans.means[i * kmeans.dim + j]);
+		printf("%d, ", kmeans.means[i + j]);
 	    }
 	    printf(")\n");
 	}

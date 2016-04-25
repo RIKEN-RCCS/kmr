@@ -275,6 +275,8 @@ kmr_create_context(const MPI_Comm comm, const MPI_Info conf,
 	assert(s < KMR_JOB_NAME_LEN);
 	strncpy(mr->identifying_name, identifying_name, KMR_JOB_NAME_LEN);
 	mr->identifying_name[KMR_JOB_NAME_LEN - 1] = 0;
+    } else {
+	mr->identifying_name[0] = 0;
     }
 
     /* KMR is now usable (with default setting). */
