@@ -18,7 +18,7 @@ import inspect
 import traceback
 import sys
 
-__version__ = "20151225"
+__version__ = "20160425"
 
 kmrso = ctypes.CDLL("libkmr.so")
 

@@ -1,4 +1,4 @@
-## 1.8.1 (2016-04-XX)
+## 1.8.1 (2016-04-25)
 
 - Add ex/kmreprun.py, an example of simple shell command invoker
 - Improve support of Mac OS X
