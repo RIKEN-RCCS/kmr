@@ -1089,8 +1089,8 @@ normally the ordering is irrelevant.
 <h1>Appendix: KMRViz Visualisation Tool</h1>
 
 <p>
-KMRViz is a visualisation tool for KMR.  KMRViz shows timestamps of start
-and finish, number of key-values in KVS of major KMR functions graphically.
+KMRViz is a visualisation tool for KMR.  KMRViz shows timestamps,
+number of key-values in KVS, and etc. of major KMR functions graphically.
 KMRViz can be downloaded from
 <a href="https://github.com/pf-aics-riken/kmrviz">KMRViz github page</a>.
 
@@ -1104,7 +1104,7 @@ to your configuration file.
 echo "kmrviz_trace=1" >> kmrrc
 KMROPTION=kmrrc mpiexec -np 12 ./a.out
 </pre>
-To enable with code modification, just adding "mr->kmrviz_trace = 1;" line
+To enable by modifying your code, just adding "mr->kmrviz_trace = 1;" line
 to your main function is enough.
 <pre class="fragment">
 KMR *mr = kmr_create_context(MPI_COMM_WORLD, MPI_INFO_NULL, 0);
