@@ -485,7 +485,7 @@ kmr_spawn_info_get(struct kmr_spawn_info *info,
     }
 }
 
-/* Lists processes to spawn from the key-value entries. */
+/* Makes a list of processes to spawn from the KVS entries. */
 
 static int
 kmr_list_spawns(struct kmr_spawning *spw, KMR_KVS *kvi, MPI_Info info,
@@ -1569,17 +1569,57 @@ kmr_map_spawned_processes(enum kmr_spawn_mode mode, char *name,
 	    cc = kmr_listen_to_watch(mr, spw, w);
 	    assert(cc == MPI_SUCCESS);
 	} else {
-	    cc = snprintf(spw->watch_host, sizeof(spw->watch_host),
-			  "0");
+	    cc = snprintf(spw->watch_host, sizeof(spw->watch_host), "0");
 	    assert(cc < (int)sizeof(spw->watch_host));
 	}
 
 	{
-	    char **argv;
-	    int argc;
+	    /* Store command entries "key=value" to the info when the
+	       option NO_SET_INFOS is false.  An empty key or value is
+	       regarded as an end of the entries. */
+
+	    char **argv1;
+	    int argc1;
+	    argc1 = s->argc;
+	    argv1 = s->argv;
+
+	    MPI_Info infox;
+	    if (!opt.no_set_infos && argc1 > 0 && strchr(argv1[0], '=') != 0) {
+		cc = MPI_Info_dup(info, &infox);
+		assert(cc == MPI_SUCCESS);
+
+		char *sep;
+		while (argc1 > 0 && (sep = strchr(argv1[0], '=')) != 0) {
+		    char *k = argv1[0];
+		    char *v = (sep + 1);
+		    if (k != sep && v[0] != 0) {
+			/* (It ignores an empty entry). */
+			assert(*sep == '=');
+			*sep = '0';
+			cc = MPI_Info_set(infox, k, v);
+			assert(cc == MPI_SUCCESS);
+			*sep = '=';
+		    }
+		    argc1--;
+		    argv1++;
+		    if (k != sep && v[0] != 0) {
+			break;
+		    }
+		}
+	    } else {
+		infox = info;
+	    }
+
+	    /* Modify the command line to use the watch program. */
+
+	    char **argv2;
+	    int argc2;
+	    argc2 = argc1;
+	    argv2 = argv1;
+
 	    if (use_watch) {
-		argc = (s->argc + 5);
-		argv = kmr_malloc(sizeof(char *) * (size_t)(argc + 1));
+		argc2 = (argc1 + 5);
+		argv2 = kmr_malloc(sizeof(char *) * (size_t)(argc2 + 1));
 
 		cc = snprintf(hostport, sizeof(hostport),
 			      "%s/%d", spw->watch_host, s->watch_port);
@@ -1591,24 +1631,21 @@ kmr_map_spawned_processes(enum kmr_spawn_mode mode, char *name,
 		assert(cc < (int)sizeof(magic));
 
 		assert(mr->spawn_watch_program != 0);
-		argv[0] = mr->spawn_watch_program;
-		argv[1] = ((mode == KMR_SPAWN_SERIAL) ? "seq" : "mpi");
-		argv[2] = hostport;
-		argv[3] = magic;
-		argv[4] = "--";
-		for (int i = 0; i < s->argc; i++) {
-		    argv[5 + i] = s->argv[i];
+		argv2[0] = mr->spawn_watch_program;
+		argv2[1] = ((mode == KMR_SPAWN_SERIAL) ? "seq" : "mpi");
+		argv2[2] = hostport;
+		argv2[3] = magic;
+		argv2[4] = "--";
+		for (int i = 0; i < argc1; i++) {
+		    argv2[5 + i] = argv1[i];
 		}
-		argv[(s->argc + 5)] = 0;
-	    } else {
-		argc = s->argc;
-		argv = s->argv;
+		argv2[(argc1 + 5)] = 0;
 	    }
-	    assert(argv[argc] == 0);
+	    assert(argv2[argc2] == 0);
 
 	    if (tracing5) {
 		char ee[160];
-		kmr_make_pretty_argument_string(ee, sizeof(ee), argc, argv);
+		kmr_make_pretty_argument_string(ee, sizeof(ee), argc2, argv2);
 		fprintf(stderr, (";;KMR [%05d] %s [%d]: MPI_Comm_spawn"
 				 " (maxprocs=%d;%s)\n"),
 			mr->rank, spw->fn, w, s->n_procs, ee);
@@ -1622,7 +1659,7 @@ kmr_map_spawned_processes(enum kmr_spawn_mode mode, char *name,
 	    int *ec = kmr_malloc(sizeof(int) * (size_t)s->n_procs);
 	    const int root = 0;
 	    MPI_Comm spawncomm = MPI_COMM_SELF;
-	    cc = MPI_Comm_spawn(argv[0], &(argv[1]), s->n_procs, info,
+	    cc = MPI_Comm_spawn(argv2[0], &(argv2[1]), s->n_procs, infox,
 				root, spawncomm, &s->icomm, ec);
 	    assert(cc == MPI_SUCCESS || cc == MPI_ERR_SPAWN);
 	    if (cc == MPI_ERR_SPAWN) {
@@ -1641,16 +1678,21 @@ kmr_map_spawned_processes(enum kmr_spawn_mode mode, char *name,
 	    s->timestamp[1] = MPI_Wtime();
 
 	    kmr_free(ec, (sizeof(int) * (size_t)s->n_procs));
-	    if (argv != s->argv) {
-		kmr_free(argv, (sizeof(char *) * (size_t)(argc + 1)));
+	    if (argv2 != argv1) {
+		kmr_free(argv2, (sizeof(char *) * (size_t)(argc2 + 1)));
 	    }
-	    argv = 0;
+	    argv2 = 0;
 
 	    s->running = 1;
 	    s->index = spw->n_starteds;
 	    s->count = nspawns;
 	    spw->n_starteds += nspawns;
 	    spw->n_runnings += nspawns;
+
+	    if (infox != info) {
+		cc = MPI_Info_free(&infox);
+		assert(cc == MPI_SUCCESS);
+	    }
 	}
 
 	if (mode == KMR_SPAWN_PARALLEL) {

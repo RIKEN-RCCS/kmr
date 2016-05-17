@@ -410,8 +410,12 @@ kmr_stringify_spawn_options(struct kmr_spawn_option o)
 	return "reply_each";
     } else if (o.reply_root) {
 	return "reply_root";
+#if 0 /*GOMI*/
     } else if (o.one_by_one) {
 	return "one_by_one";
+#endif
+    } else if (o.no_set_infos) {
+	return "no_set_infos";
     } else if (o.take_ckpt) {
 	return "take_ckpt";
     } else {
@@ -1720,12 +1724,14 @@ kmr_print_spawn_options(struct kmr_spawn_option opt)
     printf((".separator_space=%d,"
 	    " .reply_each=%d,"
 	    " .reply_root=%d,"
-	    " .one_by_one=%d,"
+	    /*" .one_by_one=%d,"*/
+	    " .no_set_infos=%d,"
 	    " .take_ckpt=%d\n"),
 	   opt.separator_space,
 	   opt.reply_each,
 	   opt.reply_root,
-	   opt.one_by_one,
+	   /*opt.one_by_one,*/
+	   opt.no_set_infos,
 	   opt.take_ckpt);
 }
 

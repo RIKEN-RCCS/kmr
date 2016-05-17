@@ -655,7 +655,8 @@ static const union {struct kmr_file_option o; unsigned long bits;}
     option size as long, for the Fortran binding whose options are
     passed by intergers (SPARC-V9 compilers put bit-fields on
     arguments as 64 bits).  ONE_BY_ONE is no longer used (since
-    ver.178).  TAKE_CKPT tells kmr functions that support
+    ver.178); NO_SET_INFOS took up ONE_BY_ONE bit (since 2016-05-17).
+    TAKE_CKPT tells kmr functions that support
     Checkpoint/Restart to take checkpoints of the output key-value
     stream when CKPT_SELECTIVE global option is enabled. */
 
@@ -663,7 +664,8 @@ struct kmr_spawn_option {
     _Bool separator_space : 1;
     _Bool reply_each : 1;
     _Bool reply_root : 1;
-    _Bool one_by_one : 1;
+    /*_Bool one_by_one : 1;*/
+    _Bool no_set_infos : 1;
     _Bool take_ckpt : 1;
     int : 16;
     int : 32;
