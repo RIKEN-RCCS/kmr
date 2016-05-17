@@ -8,8 +8,8 @@ structures after encoding/decoding Python objects to byte arrays in C.
 Documentation in Python is minimum, so please refer to the
 documentation in C."""
 
-## NOTE: Importing mpi4py initializes for MPI execution.  It is not
-## imported here, applications shall import it.
+## NOTE: Importing MPI module from mpi4py package initializes for MPI
+## execution.  Import MPI and then import kmr4py in application codes.
 
 import warnings
 import ctypes
@@ -17,6 +17,7 @@ import cPickle
 import inspect
 import traceback
 import sys
+import mpi4py
 
 __version__ = "20160425"
 
@@ -565,8 +566,8 @@ class KMR():
         which is used in succeeding operations.  Info specifies its
         options by MPI_Info.  Arguments of comm/info are passed as a
         long integer (assuming either an integer (int) or a pointer in
-        C).  It also accepts a string "dummy" or "world" as a comm
-        argument."""
+        C).  It also accepts an communicator instance of mpi4py.MPI.Comm,
+        a string "dummy" or "world" as a comm argument."""
 
         if (isinstance(info, (int, long))):
             warninfo = False
@@ -577,6 +578,14 @@ class KMR():
         if (isinstance(comm, (int, long))):
             warncomm = False
             ccomm = comm
+        elif (isinstance(comm, mpi4py.MPI.Comm)):
+            warncomm = False
+            comm_ptr = mpi4py.MPI._addressof(comm)
+            if (mpi4py.MPI._sizeof(mpi4py.MPI.Comm) == ctypes.sizeof(_c_uint64)):
+                MPI_Comm = _c_uint64
+            else:
+                MPI_Comm = _c_void_p
+            ccomm = MPI_Comm.from_address(comm_ptr)
         elif (comm == "dummy"):
             warncomm = False
             ccomm = _mpi_comm_self
