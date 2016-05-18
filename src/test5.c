@@ -29,7 +29,7 @@ empty_map_fn_seq(const struct kmr_kv_box kv, const KMR_KVS *kvi,
 {
     fflush(0);
     usleep(50 * 1000);
-    printf("test4:empty-map-fn[%d]: called.\n", (int)ii);
+    printf("test5:empty-map-fn[%d]: called.\n", (int)ii);
     fflush(0);
     sleep(3);
     return MPI_SUCCESS;
@@ -45,10 +45,10 @@ empty_map_fn_mpi_noreply(const struct kmr_kv_box kv, const KMR_KVS *kvi,
     fflush(0);
     usleep(50 * 1000);
     if (sizeof(int) != sizeof(void *) && sizeof(ic) == sizeof(void *)) {
-	printf("test4:empty-map-fn[%d]: sleeping 12 sec (icomm=%p)...\n",
+	printf("test5:empty-map-fn[%d]: sleeping 12 sec (icomm=%p)...\n",
 	       (int)ii, (void *)ic);
     } else {
-	printf("test4:empty-map-fn[%d]: sleeping 12 sec (icomm=%d)...\n",
+	printf("test5:empty-map-fn[%d]: sleeping 12 sec (icomm=%d)...\n",
 	       (int)ii, (int)ic);
     }
     fflush(0);
@@ -66,10 +66,10 @@ empty_map_fn_mpi_with_reply(const struct kmr_kv_box kv, const KMR_KVS *kvi,
     fflush(0);
     usleep(50 * 1000);
     if (sizeof(int) != sizeof(void *) && sizeof(ic) == sizeof(void *)) {
-	printf("test4:empty-map-fn[%d]: called (icomm=%p).\n",
+	printf("test5:empty-map-fn[%d]: called (icomm=%p).\n",
 	       (int)ii, (void *)ic);
     } else {
-	printf("test4:empty-map-fn[%d]: called (icomm=%d).\n",
+	printf("test5:empty-map-fn[%d]: called (icomm=%d).\n",
 	       (int)ii, (int)ic);
     }
     fflush(0);
@@ -85,18 +85,17 @@ simple0(int nprocs, int rank)
 
     MPI_Barrier(MPI_COMM_WORLD);
     usleep(50 * 1000);
-    if (rank == 0) {printf("** CHECK kmr_map_via_spawn...\n");}
-    fflush(0);
-    usleep(50 * 1000);
 
     if (1) {
 	MPI_Barrier(MPI_COMM_WORLD);
 	usleep(50 * 1000);
-	if (rank == 0) {printf("* kmr_map_via_spawn"
-			       " WITH RETURNING KVS...\n");}
-	if (rank == 0) {printf("Spawn 2-rank work 4 times"
-			       " using %d dynamic processes.\n",
-			       mr->spawn_max_processes);}
+	if (rank == 0) {
+	    printf("\n");
+	    printf("** CHECK kmr_map_via_spawn WITH RETURNING KVS.\n");
+	    printf("** Spawn 2-rank work 4 times"
+		   " using %d dynamic processes.\n",
+		   mr->spawn_max_processes);
+	}
 	fflush(0);
 	usleep(50 * 1000);
 
@@ -106,7 +105,8 @@ simple0(int nprocs, int rank)
 	    char vbuf[256];
 	    snprintf(kbuf, sizeof(kbuf), "key");
 	    snprintf(vbuf, sizeof(vbuf),
-		     "maxprocs=2 ./a.out mpi returnkvs a0 a1 a2");
+		     "maxprocs=2 %s ./a.out mpi returnkvs a0 a1 a2",
+		     "info0=value0 info1=value1 info2=value2");
 	    struct kmr_kv_box nkv = {
 		.klen = (int)(strlen(kbuf) + 1),
 		.vlen = (int)(strlen(vbuf) + 1),
@@ -143,18 +143,17 @@ simple1(int nprocs, int rank)
 
     MPI_Barrier(MPI_COMM_WORLD);
     usleep(50 * 1000);
-    if (rank == 0) {printf("** CHECK kmr_map_via_spawn...\n");}
-    fflush(0);
-    usleep(50 * 1000);
 
     if (1) {
 	MPI_Barrier(MPI_COMM_WORLD);
 	usleep(50 * 1000);
-	if (rank == 0) {printf("* kmr_map_via_spawn"
-			       " WAITING IN MAP-FN...\n");}
-	if (rank == 0) {printf("Spawn 2-rank work 4 times"
-			       " using %d dynamic processes.\n",
-			       mr->spawn_max_processes);}
+	if (rank == 0) {
+	    printf("\n");
+	    printf("** CHECK kmr_map_via_spawn WITH WAITING IN MAP-FN.\n");
+	    printf("** Spawn 2-rank work 4 times"
+		   " using %d dynamic processes.\n",
+		   mr->spawn_max_processes);
+	}
 	fflush(0);
 	usleep(50 * 1000);
 
@@ -185,11 +184,13 @@ simple1(int nprocs, int rank)
     if (1) {
 	MPI_Barrier(MPI_COMM_WORLD);
 	usleep(50 * 1000);
-	if (rank == 0) {printf("* kmr_map_via_spawn"
-			       " WAITING WITH REPLY (EACH)...\n");}
-	if (rank == 0) {printf("Spawn 2-rank work 4 times"
-			       " using %d dynamic processes.\n",
-			       mr->spawn_max_processes);}
+	if (rank == 0) {
+	    printf("\n");
+	    printf("** CHECK kmr_map_via_spawn WITH REPLY (EACH).\n");
+	    printf("** Spawn 2-rank work 4 times"
+		   " using %d dynamic processes.\n",
+		   mr->spawn_max_processes);
+	}
 	fflush(0);
 	usleep(50 * 1000);
 
@@ -221,11 +222,13 @@ simple1(int nprocs, int rank)
     if (1) {
 	MPI_Barrier(MPI_COMM_WORLD);
 	usleep(50 * 1000);
-	if (rank == 0) {printf("* kmr_map_via_spawn"
-			       " WAITING WITH REPLY (ROOT)...\n");}
-	if (rank == 0) {printf("Spawn 2-rank work 4 times"
-			       " using %d dynamic processes.\n",
-			       mr->spawn_max_processes);}
+	if (rank == 0) {
+	    printf("\n");
+	    printf("** CHECK kmr_map_via_spawn WITH REPLY (ROOT).\n");
+	    printf("Spawn 2-rank work 4 times"
+		   " using %d dynamic processes.\n",
+		   mr->spawn_max_processes);
+	}
 	fflush(0);
 	usleep(50 * 1000);
 
@@ -266,15 +269,15 @@ simple2(int nprocs, int rank)
 
     MPI_Barrier(MPI_COMM_WORLD);
     usleep(50 * 1000);
-    if (rank == 0) {printf("** CHECK kmr_map_processes...\n");}
-    fflush(0);
-    usleep(50 * 1000);
 
     if (1) {
 	MPI_Barrier(MPI_COMM_WORLD);
 	usleep(50 * 1000);
-	if (rank == 0) {printf("* kmr_map_processes(serial)...\n");}
-	if (rank == 0) {printf("Spawn 2 serial processes 4 times.\n");}
+	if (rank == 0) {
+	    printf("\n");
+	    printf("** CHECK kmr_map_processes (SERIAL)...\n");
+	    printf("** Spawn 2 serial processes 4 times.\n");
+	}
 	fflush(0);
 	usleep(50 * 1000);
 
@@ -305,14 +308,17 @@ simple2(int nprocs, int rank)
     if (!skipmpiwork) {
 	MPI_Barrier(MPI_COMM_WORLD);
 	usleep(50 * 1000);
-	if (rank == 0) {printf("* kmr_map_processes(mpi)...\n");}
-	if (rank == 0) {printf("Spawn 2-rank work 4 times"
-			       " using %d dynamic processes.\n",
-			       mr->spawn_max_processes);}
-	if (rank == 0) {printf("** ON SOME IMPLEMENTATIONS OF MPI,"
-			       " THIS TEST MAY BLOCK INDEFINITELY. **\n");}
-	if (rank == 0) {printf("** THEN, RUN THIS TEST WITH a.out 0"
-			       " TO SKIP THIS PART. **\n");}
+	if (rank == 0) {
+	    printf("\n");
+	    printf("** CHECK kmr_map_processes (MPI)...\n");
+	    printf("** Spawn 2-rank work 4 times"
+		   " using %d dynamic processes.\n",
+		   mr->spawn_max_processes);
+	    printf("** THIS TEST MAY BLOCK INDEFINITELY"
+		   " ON SOME IMPLEMENTATIONS OF MPI.\n");
+	    printf("** THEN, RUN THIS TEST WITH a.out 0"
+		   " TO SKIP THIS PART.\n");
+	}
 	fflush(0);
 	usleep(50 * 1000);
 
@@ -350,12 +356,12 @@ spawned(int argc, char *argv[])
 
     assert(strcmp(argv[1], "seq") == 0 || strcmp(argv[1], "mpi") == 0);
     if (strcmp(argv[1], "seq") == 0) {
-	printf("test4:spawned-process(serial): started (%s,%s,%s).\n",
+	printf("test5:spawned(serial): started (%s,%s,%s).\n",
 	       argv[0], argv[1], argv[3]);
-	printf("test4:spawned-process(serial): sleeping 3 sec...\n");
+	printf("test5:spawned(serial): sleeping 3 sec...\n");
 	fflush(0);
 	sleep(3);
-	printf("test4:spawned-process(serial): exits.\n");
+	printf("test5:spawned(serial): exits.\n");
 	fflush(0);
     } else if (strcmp(argv[1], "mpi") == 0) {
 	int nprocs, rank, lev;
@@ -370,9 +376,9 @@ spawned(int argc, char *argv[])
 	int peer_nprocs;
 	MPI_Comm_remote_size(parent, &peer_nprocs);
 	assert(peer_nprocs == 1);
-	printf("test4:spawned-process(mpi;rank=%d/%d): started (%s,%s,%s).\n",
+	printf("test5:spawned(mpi;rank=%d/%d): started (%s,%s,%s).\n",
 	       rank, nprocs, argv[0], argv[1], argv[2]);
-	printf("test4:spawned-process(mpi;rank=%d/%d): sleeping 3 sec...\n",
+	printf("test5:spawned(mpi;rank=%d/%d): sleeping 3 sec...\n",
 	       rank, nprocs);
 	fflush(0);
 	sleep(3);
@@ -383,12 +389,12 @@ spawned(int argc, char *argv[])
 	       || (strcmp(argv[2], "returnkvs") == 0));
 	if (strcmp(argv[2], "noreply") == 0) {
 	    /* NO REPLY */
-	    printf("test4:spawned-process(mpi;rank=%d/%d):"
+	    printf("test5:spawned(mpi;rank=%d/%d):"
 		   " no reply.\n",
 		   rank, nprocs);
 	} else if (strcmp(argv[2], "eachreply") == 0) {
 	    /* EACH REPLY */
-	    printf("test4:spawned-process(mpi;rank=%d/%d):"
+	    printf("test5:spawned(mpi;rank=%d/%d):"
 		   " sending a reply.\n",
 		   rank, nprocs);
 	    int peer = 0;
@@ -397,7 +403,7 @@ spawned(int argc, char *argv[])
 	} else if (strcmp(argv[2], "rootreply") == 0) {
 	    /* ROOT REPLY */
 	    if (rank == 0) {
-		printf("test4:spawned-process(mpi;rank=%d/%d):"
+		printf("test5:spawned(mpi;rank=%d/%d):"
 		       " sending a root reply.\n",
 		       rank, nprocs);
 		int peer = 0;
@@ -405,7 +411,7 @@ spawned(int argc, char *argv[])
 			 KMR_TAG_SPAWN_REPLY, parent);
 	    }
 	} else if (strcmp(argv[2], "returnkvs") == 0) {
-	    printf("test4:spawned-process(mpi;rank=%d/%d):"
+	    printf("test5:spawned(mpi;rank=%d/%d):"
 		   " sending a kvs.\n",
 		   rank, nprocs);
 	    KMR *mr = kmr_create_dummy_context();
@@ -425,19 +431,21 @@ spawned(int argc, char *argv[])
 	    assert(0);
 	}
 
-	printf("test4:spawned-process(mpi;rank=%d/%d):"
+	printf("test5:spawned(mpi;rank=%d/%d):"
 	       " call MPI_Comm_free (could block)...\n",
 	       rank, nprocs);
 	fflush(0);
 	MPI_Comm_free(&parent);
-	printf("test4:spawned-process(mpi;rank=%d/%d):"
+	printf("test5:spawned(mpi;rank=%d/%d):"
 	       " MPI_Comm_free done.\n",
 	       rank, nprocs);
 	fflush(0);
-	MPI_Finalize();
-	printf("test4:spawned-process(mpi;rank=%d/%d): finalized.\n",
+	printf("test5:spawned(mpi;rank=%d/%d):"
+	       " call MPI_Finalize...\n",
 	       rank, nprocs);
-	printf("test4:spawned-process(mpi;rank=%d/%d): exits.\n",
+	MPI_Finalize();
+	printf("test5:spawned(mpi;rank=%d/%d):"
+	       " MPI_Finalize done; exits.\n",
 	       rank, nprocs);
 	fflush(0);
     }
@@ -460,9 +468,11 @@ main(int argc, char *argv[])
 
 	skipmpiwork = (argc == 2 && argv[1][0] == '0');
 
-	if (rank == 0) {printf("CHECK SPAWNING MAPPER\n");}
-	if (rank == 0) {printf("Running this test needs 4 or more"
-			       " dynamic processes.\n");}
+	if (rank == 0) {
+	    printf("Check spawning mapper.\n");
+	    printf("Running this test needs 4 or more"
+		   " dynamic processes.\n");
+	}
 	fflush(0);
 
 	simple0(nprocs, rank);

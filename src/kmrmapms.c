@@ -439,14 +439,52 @@ kmr_sum_on_all_ranks(KMR *mr, int v, int *sum)
 }
 
 static int
-kmr_make_pretty_argument_string(char *s, size_t sz, int argc, char **argv)
+kmr_make_printable_argv_string(char *s, size_t sz, char **argv)
 {
     int cc;
-    size_t cnt = 0;
-    for (int i = 0; (i < argc && argv[i] != 0); i++) {
-	cc = snprintf(&s[cnt], (sz - cnt), (i == 0 ? "%s" : ",%s"), argv[i]);
+
+    assert(sz > 4);
+    size_t cnt;
+    cnt = 0;
+    for (int i = 0; argv[i] != 0; i++) {
+	cc = snprintf(&s[cnt], (sz - cnt), "%s%s",
+		      (i == 0 ? "" : ","), argv[i]);
 	cnt += (size_t)cc;
 	if (cnt >= sz) {
+	    snprintf(&s[sz - 4], 4, "...");
+	    return 0;
+	}
+    }
+    return 0;
+}
+
+static int
+kmr_make_printable_info_string(char *s, size_t sz, MPI_Info info)
+{
+    int cc;
+    char key[MPI_MAX_INFO_KEY + 1];
+    char value[MPI_MAX_INFO_VAL + 1];
+
+    assert(sz > 4);
+    int nkeys;
+    cc = MPI_Info_get_nkeys(info, &nkeys);
+    assert(cc == MPI_SUCCESS);
+
+    size_t cnt;
+    cnt = 0;
+    for (int i = 0; i < nkeys; i++) {
+	cc = MPI_Info_get_nthkey(info, i, key);
+	assert(cc == MPI_SUCCESS);
+	key[MPI_MAX_INFO_KEY] = 0;
+	int flag;
+	cc = MPI_Info_get(info, key, MPI_MAX_INFO_VAL, value, &flag);
+	assert(cc == MPI_SUCCESS && flag != 0);
+	value[MPI_MAX_INFO_VAL] = 0;
+	cc = snprintf(&s[cnt], (sz - cnt), "%s%s=%s",
+		      (i == 0 ? "" : ","), key, value);
+	cnt += (size_t)cc;
+	if (cnt >= sz) {
+	    snprintf(&s[sz - 4], 4, "...");
 	    return 0;
 	}
     }
@@ -1573,82 +1611,86 @@ kmr_map_spawned_processes(enum kmr_spawn_mode mode, char *name,
 	    assert(cc < (int)sizeof(spw->watch_host));
 	}
 
-	{
-	    /* Store command entries "key=value" to the info when the
-	       option NO_SET_INFOS is false.  An empty key or value is
-	       regarded as an end of the entries. */
+	/* Modify the command line by moving "key=value" entries to
+	   the info.  An empty key or value is regarded as an end of
+	   the entries. */
 
-	    char **argv1;
-	    int argc1;
-	    argc1 = s->argc;
-	    argv1 = s->argv;
-
-	    MPI_Info infox;
-	    if (!opt.no_set_infos && argc1 > 0 && strchr(argv1[0], '=') != 0) {
+	MPI_Info infox;
+	char **argv1;
+	argv1 = s->argv;
+	if (!opt.no_set_infos && strchr(argv1[0], '=') != 0) {
+	    if (info == MPI_INFO_NULL) {
+		cc = MPI_Info_create(&infox);
+		assert(cc == MPI_SUCCESS);
+	    } else {
 		cc = MPI_Info_dup(info, &infox);
 		assert(cc == MPI_SUCCESS);
-
-		char *sep;
-		while (argc1 > 0 && (sep = strchr(argv1[0], '=')) != 0) {
-		    char *k = argv1[0];
-		    char *v = (sep + 1);
-		    if (k != sep && v[0] != 0) {
-			/* (It ignores an empty entry). */
-			assert(*sep == '=');
-			*sep = '0';
-			cc = MPI_Info_set(infox, k, v);
-			assert(cc == MPI_SUCCESS);
-			*sep = '=';
-		    }
-		    argc1--;
-		    argv1++;
-		    if (k != sep && v[0] != 0) {
-			break;
-		    }
-		}
-	    } else {
-		infox = info;
 	    }
 
-	    /* Modify the command line to use the watch program. */
+	    char *sep;
+	    while ((sep = strchr(argv1[0], '=')) != 0) {
+		char *k = argv1[0];
+		char *v = (sep + 1);
+		if (k != sep && v[0] != 0) {
+		    /* (It ignores an empty entry). */
+		    assert(*sep == '=');
+		    *sep = '\0';
+		    cc = MPI_Info_set(infox, k, v);
+		    assert(cc == MPI_SUCCESS);
+		    *sep = '=';
+		}
+		argv1++;
+		if (!(k != sep && v[0] != 0)) {
+		    break;
+		}
+	    }
+	} else {
+	    infox = info;
+	}
 
-	    char **argv2;
-	    int argc2;
-	    argc2 = argc1;
+	/* Modify the command line to use the watch program. */
+
+	char **argv2;
+	int argc2;
+	if (!use_watch) {
 	    argv2 = argv1;
+	} else {
+	    int argc1;
+	    for (argc1 = 0; argv1[argc1] != 0; argc1++);
 
-	    if (use_watch) {
-		argc2 = (argc1 + 5);
-		argv2 = kmr_malloc(sizeof(char *) * (size_t)(argc2 + 1));
+	    argc2 = (argc1 + 5);
+	    argv2 = kmr_malloc(sizeof(char *) * (size_t)(argc2 + 1));
 
-		cc = snprintf(hostport, sizeof(hostport),
-			      "%s/%d", spw->watch_host, s->watch_port);
-		assert(cc < (int)sizeof(hostport));
+	    cc = snprintf(hostport, sizeof(hostport),
+			  "%s/%d", spw->watch_host, s->watch_port);
+	    assert(cc < (int)sizeof(hostport));
 
-		unsigned int vv = (unsigned int)random();
-		cc = snprintf(magic, sizeof(magic), "%08xN%dV0%s",
-			      vv, w, ((mr->trace_map_spawn) ? "T1" : ""));
-		assert(cc < (int)sizeof(magic));
+	    unsigned int vv = (unsigned int)random();
+	    cc = snprintf(magic, sizeof(magic), "%08xN%dV0%s",
+			  vv, w, ((mr->trace_map_spawn) ? "T1" : ""));
+	    assert(cc < (int)sizeof(magic));
 
-		assert(mr->spawn_watch_program != 0);
-		argv2[0] = mr->spawn_watch_program;
-		argv2[1] = ((mode == KMR_SPAWN_SERIAL) ? "seq" : "mpi");
-		argv2[2] = hostport;
-		argv2[3] = magic;
-		argv2[4] = "--";
-		for (int i = 0; i < argc1; i++) {
-		    argv2[5 + i] = argv1[i];
-		}
-		argv2[(argc1 + 5)] = 0;
+	    assert(mr->spawn_watch_program != 0);
+	    argv2[0] = mr->spawn_watch_program;
+	    argv2[1] = ((mode == KMR_SPAWN_SERIAL) ? "seq" : "mpi");
+	    argv2[2] = hostport;
+	    argv2[3] = magic;
+	    argv2[4] = "--";
+	    for (int i = 0; i < argc1; i++) {
+		argv2[5 + i] = argv1[i];
 	    }
-	    assert(argv2[argc2] == 0);
+	    argv2[(argc1 + 5)] = 0;
+	}
 
+	{
 	    if (tracing5) {
-		char ee[160];
-		kmr_make_pretty_argument_string(ee, sizeof(ee), argc2, argv2);
+		char ee0[160];
+		char ee1[160];
+		kmr_make_printable_argv_string(ee0, sizeof(ee0), argv2);
+		kmr_make_printable_info_string(ee1, sizeof(ee1), infox);
 		fprintf(stderr, (";;KMR [%05d] %s [%d]: MPI_Comm_spawn"
-				 " (maxprocs=%d;%s)\n"),
-			mr->rank, spw->fn, w, s->n_procs, ee);
+				 " (maxprocs=%d;%s;info:%s)\n"),
+			mr->rank, spw->fn, w, s->n_procs, ee0, ee1);
 		fflush(0);
 	    }
 
@@ -1864,38 +1906,44 @@ kmr_get_spawner_communicator_ff(KMR *mr, long ii, int *comm)
     run custom MPI programs which will return a reply as MPI messages.
     Consider other variations to run independent processes, when the
     spawned processes will not interact with the parent:
-    kmr_map_processes() or kmr_map_ms_commands().\n The spawner
-    (parent) spawns processes specified by key-value pairs.  The key
-    part is ignored, and the value part is a list of null-separated
-    strings which constitutes a command and arguments.  The option
-    SEPARATOR_SPACE changes the separator character to whitespaces.
-    If the first string is "maxprocs=n", then the number of processes
-    is taken from this string.  Or, an MPI_Info entry "maxprocs" in
-    INFO is used, and "maxprocs" is common to all spawns.  It is an
-    error if neither is specified.  The multile spawners (more than
-    one ranks can have entries to spawn) divide the universe of
-    processes evenly among them, and tries to control the number of
-    the simultaneously running processes in the range.\n The option
-    REPLY_EACH or REPLY_ROOT lets the spawner wait for the reply
-    messages from the spawned processes, and then the spawner calls
-    the map-function.  A reply message is of the tag
-    KMR_TAG_SPAWN_REPLY=500 and length zero, and
+    kmr_map_serial_processes(), kmr_map_parallel_processes(), or
+    kmr_map_ms_commands().\n A spawner (parent) spawns processes
+    specified by key-value pairs.  The key part is ignored, and the
+    value part is a list of null-separated strings which constitutes a
+    command and arguments.  The option SEPARATOR_SPACE changes the
+    separator character to whitespaces.  If the first string is
+    "maxprocs=n", then the number of processes is taken from this
+    string.  Or, an MPI_Info entry "maxprocs" in INFO is used, in
+    which case "maxprocs" is common to all spawns.  It is an error if
+    neither is specified.  A spawner tries to control the
+    simultaneously running processes limited to the number of
+    processes in the universe.  When multiple spawners are active
+    (more than one ranks have the entries to spawn), they divide the
+    universe evenly among them.\n The option REPLY_EACH or REPLY_ROOT
+    lets a spawner wait for reply messages from the spawned processes,
+    and then the spawner calls a map-function.  A reply message is of
+    the tag KMR_TAG_SPAWN_REPLY=500 and length zero, and
     kmr_reply_to_spawner() can be used to send this reply.  When none
     of REPLY_EACH or REPLY_ROOT are specified, the spawner immediately
-    calls the map-function one-by-one in the FIFO order (before the
+    calls a map-function one-by-one in the FIFO order (before the
     spawned processes finish).  In that case, no load-balance is
-    taken.  The map-function should wait for the spawned processes to
-    finish, otherwise, the spawner starts next spawns continuously and
-    runs out the processes, which causes the MPI runtime to signal an
-    error.\n Communication between the spawned processes and the
-    map-function of the spawner is through the inter-communicator.
-    The parent inter-communicator of the spawned processes can be
-    taken by MPI_Comm_get_parent() as usual.  The inter-communicator
-    at the spawner side can be obtained by calling
+    taken.  Thus, the map-function should wait for the spawned
+    processes to finish, otherwise, a spawner starts next spawns
+    continuously and runs out the processes, which causes the MPI
+    runtime to signal an error.\n Communication between the spawned
+    processes and a map-function of a spawner is through an
+    inter-communicator.  The parent inter-communicator of the spawned
+    processes can be taken by MPI_Comm_get_parent() as usual.  The
+    inter-communicator at the spawner side can be obtained by calling
     kmr_get_spawner_communicator() inside a map-function.\n The INFO
-    argument is passed to MPI_Comm_spawn() unchanged.\n NOTE: There is
-    no way to check the availability of processes for spawning in the
-    MPI specification and MPI implementations. And, the MPI runtime
+    argument is passed to MPI_Comm_spawn() after inserting the entries
+    which appear in the command line, when the command line has
+    prefixes of the form "key=value".  Insertion of the prefixes can
+    be terminated by an empty entry "=".  Use of info is discouraged,
+    because it is not portable and may contradicts to the implicit
+    assumption of the KMR implementation.\n NOTE: There is no way to
+    check the availability of processes for spawning in the MPI
+    specification and MPI implementations. And, the MPI runtime
     signals errors when it runs out the processes.  Thus, it puts a
     sleep (1 sec) in between MPI_Comm_spawn() calls to allow clean-ups
     in the MPI runtime and to avoid timing issues.\n INTERFACE CHANGE:
@@ -1903,10 +1951,9 @@ kmr_get_spawner_communicator_ff(KMR *mr, long ii, int *comm)
     interface, where the map-function MAPFN is called with the
     kmr_spawn_state structure as the general argument.  The argument
     ARG passed to the mapper is stored in the MAPARG slot in the
-    kmr_spawn_state structure.
-    When TAKE_CKPT option is specified, a checkpoint data file of the
-    output key-value stream is saved if both CKPT_ENABLE and
-    CKPT_SELECTIVE global options are set. */
+    kmr_spawn_state structure.  When TAKE_CKPT option is specified, a
+    checkpoint data file of the output key-value stream is saved if
+    both CKPT_ENABLE and CKPT_SELECTIVE global options are set. */
 
 int
 kmr_map_via_spawn(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
@@ -1922,7 +1969,7 @@ kmr_map_via_spawn(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
 /** Maps on processes started by MPI_Comm_spawn() to run independent
     MPI processes, which will not communicate to the parent.  The
     programs need to be MPI.  It is a variation of
-    kmr_map_via_spawn(), and refer to the comment on it for the basic
+    kmr_map_via_spawn(), and refer to the comments on it for the basic
     usage.  Since the spawned program does not know the parent, there
     is no way to communicate from the spawner.  The map-function is
     called after the processes have exited, so that the map-function
@@ -1970,7 +2017,7 @@ kmr_map_parallel_processes(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
 /** Maps on processes started by MPI_Comm_spawn() to run serial
     processes.  This should NOT be used; Use kmr_map_ms_commands(),
     instead.  Fork-execing in kmr_map_ms_commands() is simpler than
-    spawning.  See also the comment on kmr_map_via_spawn() and
+    spawning.  See also the comments on kmr_map_via_spawn() and
     kmr_map_parallel_processes().  The map-function is called after
     the processes have exited, thus, there is no way to communicate
     from the map-function.  Instead, the map-function can check the
@@ -2152,7 +2199,7 @@ kmr_map_ms_fork_exec_command(const struct kmr_kv_box kv,
 
     if (tracing5) {
 	char ss[160];
-	kmr_make_pretty_argument_string(ss, sizeof(ss), argc, argv);
+	kmr_make_printable_argv_string(ss, sizeof(ss), argv);
 	fprintf(stderr,
 		";;KMR [%05d] %s: fork-exec: %s\n",
 		mr->rank, name, ss);
@@ -2180,7 +2227,7 @@ kmr_map_ms_fork_exec_command(const struct kmr_kv_box kv,
 	    }
 	    cc = execvp(argv[0], argv);
 	    char ss[160];
-	    kmr_make_pretty_argument_string(ss, sizeof(ss), argc, argv);
+	    kmr_make_printable_argv_string(ss, sizeof(ss), argv);
 	    if (cc == -1) {
 		char ee[80];
 		char *m = strerror(errno);
@@ -2215,7 +2262,7 @@ kmr_map_ms_fork_exec_command(const struct kmr_kv_box kv,
 
     if (tracing5) {
 	char ss[160];
-	kmr_make_pretty_argument_string(ss, sizeof(ss), argc, argv);
+	kmr_make_printable_argv_string(ss, sizeof(ss), argv);
 	fprintf(stderr,
 		";;KMR [%05d] %s: fork-exec done: %s\n",
 		mr->rank, name, ss);
