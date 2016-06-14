@@ -1508,41 +1508,54 @@ kmr_install_watch_program(KMR *mr, char *msg)
 /* DUMPERS */
 
 /** Puts the string of the key or value field into a buffer BUF as
-    printable string.  Ellipses appear if string does not fit in the
-    buffer. */
+    printable string. */
 
 void
 kmr_dump_opaque(const char *p, int sz, char *buf, int buflen)
 {
-    int printable = 1; /*printable*/
+    /* PRINTABLE indicates the content consists of printable
+       characters (=1), printable characters but terminated in the
+       middle (=2), or includes unprintable characters (=0). */
+
+    int printable = 1;
     int seezero = 0;
     for (int i = 0; i < sz; i++) {
 	if (p[i] == 0) {
 	    seezero = 1;
-	} else if (!isprint(p[i])) {
-	    printable = 0; /*unprintable*/
+	} else if (!isprint((unsigned char)p[i])) {
+	    /* (Unprintable appears). */
+	    printable = 0;
 	    break;
 	} else {
 	    if (seezero && printable == 1) {
-		printable = 2; /*null-in-the-middle*/
+		/* (null appears in the middle). */
+		printable = 2;
 	    }
 	}
     }
     if (printable == 1) {
 	int z = (int)strnlen(p, (size_t)sz);
 	int n = MIN(z, ((int)buflen - 5 - 1));
+	snprintf(buf, (size_t)2, "\"");
+	snprintf((buf + 1), (size_t)(n + 1), "%s", p);
 	if (z == n) {
-	    snprintf(buf, (size_t)(n + 3), "\"%s\"", p);
+	    snprintf((buf + n + 1), (size_t)2, "\"");
+	    buf[n + 2] = 0;
 	} else {
-	    snprintf(buf, (size_t)(n + 6), "\"%s...\"", p);
+	    snprintf((buf + n + 1), (size_t)5, "...\"");
+	    buf[(n + 5)] = 0;
 	}
     } else if (printable == 2) {
 	int z = (int)strnlen(p, (size_t)sz);
 	int n = MIN(z, (buflen - 5 - 1));
+	snprintf(buf, (size_t)2, "\"");
+	snprintf((buf + 1), (size_t)(n + 1), "%s", p);
 	if (z == n) {
-	    snprintf(buf, (size_t)(n + 6), "\"%s???\"", p);
+	    snprintf((buf + n + 1), (size_t)5, "???\"");
+	    buf[(n + 5)] = 0;
 	} else {
-	    snprintf(buf, (size_t)(n + 6), "\"%s...\"", p);
+	    snprintf((buf + n + 1), (size_t)5, "...\"");
+	    buf[(n + 5)] = 0;
 	}
     } else {
 	int n = MIN(sz, ((buflen - 3 - 1) / 3));
@@ -1606,8 +1619,11 @@ kmr_dump_kvs_fn(const struct kmr_kv_box kv,
     return MPI_SUCCESS;
 }
 
-/** Dumps contents of a key-value stream to stdout.  Argument FLAG is
-    nothing, ignored. */
+/** Dumps contents of a KVS to stdout.  Argument FLAG is nothing, and
+    ignored.  It prints each content as a string or as a hex-dump.
+    Each content is truncated to 45 characters.  Ellipses may appear
+    if the content is truncated, or, "???" appears if the content is a
+    string but includes null in the middle. */
 
 int
 kmr_dump_kvs(KMR_KVS *kvs, int flag)
