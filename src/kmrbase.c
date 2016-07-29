@@ -236,6 +236,10 @@ kmr_create_context(const MPI_Comm comm, const MPI_Info conf,
     mr->spawn_gap_msec[1] = 10000;
     mr->spawn_watch_accept_onhold_msec = (60 * 1000);
 
+    mr->spawn_self = MPI_COMM_NULL;
+    mr->spawn_retry_limit = 20;
+    mr->spawn_retry_gap_msec = (15 * 1000);
+
     mr->verbosity = 5;
 
     mr->onk = 1;
@@ -295,9 +299,11 @@ kmr_create_context(const MPI_Comm comm, const MPI_Info conf,
     kmr_check_options(mr, mr->conf);
 
     /* Initialize checkpoint context. */
+
     kmr_ckpt_create_context(mr);
 
     /* Initialize KMRViz trace */
+
     kmr_trace_initialize(mr);
 
     return mr;
@@ -345,10 +351,17 @@ kmr_free_context(KMR *mr)
 	}
     }
 
-    /* Finalize KMRViz trace */
+    if (mr->spawn_self != MPI_COMM_NULL && mr->spawn_self != MPI_COMM_SELF) {
+	cc = MPI_Comm_free(&mr->spawn_self);
+	assert(cc == MPI_SUCCESS);
+    }
+
+    /* Finalize KMRViz trace. */
+
     kmr_trace_finalize(mr);
 
     /* Free checkpoint context. */
+
     kmr_ckpt_free_context(mr);
 
     if (mr->log_traces != 0) {

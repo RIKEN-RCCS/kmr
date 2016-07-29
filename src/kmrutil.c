@@ -1236,6 +1236,20 @@ kmr_set_option_by_strings(KMR *mr, char *k, char *v)
 	    kmr_warning(mr, 1, ("option spawn_max_processes be"
 				" non-negative integer"));
 	}
+    } else if (strcasecmp("spawn_retry_limit", k) == 0) {
+	if (kmr_parse_int(v, &x) && x >= 0) {
+	    mr->spawn_retry_limit = x;
+	} else {
+	    kmr_warning(mr, 1, ("option spawn_retry_limit be"
+				" non-negative integer"));
+	}
+    } else if (strcasecmp("spawn_retry_gap_msec", k) == 0) {
+	if (kmr_parse_int(v, &x) && x >= 0) {
+	    mr->spawn_retry_gap_msec = x;
+	} else {
+	    kmr_warning(mr, 1, ("option spawn_retry_gap_msec be"
+				" non-negative integer"));
+	}
     } else if (strcasecmp("ckpt_enable", k) == 0) {
 	if (kmr_parse_boolean(v, &x)) {
 	    mr->ckpt_enable = (_Bool)x;

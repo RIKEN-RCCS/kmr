@@ -465,6 +465,10 @@ kmr_make_printable_info_string(char *s, size_t sz, MPI_Info info)
     char key[MPI_MAX_INFO_KEY + 1];
     char value[MPI_MAX_INFO_VAL + 1];
 
+    /* Clear string in case INFO is empty. */
+
+    *s = 0;
+
     assert(sz > 4);
     int nkeys;
     cc = MPI_Info_get_nkeys(info, &nkeys);
@@ -1478,6 +1482,13 @@ kmr_wait_then_map(KMR *mr, struct kmr_spawning *spw,
     return MPI_SUCCESS;
 }
 
+/* NOTE: MPI_Comm_spawn() may fail due to a race between an issue of
+   spawning and job scheduling.  Although KMR adds a sleep between
+   spawning, still, the users can call spawning-mappers without a gap.
+   It retries regardless of the cause of an error (e.g., timing or bad
+   arguments), because it cannot tell from the return code of
+   MPI_Comm_spawn() (always MPI_ERR_SPAWN). */
+
 static int
 kmr_map_spawned_processes(enum kmr_spawn_mode mode, char *name,
 			  KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
@@ -1504,6 +1515,23 @@ kmr_map_spawned_processes(enum kmr_spawn_mode mode, char *name,
 	cc = kmr_install_watch_program(mr, name);
 	assert(cc == MPI_SUCCESS);
 	kmr_ckpt_enable_ckpt(mr, kcdc);
+    }
+
+    if (mr->spawn_self == MPI_COMM_NULL) {
+	if (mr->spawn_retry_limit > 0) {
+	    cc = MPI_Comm_dup(MPI_COMM_SELF, &mr->spawn_self);
+	    if (cc != MPI_SUCCESS) {
+		kmr_error_mpi(mr, "MPI_Comm_dup(MPI_COMM_SELF)", cc);
+		MPI_Abort(MPI_COMM_WORLD, 1);
+	    }
+	    cc = MPI_Errhandler_set(mr->spawn_self, MPI_ERRORS_RETURN);
+	    if (cc != MPI_SUCCESS) {
+		kmr_error_mpi(mr, "MPI_Errhandler_set()", cc);
+		MPI_Abort(MPI_COMM_WORLD, 1);
+	    }
+	} else {
+	    mr->spawn_self = MPI_COMM_SELF;
+	}
     }
 
     int cnt = (int)kvi->c.element_count;
@@ -1700,18 +1728,35 @@ kmr_map_spawned_processes(enum kmr_spawn_mode mode, char *name,
 	    assert(s->icomm == MPI_COMM_NULL);
 	    int *ec = kmr_malloc(sizeof(int) * (size_t)s->n_procs);
 	    const int root = 0;
-	    MPI_Comm spawncomm = MPI_COMM_SELF;
-	    cc = MPI_Comm_spawn(argv2[0], &(argv2[1]), s->n_procs, infox,
-				root, spawncomm, &s->icomm, ec);
-	    assert(cc == MPI_SUCCESS || cc == MPI_ERR_SPAWN);
-	    if (cc == MPI_ERR_SPAWN) {
-		/* SOFT-case. */
-		nspawns = 0;
-		for (int r = 0; r < s->n_procs; r++) {
-		    if (ec[r] == MPI_SUCCESS) {
-			nspawns++;
-		    }
+
+	    /* RETRY WHEN SPAWNING FAILS. */
+
+	    int trys;
+	    trys = (mr->spawn_retry_limit + 1);
+	    assert(trys > 0);
+	    for (;;) {
+		cc = MPI_Comm_spawn(argv2[0], &(argv2[1]), s->n_procs, infox,
+				    root, mr->spawn_self, &s->icomm, ec);
+		assert(cc == MPI_SUCCESS || cc == MPI_ERR_SPAWN);
+		trys--;
+		if (cc == MPI_SUCCESS || trys == 0) {
+		    break;
 		}
+		if (tracing5) {
+		    fprintf(stderr,
+			    ";;KMR [%05d] %s: sleeping after spawn failure"
+			    " (%d msec)\n",
+			    mr->rank, spw->fn, mr->spawn_retry_gap_msec);
+		    fflush(0);
+		}
+		kmr_msleep(mr->spawn_retry_gap_msec, 1);
+	    }
+
+	    /* NOT handle SOFT-ERROR case at all. */
+
+	    if (cc != MPI_SUCCESS) {
+		kmr_error_mpi(mr, "MPI_Comm_spawn()", cc);
+		MPI_Abort(MPI_COMM_WORLD, 1);
 	    } else {
 		nspawns = s->n_procs;
 	    }

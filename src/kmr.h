@@ -176,6 +176,15 @@ struct kmr_code_line { const char *file; const char *func; int line; };
     of the universe size, corresponding the 1st value to 0 processes
     and the 2nd value to 1,000 processes (the default is 1 second to
     one process and 10 seconds for 1,000 processes).
+
+    SPAWN_SELF holds the communicator used in spawning.  KMR retries
+    MPI_Comm_spawn() because it can fail due to the race between an
+    issue and a delay in job scheduling.  SPAWN_RETRY_LIMIT and
+    SPAWN_RETRY_GAP_MSEC control retries of MPI_Comm_spawn().  It
+    reties MPI_Comm_spawn() by SPAWN_RETRY_LIMIT times taking a
+    SPAWN_RETRY_GAP_MSEC sleep in between (300 seconds in total by
+    default).
+
     SPAWN_WATCH_ACCEPT_ONHOLD_MSEC is the time given to wait for the
     watch-program to connect back by a socket.
 
@@ -259,6 +268,10 @@ struct kmr_ctx {
     int spawn_watch_port_range[2];
     int spawn_gap_msec[2];
     int spawn_watch_accept_onhold_msec;
+
+    MPI_Comm spawn_self;
+    int spawn_retry_limit;
+    int spawn_retry_gap_msec;
 
     size_t pushoff_block_size;
     int pushoff_poll_rate;
