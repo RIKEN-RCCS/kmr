@@ -12,9 +12,11 @@ mpicxx = $(MPICXX) $(OPENMP_CXXFLAGS) $(CXXFLAGS)
 mpif90 = $(MPIFC) $(OPENMP_FFLAGS) $(FCFLAGS)
 
 SRCS_C = kmrbase.c kmrutil.c kmrmapms.c kmrmoreops.c kmrisort.c kmratoa.c \
-	kmrckpt.c kmrfefs.c kmrfiles.c kmraltkvs.c kmriolb.c kmrtrace.c
+	kmrckpt.c kmrfefs.c kmrfiles.c kmraltkvs.c kmriolb.c kmrtrace.c \
+	kmrspawn.c kmrwfmap.c
 OBJS_C = kmrbase.o kmrutil.o kmrmapms.o kmrmoreops.o kmrisort.o kmratoa.o \
-	kmrckpt.o kmrfefs.o kmrfiles.o  kmraltkvs.o kmriolb.o kmrtrace.o
+	kmrckpt.o kmrfefs.o kmrfiles.o  kmraltkvs.o kmriolb.o kmrtrace.o \
+	kmrspawn.o kmrwfmap.o
 SRCS_F = kmrf.F90
 OBJS_F = kmrf.o
 
@@ -32,18 +34,18 @@ libkmr.a: $(KMRTARGET)
 
 kmr_c: kmr_c.a $(KMRSOLIB)
 
-kmr_c.a: kmr.h kmrimpl.h kmrckpt.h kmrtrace.h $(SRCS_C) $(KMRWATCH)
+kmr_c.a: kmr.h kmrimpl.h kmrckpt.h kmrtrace.h kmrspawn.h $(SRCS_C) $(KMRWATCH)
 	$(mpicc) -c $(SRCS_C)
 	ar csr kmr_c.a $(OBJS_C) $(KMRWATCH)
 	cp kmr_c.a libkmr.a
 
-kmr_c.so: kmr.h kmrimpl.h kmrckpt.h kmrtrace.h $(SRCS_C) $(KMRWATCH)
+kmr_c.so: kmr.h kmrimpl.h kmrckpt.h kmrtrace.h kmrspawn.h $(SRCS_C) $(KMRWATCH)
 	$(mpicc) $(SO_CCFLAGS) -c $(SRCS_C)
 	$(mpicc) $(SO_LDFLAGS) -Wl,-soname,libkmr.so.$(KMRVER) \
 		-o kmr_c.so $(OBJS_C) $(KMRWATCH)
 	cp kmr_c.so libkmr.so.$(KMRVER)
 
-kmr_c.dylib: kmr.h kmrimpl.h kmrckpt.h kmrtrace.h $(SRCS_C) $(KMRWATCH)
+kmr_c.dylib: kmr.h kmrimpl.h kmrckpt.h kmrtrace.h kmrspawn.h $(SRCS_C) $(KMRWATCH)
 	$(mpicc) $(SO_CCFLAGS) -c $(SRCS_C)
 	$(mpicc) $(SO_LDFLAGS) -install_name libkmr.$(KMRVER).dylib \
 		-o kmr_c.dylib $(OBJS_C) $(KMRWATCH)
@@ -51,7 +53,7 @@ kmr_c.dylib: kmr.h kmrimpl.h kmrckpt.h kmrtrace.h $(SRCS_C) $(KMRWATCH)
 
 kmr_f: kmr_f.a $(KMRSOLIB)
 
-kmr_f.a: kmr.h kmrimpl.h kmrckpt.h kmrtrace.h $(SRCS_C) $(SRCS_F) $(KMRWATCH)
+kmr_f.a: kmr.h kmrimpl.h kmrckpt.h kmrtrace.h kmrspawn.h $(SRCS_C) $(SRCS_F) $(KMRWATCH)
 	$(mpicc) -c $(SRCS_C)
 	$(mpif90) -c $(SRCS_F)
 	ar csr kmr_f.a $(OBJS_C) $(OBJS_F) $(KMRWATCH)
@@ -140,6 +142,9 @@ testf: libkmr.a testf.f90
 
 testmisc:
 	$(mpicc) -g testmisc.c libkmr.a $(LIBS)
+
+testwfmap: libkmr.a
+	$(mpicc) -g testwfmap.c libkmr.a $(LIBS)
 
 distclean:: clean
 

@@ -273,6 +273,11 @@ struct kmr_ctx {
     int spawn_retry_limit;
     int spawn_retry_gap_msec;
 
+    void *simple_workflow;
+    void *swf_spawner_so;
+    char *swf_spawner_library;
+    size_t swf_args_size;
+
     size_t pushoff_block_size;
     int pushoff_poll_rate;
 
@@ -298,6 +303,9 @@ struct kmr_ctx {
     _Bool spawn_disconnect_but_free : 1;
     _Bool spawn_pass_intercomm_in_argument : 1;
     _Bool keep_fds_at_fork : 1;
+    _Bool swf_exec_so;
+    _Bool swf_record_history;
+    _Bool swf_debug_master;
 
     _Bool mpi_thread_support : 1;
 
@@ -763,6 +771,7 @@ struct kmr_ntuple_entry {
 
 extern int kmr_init_2(int ignore);
 extern int kmr_fin(void);
+extern int kmr_initialize_mpi(int *refargc, char ***refargv);
 extern KMR *kmr_create_context(const MPI_Comm comm, const MPI_Info conf,
 			       const char *name);
 extern int kmr_free_context(KMR *mr);
@@ -969,6 +978,22 @@ extern void kmr_fin_pushoff_fast_notice_(void);
 extern void kmr_check_pushoff_fast_notice_(KMR *mr);
 
 extern int kmr_assign_file(KMR_KVS *kvi, KMR_KVS *kvo, struct kmr_option opt);
+
+extern int kmr_init_swf(KMR *mr, MPI_Comm splitcomms[4], int master);
+extern int kmr_detach_swf_workers(KMR *mr);
+extern int kmr_map_swf(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
+		       struct kmr_spawn_option opt, kmr_mapfn_t mapfn);
+extern int kmr_stop_swf_workers(KMR *mr);
+extern int kmr_finish_swf(KMR *mr);
+extern int kmr_split_swf_lanes_a(KMR *mr, MPI_Comm splitcomms[4],
+				 int root, int *description[], _Bool dump);
+extern int kmr_split_swf_lanes(KMR *mr, MPI_Comm splitcomms[4],
+			       int root, char *description[], _Bool dump);
+extern void kmr_dump_swf_lanes(KMR *mr);
+extern void kmr_dump_swf_history(KMR *mr);
+extern void kmr_dump_swf_order_history(KMR *mr, int *history, size_t length);
+extern void kmr_free_swf_history(KMR *mr);
+extern void kmr_set_swf_verbosity(KMR *mr, int level);
 
 /* Suppresses warnings of unused constants (for icc). */
 

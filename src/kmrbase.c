@@ -126,6 +126,27 @@ kmr_fin(void)
     return MPI_SUCCESS;
 }
 
+/** Checks the initialization state of MPI, and initializes MPI when
+    not.  It returns 1, or 0 when something is wrong.  It is for the
+    Python binding. */
+
+int
+kmr_initialize_mpi(int *refargc, char ***refargv)
+{
+    int cc;
+    int ok;
+    cc = MPI_Initialized(&ok);
+    if (cc == MPI_SUCCESS && ok != 0) {
+	return 1;
+    } else if (cc == MPI_SUCCESS && ok == 0) {
+	int thlv;
+	cc = MPI_Init_thread(refargc, refargv, MPI_THREAD_SERIALIZED, &thlv);
+	return (cc == MPI_SUCCESS);
+    } else {
+	return 0;
+    }
+}
+
 /** Makes a new KMR context (a context has type KMR).  A KMR context
     is a record of common information to all key-value streams.  COMM
     is a communicator for use inside.  It dups the given communicator
@@ -239,6 +260,14 @@ kmr_create_context(const MPI_Comm comm, const MPI_Info conf,
     mr->spawn_self = MPI_COMM_NULL;
     mr->spawn_retry_limit = 20;
     mr->spawn_retry_gap_msec = (15 * 1000);
+
+    mr->simple_workflow = 0;
+    mr->swf_spawner_so = 0;
+    mr->swf_spawner_library = 0;
+    mr->swf_args_size = 0;
+    mr->swf_exec_so = 0;
+    mr->swf_record_history = 1;
+    mr->swf_debug_master = 0;
 
     mr->verbosity = 5;
 
@@ -383,13 +412,23 @@ kmr_free_context(KMR *mr)
     }
 
     if (mr->spawn_watch_program != 0) {
-	size_t s = (strlen(mr->spawn_watch_program) + 1);
-	kmr_free(mr->spawn_watch_program, s);
+	kmr_free_string(mr->spawn_watch_program);
+	mr->spawn_watch_program = 0;
     }
     assert(mr->spawn_comms == 0);
     /*mr->kmr_installation_path;*/
     /*mr->spawn_watch_prefix;*/
     /*mr->spawn_watch_host_name;*/
+
+    if (mr->simple_workflow != 0) {
+	kmr_finish_swf(mr);
+	mr->simple_workflow = 0;
+    }
+    assert(mr->swf_spawner_so == 0);
+    if (mr->swf_spawner_library != 0) {
+	kmr_free_string(mr->swf_spawner_library);
+	mr->swf_spawner_library = 0;
+    }
 
     kmr_free(mr, sizeof(struct kmr_ctx));
     return MPI_SUCCESS;

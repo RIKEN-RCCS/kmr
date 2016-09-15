@@ -605,6 +605,17 @@ kmr_strdup(char *s)
     return p;
 }
 
+/** Frees a string strduped. */
+
+void
+kmr_free_string(char *s)
+{
+    if (s != 0) {
+	size_t sz = (strlen(s) + 1);
+	kmr_free(s, sz);
+    }
+}
+
 //extern FILE *kmr_fopen(const char *n, const char *m);
 //extern int kmr_fgetc(FILE *f);
 
@@ -1289,6 +1300,31 @@ kmr_set_option_by_strings(KMR *mr, char *k, char *v)
 	} else {
 	    kmr_warning(mr, 1, "option kmrviz_trace be boolean");
 	}
+    } else if (strcasecmp("swf_spawner_library", k) == 0) {
+	mr->swf_spawner_library = kmr_strdup(v);
+    } else if (strcasecmp("swf_args_size", k) == 0) {
+	size_t z;
+	if (kmr_parse_size_t(v, &z)) {
+	    mr->swf_args_size = z;
+	}
+    } else if (strcasecmp("swf_exec_so", k) == 0) {
+	if (kmr_parse_boolean(v, &x)) {
+	    mr->swf_exec_so = (_Bool)x;
+	} else {
+	    kmr_warning(mr, 1, "option swf_exec_so be boolean");
+	}
+    } else if (strcasecmp("swf_record_history", k) == 0) {
+	if (kmr_parse_boolean(v, &x)) {
+	    mr->swf_record_history = (_Bool)x;
+	} else {
+	    kmr_warning(mr, 1, "option swf_record_history be boolean");
+	}
+    } else if (strcasecmp("swf_debug_master", k) == 0) {
+	if (kmr_parse_boolean(v, &x)) {
+	    mr->swf_debug_master = (_Bool)x;
+	} else {
+	    kmr_warning(mr, 1, "option swf_debug_master be boolean");
+	}
     } else {
 	char ee[80];
 	snprintf(ee, 80, "option \"%s\" ignored", k);
@@ -1785,6 +1821,8 @@ kmr_print_string(char *msg, char *s, int len)
     printf("\n");
 }
 
+/** Fills the string buffer with the argv strings for printing. */
+
 int
 kmr_make_printable_argv_string(char *s, size_t sz, char **argv)
 {
@@ -1807,6 +1845,8 @@ kmr_make_printable_argv_string(char *s, size_t sz, char **argv)
     }
     return 0;
 }
+
+/** Fills the string buffer with the MPI_Info strings for printing. */
 
 int
 kmr_make_printable_info_string(char *s, size_t sz, MPI_Info info)

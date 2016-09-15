@@ -2,11 +2,11 @@
 # Copyright (C) 2012-2016 RIKEN AICS
 
 """Python Binding for KMR Map-Reduce Library.  This provides
-straightforward wrappers to the C routines.  See more abort KMR at
+straightforward wrappers to the C routines.  See more about KMR at
 "http://mt.aics.riken.jp/kmr".  All key-value data is stored in C
 structures after encoding/decoding Python objects to byte arrays in C.
-Documentation in Python is minimum, so please refer to the
-documentation in C."""
+The documentation in Python is minimum, so please refer to the
+documentation in C.  It works with Python 2.6.x, 2.7.x, but not 3.x."""
 
 ## NOTE: Importing MPI module from mpi4py package initializes for MPI
 ## execution.  Import MPI and then import kmr4py in application codes.
@@ -297,6 +297,9 @@ _setup_mpi_constants()
 kmrso.kmr_fin.argtypes = []
 kmrso.kmr_fin.restype = _c_int
 
+kmrso.kmr_initialize_mpi.argtypes = [_c_pointer, _c_pointer]
+kmrso.kmr_initialize_mpi.restype = _c_int
+
 kmrso.kmr_create_context.argtypes = [_c_mpi_comm, _c_mpi_info, _c_string]
 kmrso.kmr_create_context.restype = _c_pointer
 
@@ -439,6 +442,34 @@ kmrso.kmr_stringify_file_options.restype = _c_string
 
 kmrso.kmr_stringify_spawn_options.argtypes = [_c_spawn_option]
 kmrso.kmr_stringify_spawn_options.restype = _c_string
+
+kmrso.kmr_map_swf.argtypes = [
+    _c_kvs, _c_kvs, _c_void_p, _c_spawn_option, _c_fnp]
+kmrso.kmr_map_swf.restype = None
+
+kmrso.kmr_init_swf.argtypes = [
+    _c_kmr, ctypes.POINTER(_c_mpi_comm), _c_int]
+kmrso.kmr_init_swf.restype = None
+
+kmrso.kmr_detach_swf_workers.argtypes = [_c_kmr]
+kmrso.kmr_detach_swf_workers.restype = None
+
+kmrso.kmr_stop_swf_workers.argtypes = [_c_kmr]
+kmrso.kmr_stop_swf_workers.restype = None
+
+kmrso.kmr_finish_swf.argtypes = [_c_kmr]
+kmrso.kmr_finish_swf.restype = None
+
+kmrso.kmr_split_swf_lanes.argtypes = [
+    _c_kmr, ctypes.POINTER(_c_mpi_comm), _c_int,
+    ctypes.POINTER(_c_string), _c_bool]
+kmrso.kmr_split_swf_lanes.restype = None
+
+kmrso.kmr_dump_swf_lanes.argtypes = [_c_kmr]
+kmrso.kmr_dump_swf_lanes.restype = None
+
+kmrso.kmr_set_swf_verbosity.argtypes = [_c_kmr]
+kmrso.kmr_set_swf_verbosity.restype = None
 
 #receive_kvs_from_spawned_fn = kmrso.kmr_receive_kvs_from_spawned_fn
 
@@ -676,7 +707,47 @@ class KMR():
     def send_kvs_to_spawner(self, kvs):
         """Sends the KVS from a spawned process to the spawner."""
 
-        return kmrso.kmr_send_kvs_to_spawner(self._ckmr, kvs._ckvs)
+        kmrso.kmr_send_kvs_to_spawner(self._ckmr, kvs._ckvs)
+        return
+
+    def init_swf(self, splitcomms, masterank):
+        """."""
+        kmrso.kmr_init_swf(self._ckmr, splitcomms, masterank)
+        return
+
+    def detach_swf_workers(self):
+        """."""
+        kmrso.kmr_detach_swf_workers(self._ckmr)
+        return
+
+    def stop_swf_workers(self):
+        """."""
+        kmrso.kmr_stop_swf_workers(self._ckmr)
+        return
+
+    def finish_swf(self):
+        """."""
+        kmrso.kmr_finish_swf(self._ckmr)
+        return
+
+    def split_swf_lanes(self, masterrank, description, dump):
+        """."""
+        comms = (_c_mpi_comm * 4)()
+        desc = (ctypes.c_char_p * (len(description) + 1))()
+        desc[:-1] = description
+        desc[len(description)] = None
+        kmrso.kmr_split_swf_lanes(self._ckmr, comms, masterrank, desc, dump)
+        return comms
+
+    def dump_swf_lanes(self):
+        """."""
+        kmrso.kmr_dump_swf_lanes(self._ckmr)
+        return
+
+    def set_swf_verbosity(self, level):
+        """."""
+        kmrso.kmr_set_swf_verbosity(self._ckmr, level)
+        return
 
     def set_option(self, k, v):
         """Sets KMR option, taking both arguments by strings."""
@@ -1207,6 +1278,20 @@ class KVS():
         siz = len(data)
         addr = (_c_ubyte * siz).from_buffer(data)
         kmrso.kmr_restore_kvs(kvo._ckvs, addr, siz, _c_option())
+        return kvo
+
+    def map_swf(self, fn, **xopts):
+        """."""
+        (sopts, mopts) = _filter_spawn_options(xopts)
+        (keyty, valty, mkkvo) = _get_options(mopts, True)
+        cmopts = _c_option(mopts, _enabled_options_of_map)
+        csopts = _c_spawn_option(sopts)
+        cfn = _wrap_mapfn(fn)
+        ckvi = self._ckvs
+        kvo = (KVS(self.mr, keyty, valty) if mkkvo else None)
+        ckvo = (kvo._ckvs if (kvo is not None) else None)
+        kmrso.kmr_map_swf(ckvi, ckvo, 0, csopts, cfn)
+        self._consume()
         return kvo
 
 def fin():

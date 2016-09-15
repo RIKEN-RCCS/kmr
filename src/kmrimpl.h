@@ -1065,6 +1065,7 @@ extern int kmr_iogroup_of_node(KMR *mr);
 extern int kmr_iogroup_of_obd(int obdidx);
 
 extern void *kmr_strdup(char *s);
+extern void kmr_free_string(char *s);
 extern FILE *kmr_fopen(const char *n, const char *m);
 extern int kmr_fgetc(FILE *f);
 extern int kmr_getdtablesize(KMR *mr);
