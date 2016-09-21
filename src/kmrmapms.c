@@ -438,63 +438,6 @@ kmr_sum_on_all_ranks(KMR *mr, int v, int *sum)
     return MPI_SUCCESS;
 }
 
-static int
-kmr_make_printable_argv_string(char *s, size_t sz, char **argv)
-{
-    int cc;
-
-    assert(sz > 4);
-    size_t cnt;
-    cnt = 0;
-    for (int i = 0; argv[i] != 0; i++) {
-	cc = snprintf(&s[cnt], (sz - cnt), "%s%s",
-		      (i == 0 ? "" : ","), argv[i]);
-	cnt += (size_t)cc;
-	if (cnt >= sz) {
-	    snprintf(&s[sz - 4], 4, "...");
-	    return 0;
-	}
-    }
-    return 0;
-}
-
-static int
-kmr_make_printable_info_string(char *s, size_t sz, MPI_Info info)
-{
-    int cc;
-    char key[MPI_MAX_INFO_KEY + 1];
-    char value[MPI_MAX_INFO_VAL + 1];
-
-    /* Clear string in case INFO is empty. */
-
-    *s = 0;
-
-    assert(sz > 4);
-    int nkeys;
-    cc = MPI_Info_get_nkeys(info, &nkeys);
-    assert(cc == MPI_SUCCESS);
-
-    size_t cnt;
-    cnt = 0;
-    for (int i = 0; i < nkeys; i++) {
-	cc = MPI_Info_get_nthkey(info, i, key);
-	assert(cc == MPI_SUCCESS);
-	key[MPI_MAX_INFO_KEY] = 0;
-	int flag;
-	cc = MPI_Info_get(info, key, MPI_MAX_INFO_VAL, value, &flag);
-	assert(cc == MPI_SUCCESS && flag != 0);
-	value[MPI_MAX_INFO_VAL] = 0;
-	cc = snprintf(&s[cnt], (sz - cnt), "%s%s=%s",
-		      (i == 0 ? "" : ","), key, value);
-	cnt += (size_t)cc;
-	if (cnt >= sz) {
-	    snprintf(&s[sz - 4], 4, "...");
-	    return 0;
-	}
-    }
-    return 0;
-}
-
 int
 kmr_map_via_spawn_ff(KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
 		     int finfo, struct kmr_spawn_option opt,

@@ -1086,6 +1086,8 @@ extern void kmr_print_options(struct kmr_option opt);
 extern void kmr_print_file_options(struct kmr_file_option opt);
 extern void kmr_print_spawn_options(struct kmr_spawn_option opt);
 extern void kmr_print_string(char *msg, char *s, int len);
+extern int kmr_make_printable_argv_string(char *s, size_t sz, char **argv);
+extern int kmr_make_printable_info_string(char *s, size_t sz, MPI_Info info);
 
 extern void kmr_open_log(KMR *mr);
 extern void kmr_log_map(KMR *mr, KMR_KVS *kvs, struct kmr_kv_box *ev,
