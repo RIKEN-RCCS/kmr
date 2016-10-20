@@ -200,7 +200,7 @@ class _c_spawn_option(ctypes.Structure):
         ("separator_space", _c_uint8, 1),
         ("reply_each", _c_uint8, 1),
         ("reply_root", _c_uint8, 1),
-        ("one_by_one", _c_uint8, 1),
+        ("no_set_infos", _c_uint8, 1),
         ("take_ckpt", _c_uint8, 1),
         ("gap16", _c_uint, 16),
         ("gap32", _c_uint, 32)]
@@ -222,8 +222,8 @@ class _c_spawn_option(ctypes.Structure):
                 self.reply_each = v
             elif (o == "reply_root"):
                 self.reply_root = v
-            elif (o == "one_by_one"):
-                self.one_by_one = v
+            elif (o == "no_set_infos"):
+                self.no_set_infos = v
             elif (o == "take_ckpt"):
                 self.take_ckpt = v
             else:
