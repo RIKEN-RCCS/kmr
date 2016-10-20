@@ -783,6 +783,17 @@ contains
   !!kmr_read_files_reassemble
   !!kmr_read_file_by_segments
 
+  !> Reinterprets a pointer (as an integer) as a character array.  It
+  !> is the same as kmr_ptrstr().  The return value is used like
+  !> v=kmr_str(kv%k);v(1:kv%keln).  Note kmr_intstr() copies the
+  !> string.
+
+  character(kind=c_char,len=1) function kmr_str(p) result(zz)
+    use iso_c_binding
+    integer(c_long), intent(in) :: p
+    zz = transfer(p, zz)
+  end function kmr_str
+
 end module kmrf
 
 ! Copyright (C) 2012-2016 RIKEN AICS
