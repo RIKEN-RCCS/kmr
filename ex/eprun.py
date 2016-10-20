@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-# kmreprun.py - Invokes shell commands on ranks (except rank=0).  It
+# eprun.py - Invokes shell commands on ranks (except rank=0).  It
 # reads a file containing lines of shell commands (one per line) on
 # rank=0.  It runs mulitple commands on each node (one per core) with
-# option "-m".  USAGE: "mpiexec -n N python ./kmreprun.py
+# option "-m".  USAGE: "mpiexec -n N python ./eprun.py
 # ./file-of-commands"
 
 from mpi4py import MPI
@@ -74,12 +74,12 @@ def identitymap((k, v), kvi, kvo, i, *_data):
 (opts, args) = options.parse_args()
 
 if (NPROCS == 1):
-    sys.stderr.write("kmreprun needs more than one rank; abort.\n")
+    sys.stderr.write("eprun needs more than one rank; abort.\n")
     sys.exit(1)
 
 if (len(args) != 1):
     if (RANK == 0):
-        sys.stderr.write("Usage: python kmreprun.py [options] input-file.\n")
+        sys.stderr.write("Usage: python eprun.py [options] input-file.\n")
     sys.exit(1)
 
 if (opts.trace):
@@ -100,5 +100,5 @@ sys.stdout.flush()
 sys.stderr.flush()
 #time.sleep(1)
 #if (RANK == 0):
-#    print "kmreprun OK"
+#    print "eprun OK"
 #sys.stdout.flush()
