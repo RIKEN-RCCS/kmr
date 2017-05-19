@@ -139,6 +139,17 @@ struct kmr_code_line { const char *file; const char *func; int line; };
     communication by the sizes of messages (set to zero to use
     all-to-all-v of MPI).
 
+    ATOA_SIZE_LIMIT is normally 0.  It is mainly for tests.  It lowers
+    the limit of the data size of using MPI all-to-all-v from 16GB to
+    the specified value.  When the data size exceeds the value, a
+    naive method using isend/irecv is used instead of MPI
+    all-to-all-v.
+
+    ATOA_REQUESTS_LIMIT is the limit of the number of isend/irecv
+    requests which are pending in a naive all-to-all-v algorithm, that
+    is used when the data size exceeds the 16GB.  It is normally 0,
+    which sets it to 4096.
+
     SORT_TRIVIAL determines the sorter to run on a single node when
     data size is this value or smaller.  SORT_THRESHOLD determines the
     sorter to use full sampling of a sampling-sort, or pseudo sampling
@@ -251,6 +262,8 @@ struct kmr_ctx {
     size_t malloc_overhead;
 
     long atoa_threshold;
+    long atoa_size_limit;
+    int atoa_requests_limit;
 
     long sort_trivial;
     long sort_threshold;
@@ -327,7 +340,6 @@ struct kmr_ctx {
     _Bool kmrviz_trace : 1;
 
     char identifying_name[KMR_JOB_NAME_LEN];
-
 };
 
 /** Datatypes of Keys or Values.  It indicates the field data of keys
@@ -932,6 +944,8 @@ extern int kmr_read_file_by_segments(KMR *mr, char *file, int color,
 
 extern int kmr_retrieve_kvs_entries(KMR_KVS *kvs, struct kmr_kvs_entry **ev,
 				    long n);
+extern int kmr_retrieve_kv_box_entries(KMR_KVS *kvs, struct kmr_kv_box *ev,
+				       long n);
 extern int kmr_retrieve_keyed_records(KMR_KVS *kvs,
 				      struct kmr_keyed_record *ev,
 				      long n, _Bool shuffling, _Bool ranking);

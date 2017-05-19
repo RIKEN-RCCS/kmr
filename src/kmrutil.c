@@ -1138,6 +1138,8 @@ kmr_check_options(KMR *mr, MPI_Info info)
 	printf("[%05d] sort_threads_depth=%d\n", r, mr->sort_threads_depth);
 	printf("[%05d] onk=%d\n", r, mr->onk);
 	printf("[%05d] atoa_threshold=%ld\n", r, mr->atoa_threshold);
+	printf("[%05d] atoa_size_limit=%ld\n", r, mr->atoa_size_limit);
+	printf("[%05d] atoa_requests_limit=%d\n", r, mr->atoa_requests_limit);
 	printf("[%05d] single_thread=%d\n", r, mr->single_thread);
 	printf("[%05d] step_sync=%d\n", r, mr->step_sync);
 	printf("[%05d] trace_file_io=%d\n", r, mr->trace_file_io);
@@ -1240,6 +1242,21 @@ kmr_set_option_by_strings(KMR *mr, char *k, char *v)
 	    kmr_warning(mr, 1, ("option atoa_threshold be"
 				" non-negative integer"));
 	}
+    } else if (strcasecmp("atoa_size_limit", k) == 0) {
+	if (kmr_parse_int(v, &x) && x >= 0) {
+	    mr->atoa_size_limit = (long)x * 1024 * 1024;
+	} else {
+	    kmr_warning(mr, 1, ("option atoa_size_limit be"
+				" non-negative integer (in MB)"));
+	}
+    } else if (strcasecmp("atoa_requests_limit", k) == 0) {
+	if (kmr_parse_int(v, &x) && x >= 0) {
+	    mr->atoa_requests_limit = x;
+	} else {
+	    kmr_warning(mr, 1, ("option atoa_requests_limit be"
+				" non-negative integer"));
+	}
+
     } else if (strcasecmp("spawn_max_processes", k) == 0) {
 	if (kmr_parse_int(v, &x) && x >= 0) {
 	    mr->spawn_max_processes = x;

@@ -230,6 +230,8 @@ kmr_create_context(const MPI_Comm comm, const MPI_Info conf,
     mr->malloc_overhead = (int)sizeof(void *);
 
     mr->atoa_threshold = 512;
+    mr->atoa_size_limit = 0;
+    mr->atoa_requests_limit = 0;
 
     mr->sort_trivial = 100000;
     mr->sort_threshold = 100L;
@@ -2846,8 +2848,9 @@ kmr_find_kvs_last_entry(KMR_KVS *kvs)
 }
 
 /** Fills local key-value entries in an array for inspection.  The
-    returned pointers point to the inside of the KVS.  The array EV
-    should be as large as N.  It implies inspect. */
+    returned pointers point to the inside of the KVS.  It returns up
+    to N entries, and the array EV should be as large as N.  It
+    implies inspect. */
 
 int
 kmr_retrieve_kvs_entries(KMR_KVS *kvs, struct kmr_kvs_entry **ev, long n)
@@ -2859,6 +2862,29 @@ kmr_retrieve_kvs_entries(KMR_KVS *kvs, struct kmr_kvs_entry **ev, long n)
     struct kmr_kvs_entry *e = kmr_kvs_first_entry(kvs, kvs->c.first_block);
     for (long i = 0; i < cnt && e != 0; i++) {
 	ev[i] = e;
+	e = kmr_kvs_next(kvs, e, 0);
+    }
+    kvs->c.current_block = 0;
+    return MPI_SUCCESS;
+}
+
+/** Fills local key-value entries in an array of kmr_kv_box for
+    inspection.  While kmr_retrieve_kvs_entries() returns raw entries
+    but kmr_retrieve_kv_box_entries() returns entries of kmr_kv_box.
+    The returned pointers point to the inside of the KVS.  It returns
+    up to N entries, and the array EV should be as large as N.  It
+    implies inspect. */
+
+int
+kmr_retrieve_kv_box_entries(KMR_KVS *kvs, struct kmr_kv_box *ev, long n)
+{
+    kmr_assert_kvs_ok(kvs, 0, 1, 0);
+    assert(kvs->c.magic == KMR_KVS_ONCORE);
+    long cnt = MIN(n, kvs->c.element_count);
+    kvs->c.current_block = kvs->c.first_block;
+    struct kmr_kvs_entry *e = kmr_kvs_first_entry(kvs, kvs->c.first_block);
+    for (long i = 0; i < cnt && e != 0; i++) {
+	ev[i] = kmr_pick_kv(e, kvs);
 	e = kmr_kvs_next(kvs, e, 0);
     }
     kvs->c.current_block = 0;

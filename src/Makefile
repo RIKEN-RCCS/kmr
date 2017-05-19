@@ -146,6 +146,9 @@ testmisc:
 testwfmap: libkmr.a
 	$(mpicc) -g testwfmap.c libkmr.a $(LIBS)
 
+testnaivealltoall: libkmr.a
+	$(mpicc) -g testnaivealltoall.c libkmr.a $(LIBS)
+
 distclean:: clean
 
 clean::
