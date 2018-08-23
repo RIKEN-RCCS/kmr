@@ -20,13 +20,14 @@
 #include "kmrspawn.h"
 
 /* KMR_MAIN_LIBRARY switches compiling for the KMR main library or
-   compiling for the static-spawning library.  KMRBINEMBED is defined
-   in compiling the main library.  The purpose of compiling for the
-   main library is for testing the workflow scheduler.  The interface
-   functions are renamed by suffixing with "_standin" for the main
-   library.  */
+   compiling for the static-spawning library.  The purpose of
+   compiling for the main library is for testing the workflow
+   scheduler.  The interface functions are renamed by suffixing with
+   "_standin" for the main library.  */
 
-#ifdef KMRBINEMBED
+#define KMR_NO_STATIC_SPAWNING
+
+#ifdef KMR_NO_STATIC_SPAWNING
 #define KMR_MAIN_LIBRARY (1)
 #else
 #define KMR_MAIN_LIBRARY (0)

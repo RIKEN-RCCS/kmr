@@ -64,6 +64,9 @@ fi
 if grep 'IBM XL [CF]' conftestcc.out >/dev/null 2>&1; then
     CCVENDOR=ibmxlc
 fi
+if grep 'Cray C' conftestcc.out >/dev/null 2>&1; then
+    CCVENDOR=cray
+fi
 fi
 
 rm -f conftestcc.out

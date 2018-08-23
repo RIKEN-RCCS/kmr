@@ -1,4 +1,4 @@
-# Makefile (2014-02-04)
+# Makefile (2018-08-27)
 
 include ../config.make
 
@@ -20,19 +20,14 @@ OBJS_C = kmrbase.o kmrutil.o kmrmapms.o kmrmoreops.o kmrisort.o kmratoa.o \
 SRCS_F = kmrf.F90
 OBJS_F = kmrf.o
 
-ifeq ($(KMRSOLIB), kmr_c.so)
-	SOLIB_VER = libkmr.so.$(KMRVER)
-	SOLIB     = libkmr.so
-else
-	SOLIB_VER = libkmr.$(KMRVER).dylib
-	SOLIB     = libkmr.so
-endif
+SOLIB = libkmr.so
+SOLIB_VER = $(KMRSONAME)
 
-all:: libkmr.a
+all:: kmrwatch0 libkmr.a
 
 libkmr.a: $(KMRTARGET)
 
-kmr_c: kmr_c.a $(KMRSOLIB)
+kmr_c: kmr_c.a $(KMRSOTARGET)
 
 kmr_c.a: kmr.h kmrimpl.h kmrckpt.h kmrtrace.h kmrspawn.h $(SRCS_C) $(KMRWATCH)
 	$(mpicc) -c $(SRCS_C)
@@ -51,13 +46,16 @@ kmr_c.dylib: kmr.h kmrimpl.h kmrckpt.h kmrtrace.h kmrspawn.h $(SRCS_C) $(KMRWATC
 		-o kmr_c.dylib $(OBJS_C) $(KMRWATCH)
 	cp kmr_c.dylib libkmr.$(KMRVER).dylib
 
-kmr_f: kmr_f.a $(KMRSOLIB)
+kmr_f: kmr_f.a $(KMRSOTARGET)
 
 kmr_f.a: kmr.h kmrimpl.h kmrckpt.h kmrtrace.h kmrspawn.h $(SRCS_C) $(SRCS_F) $(KMRWATCH)
 	$(mpicc) -c $(SRCS_C)
 	$(mpif90) -c $(SRCS_F)
 	ar csr kmr_f.a $(OBJS_C) $(OBJS_F) $(KMRWATCH)
 	cp kmr_f.a libkmr.a
+
+kmrwatch0: kmrwatch0.c
+	$(CC) $(CFLAGS) -o kmrwatch0 kmrwatch0.c $(LIBS)
 
 kmrwatch0.bin.o: kmrwatch0.c
 	$(CC) $(CFLAGS) -o kmrwatch0 kmrwatch0.c $(LIBS)

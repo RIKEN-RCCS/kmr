@@ -1,23 +1,23 @@
-# configure.ac (2014-02-04)
+# configure.ac (2018-08-27)
 
-# KMR only needs compilers for MPI, that is, MPICC/MPIF90, and prefers
-# Fujitsu cross-compilers on K and FX10.  Thus, it does not run
-# "AC_REQUIRE(AC_PROG_CC)" with normal CC, and runs it only after
-# finding MPICC.  "m4_define"/"m4_undefine" are used for this purpose
-# to place test code after finding MPICC.  The same for C++ and
-# Fortran.  So, it first fails to test on compiling with "mpi.h"
-# because MPICC is not yet found.  On K and FX10, C/CXX/FC FLAGS are
+# KMR only needs compilers for MPI, usually "mpicc" and "mpif90", but
+# it needs to select other ones in some environments like Fujitsu and
+# Cray.  Thus, it does not run "AC_REQUIRE(AC_PROG_CC)" with normal
+# CC, but runs it only after finding MPICC.  "m4_define"/"m4_undefine"
+# are used for this purpose to place test code after finding MPICC.
+# So, at first, it fails to test on compiling with "mpi.h" because
+# MPICC is not yet found.  On K and FX10, C/CXX/FC FLAGS are
 # explicitly set to skip adding "-g", because Fujitsu compilers
-# generate slow debugging code with "-g".
+# generate slow code with "-g".
 
-AC_INIT([KMR], [1], [],	[], [http://mt.aics.riken.jp/kmr])
-AC_PREREQ([2.68])
+AC_INIT([KMR], [1], [],	[], [http://mt.r-ccs.riken.jp/kmr])
+AC_PREREQ([2.69])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([config.make])
 
-# 'version' is the version of KMR release and 'release_date' is its
-# release date.
-# Update these two variables when new version of KMR is released.
+# Update these variables for a new version of KMR.  "version" is the
+# version and "release_date" is its release date.
+
 version="1.8.1"
 release_date="20160425"
 
@@ -26,14 +26,14 @@ release_date="20160425"
 
 AC_CANONICAL_TARGET
 
-# Check platforms, K and FX10.
+# Settings for Fujitsu platforms.
 
-test ! -d /opt/FJSVtclang -a ! -d /opt/FJSVfxlang; mp10fx10=$?
+! test -d /opt/FJSVtclang -o -d /opt/FJSVfxlang; eefujitsu=$?
 
-# Record of software version.
+# Record of Fujitsu software version.
 AC_SUBST(KMRFJSV) #[K/FX10 software version]
 
-if test "1" -eq "$mp10fx10"; then
+if test "1" -eq "$eefujitsu"; then
   test -z "$host_alias" && host_alias=sparc-sun-linux
   test "$cross_compiling"!="yes" && cross_compiling=maybe
   test -z "$CC" && CC=fccpx
@@ -45,6 +45,28 @@ if test "1" -eq "$mp10fx10"; then
     fjsv=`command -v mpifccpx`
     KMRFJSV="Env_base=$Env_base;`dirname $fjsv`"
   fi
+fi
+
+# Settings for Cray platforms.
+
+! command -v cc | grep 'craype' >/dev/null 2>&1; eecray=$?
+
+# Disable "enable_embed" (embedding of the kmrwatch0 binary) for Cray
+# compilers, because they generate a too large binary by static
+# linking it with MPI.
+
+if test "1" -eq "$eecray"; then
+  test -z "$MPICC" && MPICC=cc
+  test -z "$MPICXX" && MPICXX=CC
+  test -z "$MPIFC" && MPIFC=ftn
+  test -z "$LD" && LD=cc
+  CC="cc" sh config.ccvendor.sh >conftest.out 2>&1
+  CC_VENDOR=`cat conftest.out`
+  case "$CC_VENDOR" in
+    cray)
+      test -z "$enable_embed" && enable_embed="no"
+    ;;
+  esac
 fi
 
 AC_ARG_ENABLE(debug,
@@ -81,7 +103,7 @@ fi
 
 # Set CFLAGS to suppress setting "-g" on K and FX10.
 
-if test "1" -eq "$mp10fx10"; then
+if test "1" -eq "$eefujitsu"; then
   test -z "$CFLAGS" && CFLAGS=""
   test -z "$CXXFLAGS" && CXXFLAGS=""
   test -z "$FCFLAGS" && FCFLAGS=""
@@ -174,6 +196,10 @@ pgi)
     SO_CCFLAGS="-fPIC"
     SO_LDFLAGS="-shared"
     ;;
+cray)
+    SO_CCFLAGS="-fPIC"
+    SO_LDFLAGS="-shared"
+    ;;
 solarisstudio)
     CFLAGS="-m64 -mt $CFLAGS"
     STD_CC="-xc99"
@@ -225,6 +251,8 @@ intel)
 pgi)
     CXXFLAGS="-m64 $CXXFLAGS"
     ;;
+cray)
+    ;;
 solarisstudio)
     CXXFLAGS="-m64 -mt $CXXFLAGS"
     ;;
@@ -257,6 +285,8 @@ intel)
     ;;
 pgi)
     FCFLAGS="-m64 $FCFLAGS"
+    ;;
+cray)
     ;;
 solarisstudio)
     FCFLAGS="-m64 -mt $FCFLAGS"
@@ -305,7 +335,7 @@ fi
 
 # Check if TOFU support files are available.
 
-if test "$enable_tofu" = "yes" -a "1" -eq "$mp10fx10" -a -f "src/tofu.h"; then
+if test "$enable_tofu" = "yes" -a "1" -eq "$eefujitsu" -a -f "src/tofu.h"; then
   CFLAGS="-DKMRTOFU $CFLAGS"
 fi
 
@@ -333,17 +363,20 @@ else
   KMRWATCH=""
 fi
 
-# TARGET OS
-AC_SUBST(KMRSOLIB)
+# Set the shared object name as target OS.
+
+AC_SUBST(KMRSOTARGET)
+AC_SUBST(KMRSONAME)
 case ${target_os} in
 darwin*)
-    KMRSOLIB="kmr_c.dylib"
+    KMRSOTARGET="kmr_c.dylib"
+    KMRSONAME='libkmr.$(KMRVER).dylib'
     ;;
 *)
-    KMRSOLIB="kmr_c.so"
+    KMRSOTARGET="kmr_c.so"
+    KMRSONAME='libkmr.so.$(KMRVER)'
     ;;
 esac
-
 
 #AC_ARG_VAR(LDEMULATION, [BDF binary target (used as ld -m option)])
 #AC_SUBST(KMRLDBDF)
