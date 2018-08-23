@@ -1,10 +1,10 @@
 /* kmrspawn.c (2016-07-09) -*-Coding: us-ascii;-*- */
-/* Copyright (C) 2012-2016 RIKEN AICS */
+/* Copyright (C) 2012-2018 RIKEN R-CCS */
 
 /** \file kmrspawn.c Static-Spawning Interface.  This is a part of the
-    spawning library (https://github.com/pf-aics-riken/mpispawner).
+    spawning library (https://github.com/riken-rccs/mpispawner).
     See also the source code of the KMR map-reduce library for the use
-    of spawning (https://github.com/pf-aics-riken/kmr).  It is the
+    of spawning (https://github.com/riken-rccs/kmr).  It is the
     worker-side of the master-worker protocol, and the master-side is
     in "kmrwfmap.c" in KMR.  Note that this code is also included in
     KMR to implement a dummy spawning for testing. */
@@ -569,7 +569,7 @@ kmr_spawn_idle(struct kmr_spawn_hooks *hooks)
 #endif
 
 /*
-Copyright (C) 2012-2016 RIKEN AICS
+Copyright (C) 2012-2018 RIKEN R-CCS
 This library is distributed WITHOUT ANY WARRANTY.  This library can be
 redistributed and/or modified under the terms of the BSD 2-Clause License.
 */

@@ -1,10 +1,10 @@
 /* kmr.h (2014-02-04) */
-/* Copyright (C) 2012-2016 RIKEN AICS */
+/* Copyright (C) 2012-2018 RIKEN R-CCS */
 
 #ifndef _KMR_H
 #define _KMR_H
 
-#define KMR_H  20160425
+#define KMR_H  20180827
 
 /** \file kmr.h KMR Interface.  GENERAL NOTES.  (1) The sizes of
     key-value fields are rounded up to 8-byte boundary. */
@@ -1032,7 +1032,7 @@ KMR_BR1
 #undef KMR_BR1
 
 /*
-Copyright (C) 2012-2016 RIKEN AICS
+Copyright (C) 2012-2018 RIKEN R-CCS
 This library is distributed WITHOUT ANY WARRANTY.  This library can be
 redistributed and/or modified under the terms of the BSD 2-Clause License.
 */

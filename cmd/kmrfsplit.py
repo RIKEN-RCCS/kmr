@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Copyright (C) 2012-2016 RIKEN AICS
+# Copyright (C) 2012-2018 RIKEN R-CCS
 
 ## \file kmrfsplit.py KMR-Shell File Splitter.
 
@@ -190,6 +190,6 @@ if __name__ == "__main__":
 
     splitfile(options.nums, options.sep, options.odir, options.opref, inputfile)
 
-# Copyright (C) 2012-2016 RIKEN AICS
+# Copyright (C) 2012-2018 RIKEN R-CCS
 # This library is distributed WITHOUT ANY WARRANTY.  This library can be
 # redistributed and/or modified under the terms of the BSD 2-Clause License.

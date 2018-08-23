@@ -1,5 +1,5 @@
 /* kmrdp.cpp (2014-02-04) */
-/* Copyright (C) 2012-2016 RIKEN AICS (only for modifications) */
+/* Copyright (C) 2012-2018 RIKEN R-CCS (only for modifications) */
 /* Copyright (C) 2011-2012 AKIYAMA Lab., Tokyo Institute of Technology */
 
 //============================================================================
@@ -951,7 +951,7 @@ void MPIDP::write_report(ofstream &logging)
 }
 
 /*
-Copyright (C) 2012-2016 RIKEN AICS
+Copyright (C) 2012-2018 RIKEN R-CCS
 This library is distributed WITHOUT ANY WARRANTY.  This library can be
 redistributed and/or modified under the terms of the BSD 2-Clause License.
 */

@@ -18,8 +18,8 @@ AC_CONFIG_FILES([config.make])
 # Update these variables for a new version of KMR.  "version" is the
 # version and "release_date" is its release date.
 
-version="1.8.1"
-release_date="20160425"
+version="1.9"
+release_date="20180827"
 
 # It sets {target_os}, which is used to add rt library for
 # clock_gettime() in Linux.

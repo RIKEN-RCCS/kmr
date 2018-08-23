@@ -1,5 +1,5 @@
 ! kmrf.F90 (2014-02-04) -*-Mode: F90;-*-
-! Copyright (C) 2012-2016 RIKEN AICS
+! Copyright (C) 2012-2018 RIKEN R-CCS
 
 !> \file kmrf.F90 KMR Fortran Binding.  KMR mixes-up integers,
 !> doubles, and pointers in passing key-value pairs as all occupy 8
@@ -796,6 +796,6 @@ contains
 
 end module kmrf
 
-! Copyright (C) 2012-2016 RIKEN AICS
+! Copyright (C) 2012-2018 RIKEN R-CCS
 ! This library is distributed WITHOUT ANY WARRANTY.  This library can be
 ! redistributed and/or modified under the terms of the BSD 2-Clause License.

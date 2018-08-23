@@ -1,5 +1,5 @@
 /* kmrbase.c (2014-02-04) */
-/* Copyright (C) 2012-2016 RIKEN AICS */
+/* Copyright (C) 2012-2018 RIKEN R-CCS */
 
 /** \file kmrbase.c KMR Base Implementation (on-memory operations).
     KMR aims at fast shuffling and scalability, and provides modest
@@ -3018,7 +3018,7 @@ kmr_scan_locally(KMR_KVS *kvi, KMR_KVS *carryin,
 }
 
 /*
-Copyright (C) 2012-2016 RIKEN AICS
+Copyright (C) 2012-2018 RIKEN R-CCS
 This library is distributed WITHOUT ANY WARRANTY.  This library can be
 redistributed and/or modified under the terms of the BSD 2-Clause License.
 */

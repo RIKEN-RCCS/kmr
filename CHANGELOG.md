@@ -1,3 +1,13 @@
+# CHANGELOG
+
+The list is sketchy.
+
+## 1.9 (2018-08-27)
+
+- 1.9 is a minor update
+- Move GitHub repository from pf-aics-riken to riken-rccs
+- Change the copyright holder name: RIKEN AICS to RIKEN R-CCS
+
 ## 1.8.1 (2016-04-25)
 
 - Add ex/kmreprun.py, an example of simple shell command invoker

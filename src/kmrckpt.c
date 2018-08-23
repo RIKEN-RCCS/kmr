@@ -1,5 +1,5 @@
 /* kmrckpt.c (2014-04-01) */
-/* Copyright (C) 2012-2016 RIKEN AICS */
+/* Copyright (C) 2012-2018 RIKEN R-CCS */
 
 /** \file kmrckpt.c Checkpoint/Restart Support. */
 
@@ -3282,7 +3282,7 @@ static void test_kmr_ckpt_kvs_chains()
 
 
 /*
-Copyright (C) 2012-2016 RIKEN AICS
+Copyright (C) 2012-2018 RIKEN R-CCS
 This library is distributed WITHOUT ANY WARRANTY.  This library can be
 redistributed and/or modified under the terms of the BSD 2-Clause License.
 */

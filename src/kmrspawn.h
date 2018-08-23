@@ -1,5 +1,5 @@
 /* kmrspawn.h (2016-09-04) -*-Coding: us-ascii;-*- */
-/* Copyright (C) 2012-2016 RIKEN AICS */
+/* Copyright (C) 2012-2018 RIKEN R-CCS */
 
 /** \file kmrspawn.h Static-Spawning API. */
 
@@ -222,7 +222,7 @@ extern int kmr_spawn_mpi_get_count(MPI_Status *status, MPI_Datatype dty,
 				   int *count);
 
 /*
-Copyright (C) 2012-2016 RIKEN AICS
+Copyright (C) 2012-2018 RIKEN R-CCS
 This library is distributed WITHOUT ANY WARRANTY.  This library can be
 redistributed and/or modified under the terms of the BSD 2-Clause License.
 */

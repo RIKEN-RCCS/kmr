@@ -1,8 +1,8 @@
 <!-- kmr-overview.html (2014-02-04) -*- Mode: HTML; Coding: utf-8; -*- -->
 
-<p>Copyright (C) 2012-2016 RIKEN AICS</p>
+<p>Copyright (C) 2012-2018 RIKEN R-CCS</p>
 
-<p>(KMR Version: v1.8.1(20160425))</p>
+<p>(KMR Version: v1.9(20180827))</p>
 
 <p>
 KMR comes with ABSOLUTELY NO WARRANTY.
@@ -38,9 +38,8 @@ Contents (in this page):
 <p>
 KMR (/ke-moo-r/) is a set of high-performance map-reduce operations in
 the MPI (Message Passing Interface) environment.  Its targets include
-large-scale supercomputers with thousands nodes, especially ones such
-as the K computer and Fujitsu FX10.  But, KMR works on ordinary
-clusters as well.
+large-scale supercomputers with thousands nodes.  But, KMR works on
+ordinary clusters as well.
 
 <p>
 KMR is designed to work on memory exploiting the large amount of
@@ -81,7 +80,7 @@ includes routines for this association.
 <h1>Information and Bug Reporting, etc.</h1>
 
 <p>
-See <a href="http://mt.aics.riken.jp/kmr">"http://mt.aics.riken.jp/kmr"</a>
+See <a href="http://mt.r-ccs.riken.jp/kmr">"http://mt.r-ccs.riken.jp/kmr"</a>
 for up-to-date information and issue tracking.
 
 <a name="installation"></a>
@@ -114,20 +113,19 @@ Normally, the following suffices:
 See "config.make" for the configuring result.
 
 <p>
-KMR also works on ordinary cluster computers.  To configure properly,
-the MPI (Message Passing Interface) is needed.  Prepare the MPI
-library first.  The configurer uses the modified versions of
-"ax_mpi.m4" and "ax_openmp.m4", to find the compiler driver scripts
-for MPI and the compiler flags for OpenMP.  They are modified to be
-able to find compiler flags for Fujitsu compliers on the K computer
-(which are with unusual names).
+To configure on ordinary cluster computers, the MPI (Message Passing
+Interface) is needed.  Prepare the MPI library first.  The configurer
+uses the modified versions of "ax_mpi.m4" and "ax_openmp.m4", to find
+the compiler driver scripts for MPI and the compiler flags for OpenMP.
+They are modified to be able to find Fujitsu compliers (Fujitsu uses
+unusual names but mpicc).
 
 <a name="applicationcompilation"></a>
 <h1>Application Compilation</h1>
 
 <p>
 Applications can be compiled as usual.  Compiler/linker options
-necessary (or recommended) to Fujitsu compilers on the K computer are:
+necessary (or recommended) to Fujitsu compilers are:
 <pre class="fragment">
 mpifccpx -g -Kfast -Kopenmp
 </pre>
@@ -370,19 +368,17 @@ For the next step, browse documents starting with
 <h1>Python API</h1>
 
 <p>
-KMR also provides API for Python as 'kmr4py' Python module.  It is
-installed along with KMR C library.  The supported version of
-Python is bigger than 2.6.x.  Currently it does not support Python3.
-A Python MPI implementation is required to use kmr4py module.
-Any Python MPI implementations may work with kmr4py, only mpi4py
-is tested.
+KMR also provides API for Python as a module 'kmr4py'.  It is
+installed in the same place as the KMR C library.  A Python MPI
+binding 'mpi4py' is required to use kmr4py.  Supported version of
+Python is 2.6.x or higher.  Currently, it does not support Python3.
 
 <p>
-To run a program that uses kmr4py, the enviroment variables,
-LD_LIBRARY_PATH and PYTHONPATH, must be set so that kmr shared library
-(libkmr.so) and python module (kmr4py.py) can be found from Python
-interpreter.  By default, these two files are located under $KMRHOME/lib
-directory where KMR is isntalled.
+To run a program that uses kmr4py, the environment variables,
+LD_LIBRARY_PATH and PYTHONPATH, must be set so that the KMR shared
+library (libkmr.so) and the python module (kmr4py.py) can be found by
+the Python interpreter.  By default, these two files are located in
+the $KMRHOME/lib directory where KMR is installed.
 
 <pre class="fragment">
 export LD_LIBRARY_PATH=$KMRHOME/lib:$LD_LIBRARY_PATH
@@ -1092,7 +1088,7 @@ normally the ordering is irrelevant.
 KMRViz is a visualisation tool for KMR.  KMRViz shows timestamps,
 number of key-values in KVS, and etc. of major KMR functions graphically.
 KMRViz can be downloaded from
-<a href="https://github.com/pf-aics-riken/kmrviz">KMRViz github page</a>.
+<a href="https://github.com/riken-rccs/kmrviz">KMRViz github page</a>.
 
 <p>
 To use KMRViz, you need to run your KMR program with tracing option ON to

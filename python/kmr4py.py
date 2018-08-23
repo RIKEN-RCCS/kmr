@@ -1,9 +1,9 @@
 # kmr4py.py
-# Copyright (C) 2012-2016 RIKEN AICS
+# Copyright (C) 2012-2018 RIKEN R-CCS
 
 """Python Binding for KMR Map-Reduce Library.  This provides
 straightforward wrappers to the C routines.  See more about KMR at
-"http://mt.aics.riken.jp/kmr".  All key-value data is stored in C
+"http://mt.r-ccs.riken.jp/kmr".  All key-value data is stored in C
 structures after encoding/decoding Python objects to byte arrays in C.
 The documentation in Python is minimum, so please refer to the
 documentation in C.  It works with Python 2.6.x, 2.7.x, but not 3.x."""
@@ -19,7 +19,7 @@ import traceback
 import sys
 import mpi4py
 
-__version__ = "20160425"
+__version__ = "20180827"
 
 kmrso = ctypes.CDLL("libkmr.so")
 
@@ -1333,6 +1333,6 @@ def _check_passing_options():
                 if (o != s):
                     raise Exception("BAD: %s != %s" % (str(o), str(s)))
 
-# Copyright (C) 2012-2016 RIKEN AICS
+# Copyright (C) 2012-2018 RIKEN R-CCS
 # This library is distributed WITHOUT ANY WARRANTY.  This library can be
 # redistributed and/or modified under the terms of the BSD 2-Clause License.

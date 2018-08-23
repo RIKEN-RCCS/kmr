@@ -1,5 +1,5 @@
 /* kmrfiles.c (2014-02-04) */
-/* Copyright (C) 2012-2016 RIKEN AICS */
+/* Copyright (C) 2012-2018 RIKEN R-CCS */
 
 /** \file kmrfiles.c File Access Support.  This provides mappers
     working on files and directories, especially provides support for
@@ -1736,7 +1736,7 @@ kmr_map_getline_in_memory_(KMR *mr, void *b, size_t sz, long limit,
 }
 
 /*
-Copyright (C) 2012-2016 RIKEN AICS
+Copyright (C) 2012-2018 RIKEN R-CCS
 This library is distributed WITHOUT ANY WARRANTY.  This library can be
 redistributed and/or modified under the terms of the BSD 2-Clause License.
 */

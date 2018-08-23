@@ -1,5 +1,5 @@
 /* kmrrun.c (2014-05-29) */
-/* Copyright (C) 2012-2016 RIKEN AICS */
+/* Copyright (C) 2012-2018 RIKEN R-CCS */
 
 /** \file kmrrun.c
     kmrrun is command line version of KMR and it runs a MapReduce
@@ -761,7 +761,7 @@ main(int argc, char *argv[])
 }
 
 /*
-Copyright (C) 2012-2016 RIKEN AICS
+Copyright (C) 2012-2018 RIKEN R-CCS
 This library is distributed WITHOUT ANY WARRANTY.  This library can be
 redistributed and/or modified under the terms of the BSD 2-Clause License.
 */

@@ -1,5 +1,5 @@
 /* kmrisort.c (2014-02-04) */
-/* Copyright (C) 2012-2016 RIKEN AICS */
+/* Copyright (C) 2012-2018 RIKEN R-CCS */
 /* Copyright (c) 1992, 1993 The Regents of the University of California. */
 
 /* $NetBSD: qsort.c,v 1.15 2008/03/11 18:04:59 rmind Exp $ */
@@ -301,7 +301,7 @@ kmr_isort(void *A, const size_t N, const size_t ES, int depth)
 }
 
 /*
-Copyright (C) 2012-2016 RIKEN AICS
+Copyright (C) 2012-2018 RIKEN R-CCS
 This library is distributed WITHOUT ANY WARRANTY.  This library can be
 redistributed and/or modified under the terms of the BSD 2-Clause License.
 */

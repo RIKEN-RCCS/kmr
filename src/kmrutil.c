@@ -1,5 +1,5 @@
 /* kmrutil.c (2014-02-04) */
-/* Copyright (C) 2012-2016 RIKEN AICS */
+/* Copyright (C) 2012-2018 RIKEN R-CCS */
 
 /** \file kmrutil.c Utilities. */
 
@@ -2415,7 +2415,7 @@ kmr_copy_mpi_info(MPI_Info src, MPI_Info dst)
 }
 
 /*
-Copyright (C) 2012-2016 RIKEN AICS
+Copyright (C) 2012-2018 RIKEN R-CCS
 This library is distributed WITHOUT ANY WARRANTY.  This library can be
 redistributed and/or modified under the terms of the BSD 2-Clause License.
 */

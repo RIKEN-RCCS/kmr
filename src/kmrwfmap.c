@@ -1,5 +1,5 @@
 /* kmrwfmap.c (2016-07-14) -*-Coding: us-ascii;-*- */
-/* Copyright (C) 2012-2016 RIKEN AICS */
+/* Copyright (C) 2012-2018 RIKEN R-CCS */
 
 /** \file kmrwfmap.c Simple Workflow by Static-Spawning.  It needs a
     library for static-spawning "libkmrspawn.so" (it is only available
@@ -3255,7 +3255,7 @@ kmr_run_command(struct kmr_spawn_hooks *hooks,
 #endif
 
 /*
-Copyright (C) 2012-2016 RIKEN AICS
+Copyright (C) 2012-2018 RIKEN R-CCS
 This library is distributed WITHOUT ANY WARRANTY.  This library can be
 redistributed and/or modified under the terms of the BSD 2-Clause License.
 */
