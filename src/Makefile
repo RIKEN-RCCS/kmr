@@ -74,7 +74,7 @@ install::
 	if [ -e $(LIBDIR)/$(SOLIB) ]; then rm $(LIBDIR)/$(SOLIB); fi
 	$(LN) -s $(LIBDIR)/$(SOLIB_VER) $(LIBDIR)/$(SOLIB)
 	$(INSTALL) -m 755 kmrwatch0 $(LIBDIR)
-	$(INSTALL) -m 644 ../README $(ETCDIR)
+	$(INSTALL) -m 644 ../README.md $(ETCDIR)
 	$(INSTALL) -m 644 ../LICENSE $(ETCDIR)
 	$(INSTALL) -m 644 ../config.log $(ETCDIR)
 	$(INSTALL) -m 644 ../config.make $(ETCDIR)
