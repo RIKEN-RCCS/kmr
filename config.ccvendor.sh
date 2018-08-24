@@ -11,6 +11,9 @@ fi
 
 #AC_MSG_CHECKING([for compiler vendor])
 
+# Let compiler not return version strings in Japanese.
+export LANG=C
+
 CCVENDOR=unknown
 
 $CC --version >conftestcc.out 2>&1
