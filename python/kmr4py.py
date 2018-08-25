@@ -771,6 +771,9 @@ _enabled_options_of_reduce_as_one = [
     "inspect", "take_ckpt"]
 
 _enabled_options_of_shuffle = [
+    "inspect", "key_as_rank", "take_ckpt"]
+
+_enabled_options_of_replicate = [
     "inspect", "rank_zero", "take_ckpt"]
 
 _enabled_options_of_distribute = [
@@ -1147,7 +1150,7 @@ class KVS():
         keyty = self.get_field_type("key")
         valty = self.get_field_type("value")
         (_, _, mkkvo) = _get_options(mopts, False)
-        cmopts = _c_option(mopts, _enabled_options_of_reduce)
+        cmopts = _c_option(mopts, _enabled_options_of_shuffle)
         ckvi = self._ckvs
         kvo = (KVS(self.mr, keyty, valty) if mkkvo else None)
         ckvo = (kvo._ckvs if (kvo is not None) else None)
@@ -1161,7 +1164,7 @@ class KVS():
         keyty = self.get_field_type("key")
         valty = self.get_field_type("value")
         (_, _, mkkvo) = _get_options(mopts, False)
-        cmopts = _c_option(mopts, _enabled_options_of_shuffle)
+        cmopts = _c_option(mopts, _enabled_options_of_replicate)
         ckvi = self._ckvs
         kvo = (KVS(self.mr, keyty, valty) if mkkvo else None)
         ckvo = (kvo._ckvs if (kvo is not None) else None)
