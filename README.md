@@ -64,7 +64,7 @@ KMR binaries.
 Care should be taken in the Cray environment to use KMR Python API.
 KMR needs to be built with the same MPI library as the Python-MPI
 binding (mpi4py).  But, the default environment is not the one used to
-build the Python-MPI binding (for example, at sites
+build the Python-MPI binding (for example, at the sites like
 kudpc.kyoto-u.ac.jp).  It needs to switch the compiler and the MPI
 library appropriately before running the configure script.
 
