@@ -15,37 +15,41 @@ and API usage.
 The "src" directory contains the source code.  The "cmd" directory
 contains the source code of the commands.  The "kmrrun" directory
 contains the source code for shell command pipelining (or
-"streaming").  The "ex" directory contains a few examples.
-The "shell" directory contains the former commands of shell command
-pipelining.
+"streaming").
+The "python" directory contains the source code for the Pything binding.
+The "shell" directory contains the source code of the old shell command pipelining,
+which was mostly replaced by the "kmrrun" command.
+The "ex" directory contains a few examples.
 
 The file "gensort-1.2.tar.gz" is a 3rd-party software of the data
 generator of TeraSort.  The file "tpch_2_17_0.zip" is also a 3rd-party
 software of the data generator of TPC-H.  These files are not part of
 KMR, but they are needed for running some examples.
 
-## INSTALL
+## INSTALLATION
 
-Building KMR requires a C compiler that supports C99 standard and an
+Building KMR requires a C compiler that supports the C99 standard and an
 MPI library that supports MPI 2.2.  However, the command line tool
 "kmrrun" requires Open MPI or Fujitsu MPI.  Python binding requires
-2.6.x or higher (Python 3.x are unsupported).  KMR does not depend on
-any other libraries.  KMR is developed and tested mainly on the
+2.6.x or higher (Python 3.x are unsupported).  KMR does not need
+any unusual libraries.  KMR is developed and tested mainly on the
 following environments.
 
 * CentOS 6.5 Linux x86_64, GCC 4.4.7, Open MPI 1.8.3
 * K Computer/FX10, Fujitsu Compiler, Fujitsu MPI (latest stable)
 
+Note that recent releases are only lightly tested.
+
 KMR can be installed by just typing "configure", "make", and "make
 install".  To change the installation directory, specify the
 "--prefix" option to the configure script.
 
-    $ ./configure --prefix=PATH_TO_INSTALL_DIR
+    $ ./configure --prefix=PATH_TO_INSTALL
     $ make
     $ make install
 
 To build KMR documents, type "make htmldoc".  It depends on Doxygen,
-Epydoc and Gnu troff.  The documents are generated in the "./html"
+Epydoc and GNU Troff.  The documents are generated in the "./html"
 directory.
 
     $ make htmldoc
@@ -55,14 +59,14 @@ KMR binaries.
 
     $ make install-htmldoc
 
-## INSTALL (for "kudpc" @kyoto-u.ac.jp)
+## INSTALLATION (for kudpc @kyoto-u.ac.jp)
 
 Care should be taken in the Cray environment to use KMR Python API.
 KMR needs to be built with the same MPI library as the Python-MPI
 binding (mpi4py).  But, the default environment is not the one used to
-build the Python-MPI binding (for example, at sites
+build the Python-MPI binding (for example, at the sites like
 kudpc.kyoto-u.ac.jp).  It needs to switch the compiler and the MPI
-library appropriately before running configure.
+library appropriately before running the configure script.
 
     $ module switch PrgEnv-cray PrgEnv-gnu
     $ ./confugire ......
