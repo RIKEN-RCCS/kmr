@@ -30,7 +30,7 @@ KMR, but they are needed for running some examples.
 Building KMR requires a C compiler that supports the C99 standard and
 an MPI library that supports MPI 2.2.  However, the command line tool
 "kmrrun" requires Open MPI or Fujitsu MPI.  Python binding requires
-Python 2.6.x or higher and a mpi4py package (Python 3.x are
+Python 2.6.x or higher and an mpi4py package (Python 3.x are
 unsupported).  KMR does not need any other uncommon libraries.  KMR is
 developed and tested mainly in the following environments.  Note that
 recent releases are only lightly tested.
