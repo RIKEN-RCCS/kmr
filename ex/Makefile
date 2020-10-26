@@ -57,6 +57,13 @@ pi::
 flexdice:
 	gcc -fopenmp -m64 -std=gnu99 -Wall -Wextra -pedantic -Wno-long-long -Wno-unused-parameter -Wmissing-prototypes -Wshadow -g flexdice.c flexdicemain.c -lm
 
+check-exec-in-mpi:
+	$(mpicc) -g check-exec-in-mpi.c
+
+libforkexec.so::
+	$(mpicc) $(SO_LDFLAGS) $(SO_CCFLAGS) -Wl,-soname,libforkexec.so \
+	-o libforkexec.so forkexec.c
+
 update-version::
 	cp kmrdp-help.html _kmrdp-help.html
 	sed -e \

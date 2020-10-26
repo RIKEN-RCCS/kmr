@@ -147,7 +147,7 @@ KMR_CMP2N(void *A, void *B)
 }
 
 static inline void *
-kmr_meddleof(void *a, void *b, void *c)
+kmr_middleof(void *a, void *b, void *c)
 {
     return (KMR_CMP2P(a, b) < 0
 	    ? (KMR_CMP2P(b, c) < 0 ? b : (KMR_CMP2P(a, c) < 0 ? c : a))
@@ -163,11 +163,11 @@ kmr_medianof(char *A, const size_t N, const size_t ES)
 	char *pn = A + (N - 1) * ES;
 	if (N > 40) {
 	    size_t d = (N / 8) * ES;
-	    pl = kmr_meddleof(pl, (pl + d), (pl + 2 * d));
-	    pm = kmr_meddleof((pm - d), pm, (pm + d));
-	    pn = kmr_meddleof((pn - 2 * d), (pn - d), pn);
+	    pl = kmr_middleof(pl, (pl + d), (pl + 2 * d));
+	    pm = kmr_middleof((pm - d), pm, (pm + d));
+	    pn = kmr_middleof((pn - 2 * d), (pn - d), pn);
 	}
-	pm = kmr_meddleof(pl, pm, pn);
+	pm = kmr_middleof(pl, pm, pn);
     }
     return pm;
 }

@@ -1,8 +1,11 @@
-# K-Means (2015-06-15)
+#!/usr/bin/env python3
+# -*-coding: utf-8;-*-
+
+## K-Means (2015-06-15)
 
 ## An example of K-Means implementation.
 ## It can be run under MPI as follows:
-##   $ mpiexec -n 4 python kmeanspy.py
+##   $ mpiexec -n 4 python3 kmeanspy.py
 
 import random
 from mpi4py import MPI
@@ -57,7 +60,8 @@ def load_points(kv, kvi, kvo, i):
         kvo.add(idp, point)
 
 # Emit Key:id of nearest group, Value:a point(list of integer)
-def calc_cluster((k, v), kvi, kvo, i):
+def calc_cluster(kv, kvi, kvo, i):
+    (k, v) = kv
     del k, kvi, i
     min_id = 0
     min_dst = kmeans.grid_size * kmeans.grid_size
@@ -69,7 +73,8 @@ def calc_cluster((k, v), kvi, kvo, i):
     kvo.add(min_id, v)
 
 # Emit nothing
-def copy_center((k, v), kvi, kvo, i):
+def copy_center(kv, kvi, kvo, i):
+    (k, v) = kv
     del kvi, kvo, i
     kmeans.means[k] = v
 
@@ -94,8 +99,8 @@ kmeans = K_Means()
 random.seed(1)
 
 if comm.rank == 0:
-    print 'Number of processes = %d' % (comm.size)
-    print kmeans
+    print('Number of processes = %d' % (comm.size))
+    print(kmeans)
     kmeans.init_means()
 kmeans.means = comm.bcast(kmeans.means, root=0)
 kmeans.init_points()
@@ -109,9 +114,9 @@ for _ in range(0, kmeans.n_iteration):
     kvs4.map(copy_center)
 
     if comm.rank == 0:
-        print 'Cluster coordinates'
+        print('Cluster coordinates')
         for m in kmeans.means:
-            print m
+            print(m)
 
 kmr.dismiss()
 kmr4py.fin()

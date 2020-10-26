@@ -28,13 +28,22 @@ AC_CANONICAL_TARGET
 
 # Settings for Fujitsu platforms.
 
-! test -d /opt/FJSVtclang -o -d /opt/FJSVfxlang; eefujitsu=$?
+if test -d /opt/FJSVtclang -o -d /opt/FJSVfxlang; then
+   echo "*** This configure does not support K, FX10, FX100 any more.  ***"
+   echo "*** Please fix config.make by hand, sorry.                    ***"
+   echo "*** CFLAGS=-Kfast,preex -Xg -std=gnu99                        ***"
+   echo "*** CXXFLAGS=-Kfast,preex -Xg                                 ***"
+   echo "*** LIBS=-L/opt/FJSVpxtof/sparc64fx/lib64 -ltofutop -ltofucom ***"
+fi
+
+! test -d /opt/FJSVtclang -o -d /opt/FJSVfxlang -o \
+  -d /opt/FJSVxtclanga; fujitsuplatform=$?
 
 # Record of Fujitsu software version.
 AC_SUBST(KMRFJSV) #[K/FX10 software version]
 
-if test "1" -eq "$eefujitsu"; then
-  test -z "$host_alias" && host_alias=sparc-sun-linux
+if test "1" -eq "$fujitsuplatform"; then
+  test -z "$host_alias" && host_alias=arm-unknown-linux
   test "$cross_compiling"!="yes" && cross_compiling=maybe
   test -z "$CC" && CC=fccpx
   test -z "$CXX" && CXX=FCCpx
@@ -49,13 +58,13 @@ fi
 
 # Settings for Cray platforms.
 
-! command -v cc | grep 'craype' >/dev/null 2>&1; eecray=$?
+! command -v cc | grep 'craype' >/dev/null 2>&1; crayplatform=$?
 
 # Disable "enable_embed" (embedding of the kmrwatch0 binary) for Cray
 # compilers, because they generate a too large binary by static
 # linking it with MPI.
 
-if test "1" -eq "$eecray"; then
+if test "1" -eq "$crayplatform"; then
   test -z "$MPICC" && MPICC=cc
   test -z "$MPICXX" && MPICXX=CC
   test -z "$MPIFC" && MPIFC=ftn
@@ -103,7 +112,7 @@ fi
 
 # Set CFLAGS to suppress setting "-g" on K and FX10.
 
-if test "1" -eq "$eefujitsu"; then
+if test "1" -eq "$fujitsuplatform"; then
   test -z "$CFLAGS" && CFLAGS=""
   test -z "$CXXFLAGS" && CXXFLAGS=""
   test -z "$FCFLAGS" && FCFLAGS=""
@@ -179,7 +188,7 @@ unknown)
 gcc|clang|pathscale)
     CFLAGS="-m64 $CFLAGS"
     STD_CC="-std=gnu99"
-    WARN_CC=${WARN_CC-"-Wall -Wextra -pedantic -Wno-long-long -Wno-unused-parameter -Wmissing-prototypes -Wshadow -Wconversion"}
+    WARN_CC=${WARN_CC-"-Wall -Wextra -pedantic -Wno-long-long -Wno-unused-parameter -Wmissing-prototypes -Wno-format-truncation -Wshadow -Wconversion"}
     SO_CCFLAGS="-fPIC"
     SO_LDFLAGS="-shared"
     ;;
@@ -207,8 +216,7 @@ solarisstudio)
     SO_LDFLAGS="-shared"
     ;;
 fujitsu)
-    CFLAGS="-Kfast,preex -Xg -std=gnu99 $CFLAGS"
-    LIBS="-L/opt/FJSVpxtof/sparc64fx/lib64 -ltofutop -ltofucom $LIBS"
+    CFLAGS="-Kfast,preex -std=gnu99 $CFLAGS"
     SO_CCFLAGS="-KPIC"
     SO_LDFLAGS="-shared"
     ;;
@@ -257,7 +265,7 @@ solarisstudio)
     CXXFLAGS="-m64 -mt $CXXFLAGS"
     ;;
 fujitsu)
-    CXXFLAGS="-Kfast,preex -Xg $CXXFLAGS"
+    CXXFLAGS="-Kfast,preex $CXXFLAGS"
     ;;
 ibmxlc)
     CXXFLAGS="-q64 $CXXFLAGS"
@@ -306,6 +314,13 @@ digital|*)
     ;;
 esac
 
+# Mark Fujitsu FX platforms.
+
+if test "1" -eq "$fujitsuplatform"; then
+    CFLAGS="-DKMRFJFX $CFLAGS"
+    CXXFLAGS="-DKMRFJFX $CXXFLAGS"
+fi
+
 rm -f conftest.out
 
 # Add rt library for clock_gettime() in Linux and Intel-CC.
@@ -335,7 +350,7 @@ fi
 
 # Check if TOFU support files are available.
 
-if test "$enable_tofu" = "yes" -a "1" -eq "$eefujitsu" -a -f "src/tofu.h"; then
+if test "$enable_tofu" = "yes" -a "1" -eq "$fujitsuplatform" -a -f "src/tofu.h"; then
   CFLAGS="-DKMRTOFU $CFLAGS"
 fi
 
@@ -367,7 +382,7 @@ fi
 
 AC_SUBST(KMRSOTARGET)
 AC_SUBST(KMRSONAME)
-case ${target_os} in
+case "$target_os" in
 darwin*)
     KMRSOTARGET="kmr_c.dylib"
     KMRSONAME='libkmr.$(KMRVER).dylib'
@@ -397,6 +412,14 @@ if test "$with_hdf5" != ""; then
   CFLAGS="-DKMRHDF5 $CFLAGS"
   LIBS="$LIBS -L$with_hdf5 -lhdf5_hl -lhdf5 -lsz -lz -lm"
 fi
+
+# Add -ldl on Linux.
+
+case "$target_os" in
+linux*)
+    LIBS="${LIBS} -ldl"
+    ;;
+esac
 
 # Let KMRLIBDIR show in config.h.
 

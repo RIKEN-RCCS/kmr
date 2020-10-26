@@ -134,7 +134,7 @@ kmr_error_kvs_at_site(KMR *mr, char *m, KMR_KVS *kvs,
 		" (kvs allocated at %s:%d: %s)\n",
 		rank, m, info->file, info->line, info->func);
 	fflush(0);
-    } else if (site != 0)  {
+    } else if (site != 0) {
 	fprintf(stderr, ";;KMR [%05d] error: %s: %s; at %s:%d\n",
 		rank, site->func, m, site->file, site->line);
 	fflush(0);
@@ -1156,6 +1156,8 @@ kmr_check_options(KMR *mr, MPI_Info info)
 	printf("[%05d] pushoff_poll_rate=%d\n", r, mr->pushoff_poll_rate);
 	printf("[%05d] pushoff_fast_notice=%d\n", r, mr->pushoff_fast_notice);
 	printf("[%05d] kmrviz_trace=%d\n", r, mr->kmrviz_trace);
+	printf("[%05d] map_ms_use_exec=%d\n", r, mr->map_ms_use_exec);
+	printf("[%05d] map_ms_abort_on_signal=%d\n", r, mr->map_ms_abort_on_signal);
     }
     return MPI_SUCCESS;
 }
@@ -1256,7 +1258,20 @@ kmr_set_option_by_strings(KMR *mr, char *k, char *v)
 	    kmr_warning(mr, 1, ("option atoa_requests_limit be"
 				" non-negative integer"));
 	}
-
+    } else if (strcasecmp("map_ms_use_exec", k) == 0) {
+	if (kmr_parse_boolean(v, &x)) {
+	    mr->map_ms_use_exec = (_Bool)x;
+	} else {
+	    kmr_warning(mr, 1, "option map_ms_use_exec be"
+			" boolean");
+	}
+    } else if (strcasecmp("map_ms_abort_on_signal", k) == 0) {
+	if (kmr_parse_boolean(v, &x)) {
+	    mr->map_ms_abort_on_signal = (_Bool)x;
+	} else {
+	    kmr_warning(mr, 1, "option map_ms_abort_on_signal be"
+			" boolean");
+	}
     } else if (strcasecmp("spawn_max_processes", k) == 0) {
 	if (kmr_parse_int(v, &x) && x >= 0) {
 	    mr->spawn_max_processes = x;
@@ -2204,6 +2219,7 @@ kmr_load_properties(MPI_Info info, char *filename)
 		break;
 	    }
 	}
+	/*FALLTHRU*/
 	/* Fall thru with reading c as an ordinary character. */
 
 	default:

@@ -1,10 +1,11 @@
 /* kmrmapms.c (2014-02-04) */
 /* Copyright (C) 2012-2018 RIKEN R-CCS */
 
-/** \file kmrmapms.c Master-Slave Mapping on Key-Value Stream. */
+/** \file kmrmapms.c Master-Worker Mapping on Key-Value Stream. */
 
 #include <mpi.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <limits.h>
 #include <poll.h>
@@ -16,6 +17,7 @@
 #include <sys/stat.h>
 #include <sys/param.h>
 #include <arpa/inet.h>
+#include <sys/mman.h>
 #include <assert.h>
 #ifdef _OPENMP
 #include <omp.h>
@@ -43,8 +45,8 @@ kmr_assert_peer_tag(int tag)
 /* Special values of task ID.  Task IDs are non-negative.  A task ID
    is included in an RPC request, which is used both for returning a
    result and for wanting a new task.  KMR_RPC_ID_NONE marks no
-   results are returned in the first request from a slave thread.
-   KMR_RPC_ID_FIN marks a node has finished with all the slave
+   results are returned in the first request from a worker thread.
+   KMR_RPC_ID_FIN marks a node has finished with all the worker
    threads. */
 
 #define KMR_RPC_ID_NONE -1
@@ -52,16 +54,16 @@ kmr_assert_peer_tag(int tag)
 
 /** Delivers key-value pairs as requested.  It returns MPI_SUCCESS if
     all done, or MPI_ERR_ROOT otherwise.  It finishes the tasks when
-    all nodes have contacted and all slave threads are done.
+    all nodes have contacted and all worker threads are done.
     Protocol: (1) Receive an RPC request (KMR_TAG_REQ).  A request
     consists of a triple of integers (task-ID, peer-tag, result-size)
     ("int req[3]").  The task-ID encodes some special values.  (2)
-    Receive a result if a slave has one.  (3) Return a new task if
+    Receive a result if a worker has one.  (3) Return a new task if
     available.  A reply consists of a tuple of integers (task-ID,
     argument-size) ("int ack[2]").  (4) Or, return a "no-tasks"
     indicator by ID=KMR_RPC_ID_NONE.  (5) Count "done" messages by
-    ID=KMR_RPC_ID_FIN, which indicates the slave node has finished for
-    all slave threads.  The task-ID in an RPC request is
+    ID=KMR_RPC_ID_FIN, which indicates the worker node has finished for
+    all worker threads.  The task-ID in an RPC request is
     KMR_RPC_ID_NONE for the first request (meaning that the request
     has no result).  Peer-tags are used in subsequent messages to
     direct reply messages to a requesting thread.  */
@@ -78,31 +80,33 @@ kmr_map_master(KMR_KVS *kvi, KMR_KVS *kvo,
 	   && kvo->c.value_data == kvi->c.value_data);
     MPI_Comm comm = mr->comm;
     int nprocs = mr->nprocs;
-    long cnt = kvi->c.element_count;
-    assert(INT_MIN <= cnt && cnt <= INT_MAX);
+    _Bool tracing5 = (mr->trace_map_ms && (5 <= mr->verbosity));
+    long longcount = kvi->c.element_count;
+    assert(INT_MIN <= longcount && longcount <= INT_MAX);
+    int cnt = (int)longcount;
     struct kmr_map_ms_state *ms = kvi->c.ms;
-    char *msstates = &(ms->states[0]);
-    if (ms == 0) {
+    char *msstates;
+    if (ms != 0) {
+	msstates = &(ms->states[0]);
+    } else {
 	/* First time. */
 	size_t hdsz = offsetof(struct kmr_map_ms_state, states);
 	ms = kmr_malloc((hdsz + sizeof(char) * (size_t)cnt));
 	kvi->c.ms = ms;
-	ms->nodes = 0;
+	ms->idles = 0;
 	ms->kicks = 0;
 	ms->dones = 0;
 	msstates = &(ms->states[0]);
-	for (long i = 0; i < cnt; i++) {
+	for (int i = 0; i < cnt; i++) {
 	    msstates[i] = KMR_RPC_NONE;
 	}
-    }
-    if (ms->dones == cnt && ms->nodes == (nprocs - 1)) {
-	/* Finish the task. */
-	if (kvi->c.temporary_data != 0) {
-	    kmr_free(kvi->c.temporary_data,
-		     (sizeof(struct kmr_kvs_entry *) * (size_t)cnt));
-	    kvi->c.temporary_data = 0;
+	if (tracing5) {
+	    char *name = "kmr_map_ms";
+	    fprintf(stderr,
+		    ";;KMR [%05d] %s: key-count=%d\n",
+		    mr->rank, name, cnt);
+	    fflush(0);
 	}
-	return MPI_SUCCESS;
     }
     /* Make/remake array of key-value pointers. */
     struct kmr_kvs_entry **ev = kvi->c.temporary_data;
@@ -111,11 +115,27 @@ kmr_map_master(KMR_KVS *kvi, KMR_KVS *kvo,
 	kvi->c.temporary_data = ev;
 	kvi->c.current_block = kvi->c.first_block;
 	struct kmr_kvs_entry *e = kmr_kvs_first_entry(kvi, kvi->c.first_block);
-	for (long i = 0; i < cnt; i++) {
+	for (int i = 0; i < cnt; i++) {
 	    assert(e != 0);
 	    ev[i] = e;
 	    e = kmr_kvs_next(kvi, e, 0);
 	}
+    }
+    /* Finish the task when all done. */
+    if (ms->dones == cnt && ms->idles == (nprocs - 1)) {
+	/* Let ranks leave. */
+	for (int peer = 1; peer < nprocs; peer++) {
+	    int cc;
+	    int req[3] = {0, KMR_RPC_ID_FIN, 0};
+	    cc = MPI_Send(req, 3, MPI_INT, peer, KMR_TAG_REQ, comm);
+	    assert(cc == MPI_SUCCESS);
+	}
+	if (kvi->c.temporary_data != 0) {
+	    kmr_free(kvi->c.temporary_data,
+		     (sizeof(struct kmr_kvs_entry *) * (size_t)cnt));
+	    kvi->c.temporary_data = 0;
+	}
+	return MPI_SUCCESS;
     }
     /* Wait for one request and process it. */
     assert(ms->dones <= ms->kicks);
@@ -134,8 +154,8 @@ kmr_map_master(KMR_KVS *kvi, KMR_KVS *kvo,
 	    /* Got the first request from a peer, no task results. */
 	} else if (id == KMR_RPC_ID_FIN) {
 	    /* Got the finishing request from a peer. */
-	    ms->nodes++;
-	    assert(ms->nodes <= (nprocs - 1));
+	    ms->idles++;
+	    assert(ms->idles <= (nprocs - 1));
 	} else {
 	    /* Receive a task result. */
 	    assert(id >= 0);
@@ -156,7 +176,7 @@ kmr_map_master(KMR_KVS *kvi, KMR_KVS *kvo,
 	}
     }
     if (ms->kicks < cnt) {
-	/* Send a new task (cnt is in integer range). */
+	/* Send a new task (cnt is count in integer). */
 	int id;
 	for (id = 0; id < cnt; id++) {
 	    if (msstates[id] == KMR_RPC_NONE) {
@@ -175,8 +195,15 @@ kmr_map_master(KMR_KVS *kvi, KMR_KVS *kvo,
 	assert(msstates[id] == KMR_RPC_NONE);
 	msstates[id] = KMR_RPC_GOON;
 	ms->kicks++;
+	if (tracing5) {
+	    char *name = "kmr_map_ms";
+	    fprintf(stderr,
+		    ";;KMR [%05d] %s: work=%d to rank=%d\n",
+		    mr->rank, name, id, peer);
+	    fflush(0);
+	}
     } else {
-	/* Finish the slave. */
+	/* Finish the worker thread. */
 	int ack[2] = {KMR_RPC_ID_NONE, 0};
 	cc = MPI_Send(ack, 2, MPI_INT, peer, peer_tag, comm);
 	assert(cc == MPI_SUCCESS);
@@ -192,7 +219,7 @@ kmr_map_master(KMR_KVS *kvi, KMR_KVS *kvo,
     critical sections.	*/
 
 static int
-kmr_map_slave(KMR_KVS *kvi, KMR_KVS *kvo,
+kmr_map_worker(KMR_KVS *kvi, KMR_KVS *kvo,
 	      void *arg, struct kmr_option opt, kmr_mapfn_t m)
 {
     assert(!kmr_fields_pointer_p(kvi)
@@ -232,8 +259,10 @@ kmr_map_slave(KMR_KVS *kvi, KMR_KVS *kvo,
 	    int id = ack[0];
 	    int sz = ack[1];
 	    if (id == KMR_RPC_ID_NONE) {
+		assert(sz == 0);
 		break;
 	    }
+
 	    assert(id >= 0 && sz > 0);
 	    if (sz > maxsz) {
 		maxsz = (sz + kmr_kv_buffer_slack_size);
@@ -243,7 +272,7 @@ kmr_map_slave(KMR_KVS *kvi, KMR_KVS *kvo,
 	    KMR_OMP_CRITICAL_
 		cc = MPI_Recv(e, sz, MPI_BYTE, 0, peer_tag, comm, &st);
 	    assert(cc == MPI_SUCCESS);
-	    /* Invoke mapper. */
+	    /* Invoke a mapper. */
 	    KMR_KVS *kvx;
 	    KMR_OMP_CRITICAL_
 		kvx = kmr_create_kvs(mr, keyf, valf);
@@ -287,18 +316,23 @@ kmr_map_slave(KMR_KVS *kvi, KMR_KVS *kvo,
 	int req[3] = {0, KMR_RPC_ID_FIN, 0};
 	cc = MPI_Send(req, 3, MPI_INT, 0, KMR_TAG_REQ, comm);
 	assert(cc == MPI_SUCCESS);
+	/* Wait for the master to finish. */
+	MPI_Status st;
+	cc = MPI_Recv(req, 3, MPI_INT, 0, KMR_TAG_REQ, comm, &st);
+	assert(cc == MPI_SUCCESS);
+	assert(req[0] == 0 && req[1] == KMR_RPC_ID_FIN && req[2] == 0);
     }
     return MPI_SUCCESS;
 }
 
-/** Maps in master-slave mode.  The input key-value stream should be
+/** Maps in master-worker mode.  The input key-value stream should be
     empty except on rank0 where the master is running (the contents on
-    the slave ranks are ignored).  It consumes the input key-value
+    the worker ranks are ignored).  It consumes the input key-value
     stream.  The master does delivery only.  The master returns
     frequently to give a chance to check-pointing, etc.  The master
     returns immaturely each time one pair is delivered, and those
     returns are marked by MPI_ERR_ROOT indicating more tasks remain.
-    In contrast, slaves return only after all tasks done.  The enough
+    In contrast, workers return only after all tasks done.  The enough
     state to have to keep during kmr_map_ms() for check-pointing is in
     the key-value streams KVI and KVO on the master.  Note that this
     totally diverges from bulk-synchronous execution.  It does not
@@ -329,7 +363,7 @@ kmr_map_ms(KMR_KVS *kvi, KMR_KVS *kvo,
 	    assert(cc == MPI_SUCCESS);
 	}
     } else {
-	ccr = kmr_map_slave(kvi, kvo, arg, opt, m);
+	ccr = kmr_map_worker(kvi, kvo, arg, opt, m);
 	cc = kmr_add_kv_done(kvo);
 	assert(cc == MPI_SUCCESS);
 	cc = kmr_free_kvs(kvi);
@@ -498,7 +532,7 @@ kmr_list_spawns(struct kmr_spawning *spw, KMR_KVS *kvi, MPI_Info info,
     spw->n_spawners = nranks;
     int *usizep;
     int uflag;
-    cc = MPI_Attr_get(MPI_COMM_WORLD, MPI_UNIVERSE_SIZE, &usizep, &uflag);
+    cc = MPI_Comm_get_attr(MPI_COMM_WORLD, MPI_UNIVERSE_SIZE, &usizep, &uflag);
     if (cc != MPI_SUCCESS || uflag == 0) {
 	char ee[80];
 	snprintf(ee, sizeof(ee), "%s: MPI lacks universe size", spw->fn);
@@ -738,6 +772,7 @@ kmr_listen_to_watch(KMR *mr, struct kmr_spawning *spw, int index)
 	    sa.sa6.sin6_port = htons((uint16_t)port);
 	    salen = sizeof(sa.sa6);
 	} else {
+	    salen = 0;
 	    assert(0);
 	}
 
@@ -1467,7 +1502,11 @@ kmr_map_spawned_processes(enum kmr_spawn_mode mode, char *name,
 		kmr_error_mpi(mr, "MPI_Comm_dup(MPI_COMM_SELF)", cc);
 		MPI_Abort(MPI_COMM_WORLD, 1);
 	    }
+#if (MPI_VERSION == 3)
+	    cc = MPI_Comm_set_errhandler(mr->spawn_self, MPI_ERRORS_RETURN);
+#else
 	    cc = MPI_Errhandler_set(mr->spawn_self, MPI_ERRORS_RETURN);
+#endif
 	    if (cc != MPI_SUCCESS) {
 		kmr_error_mpi(mr, "MPI_Errhandler_set()", cc);
 		MPI_Abort(MPI_COMM_WORLD, 1);
@@ -1680,7 +1719,12 @@ kmr_map_spawned_processes(enum kmr_spawn_mode mode, char *name,
 	    for (;;) {
 		cc = MPI_Comm_spawn(argv2[0], &(argv2[1]), s->n_procs, infox,
 				    root, mr->spawn_self, &s->icomm, ec);
-		assert(cc == MPI_SUCCESS || cc == MPI_ERR_SPAWN);
+		if (cc != MPI_SUCCESS) {
+		    int xcc;
+		    xcc = MPI_SUCCESS;
+		    MPI_Error_class(cc, &xcc);
+		    assert(xcc == MPI_SUCCESS || xcc == MPI_ERR_SPAWN);
+		}
 		trys--;
 		if (cc == MPI_SUCCESS || trys == 0) {
 		    break;
@@ -1698,6 +1742,7 @@ kmr_map_spawned_processes(enum kmr_spawn_mode mode, char *name,
 	    /* NOT handle SOFT-ERROR case at all. */
 
 	    if (cc != MPI_SUCCESS) {
+		nspawns = 0;
 		kmr_error_mpi(mr, "MPI_Comm_spawn()", cc);
 		MPI_Abort(MPI_COMM_WORLD, 1);
 	    } else {
@@ -2161,99 +2206,176 @@ struct kmr_map_ms_commands_argument {
     kmr_mapfn_t fn;
 };
 
-/** Runs commands in kmr_map_ms_commands(). */
+/* Runs commands in kmr_map_ms_commands(). */
 
 static int
-kmr_map_ms_fork_exec_command(const struct kmr_kv_box kv,
-			     const KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
-			     const long index)
+kmr_exec_command_e(_Bool use_exec, const struct kmr_kv_box kv,
+		   const KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
+		   const long index)
 {
     char *name = "kmr_map_ms_commands";
     KMR *mr = kvi->c.mr;
     _Bool tracing5 = (mr->trace_map_ms && (5 <= mr->verbosity));
     struct kmr_map_ms_commands_argument *xarg = arg;
     struct kmr_spawn_option opt = xarg->opt;
+    const int maxargc = 128;
     int cc;
-    char *abuf = kmr_malloc((size_t)kv.vlen);
-    memcpy(abuf, kv.v.p, (size_t)kv.vlen);
     int argc;
-    char *argv[256];
-    const int maxargc = (sizeof(argv) / sizeof(*argv));
-    cc = kmr_scan_argv_strings(mr, abuf, (size_t)kv.vlen, maxargc,
-			       &argc, argv,
-			       opt.separator_space, name);
-    assert(cc == MPI_SUCCESS);
-    argv[argc] = 0;
+    char prefix[80];
+    char argvstring[160];
+
+    char *starter = (use_exec ? "fork-exec" : "system");
+    snprintf(prefix, sizeof(prefix), "%s: %s", name, starter);
+
+    char *abuf = kmr_malloc((size_t)kv.vlen + 1);
+    char **argv = kmr_malloc(sizeof(char *) * (size_t)maxargc);
+    memcpy(abuf, kv.v.p, (size_t)kv.vlen);
+    abuf[kv.vlen] = 0;
+
+    if (! use_exec) {
+	argc = 1;
+	argv[0] = abuf;
+	argv[1] = 0;
+    } else {
+	cc = kmr_scan_argv_strings(mr, abuf, (size_t)kv.vlen, maxargc,
+				   &argc, argv,
+				   opt.separator_space, name);
+	assert(cc == MPI_SUCCESS);
+	argv[argc] = 0;
+    }
+    kmr_make_printable_argv_string(argvstring, sizeof(argvstring), argv);
 
     if (tracing5) {
-	char ss[160];
-	kmr_make_printable_argv_string(ss, sizeof(ss), argv);
 	fprintf(stderr,
-		";;KMR [%05d] %s: fork-exec: %s\n",
-		mr->rank, name, ss);
+		";;KMR [%05d] %s(%s)\n",
+		mr->rank, prefix, argvstring);
 	fflush(0);
     }
 
-    int closefds;
-    if (mr->keep_fds_at_fork) {
-	closefds = 0;
+    int waitstatus = 0;
+    if (! use_exec) {
+	waitstatus = system(abuf);
+	if (waitstatus == -1) {
+	    char ee[240];
+	    char *m = strerror(errno);
+	    snprintf(ee, sizeof(ee), "%s() failed: %s for %s(%s)",
+		     prefix, m, starter, argvstring);
+	    kmr_error(mr, ee);
+	}
     } else {
-	closefds = kmr_getdtablesize(mr);
-    }
-
-    int pid = fork();
-    if (pid == -1) {
-	char ee[80];
-	char *m = strerror(errno);
-	snprintf(ee, sizeof(ee), "%s: fork() failed: %s",
-		 name, m);
-	kmr_error(mr, ee);
-    } else {
-	if (pid == 0) {
-	    for (int fd = 3; fd < closefds; fd++) {
-		close(fd);
-	    }
-	    cc = execvp(argv[0], argv);
-	    char ss[160];
-	    kmr_make_printable_argv_string(ss, sizeof(ss), argv);
-	    if (cc == -1) {
-		char ee[80];
-		char *m = strerror(errno);
-		snprintf(ee, sizeof(ee), "%s: execvp(%s) failed: %s",
-			 name, ss, m);
-		kmr_error(mr, ee);
-	    } else {
-		char ee[80];
-		snprintf(ee, sizeof(ee), "%s: execvp(%s) returned with cc=%d",
-			 name, ss, cc);
-		kmr_error(mr, ee);
-	    }
+	int closefds;
+	if (mr->keep_fds_at_fork) {
+	    closefds = 0;
+	} else if (mr->rlimit_nofile == -1) {
+	    mr->rlimit_nofile = kmr_getdtablesize(mr);
+	    assert(mr->rlimit_nofile > 0);
+	    closefds = mr->rlimit_nofile;
 	} else {
-	    int st;
-	    cc = waitpid(pid, &st, 0);
-	    if (cc == -1) {
-		if (errno == EINTR) {
-		    char ee[80];
-		    snprintf(ee, sizeof(ee), "%s: waitpid() interrupted",
-			     name);
-		    kmr_warning(mr, 1, ee);
-		} else {
-		    char ee[80];
+	    closefds = mr->rlimit_nofile;
+	}
+
+	int pid = fork();
+	if (pid == -1) {
+	    char ee[80];
+	    char *m = strerror(errno);
+	    snprintf(ee, sizeof(ee), "%s: fork() failed: %s",
+		     name, m);
+	    kmr_error(mr, ee);
+	} else {
+	    if (pid == 0) {
+		for (int fd = 3; fd < closefds; fd++) {
+		    close(fd);
+		}
+
+		if (0) {
+		    unsetenv("LD_PRELOAD");
+		    setenv("XOS_MMM_L_HPAGE_TYPE", "none", 1);
+		}
+
+		cc = execvp(argv[0], argv);
+		if (cc == -1) {
+		    char ee[240];
 		    char *m = strerror(errno);
-		    snprintf(ee, sizeof(ee), "%s: waitpid() failed: %s",
-			     name, m);
-		    kmr_warning(mr, 1, ee);
+		    snprintf(ee, sizeof(ee),
+			     "%s: execvp failed: %s for execvp(%s)",
+			     name, m, argvstring);
+		    kmr_error(mr, ee);
+		} else {
+		    char ee[240];
+		    snprintf(ee, sizeof(ee),
+			     "%s: execvp returned with=%d for execvp(%s)",
+			     name, cc, argvstring);
+		    kmr_error(mr, ee);
+		}
+	    } else {
+		for (;;) {
+		    cc = waitpid(pid, &waitstatus, 0);
+		    if (cc == -1) {
+			if (errno == EINTR) {
+			    char ee[80];
+			    snprintf(ee, sizeof(ee),
+				     "%s: waitpid() interrupted",
+				     name);
+			    kmr_warning(mr, 1, ee);
+			    continue;
+			} else {
+			    char ee[80];
+			    char *m = strerror(errno);
+			    snprintf(ee, sizeof(ee),
+				     "%s: waitpid() failed: %s",
+				     name, m);
+			    kmr_warning(mr, 1, ee);
+			    break;
+			}
+		    } else {
+			break;
+		    }
 		}
 	    }
 	}
     }
 
-    if (tracing5) {
-	char ss[160];
-	kmr_make_printable_argv_string(ss, sizeof(ss), argv);
-	fprintf(stderr,
-		";;KMR [%05d] %s: fork-exec done: %s\n",
-		mr->rank, name, ss);
+    if (tracing5 || WIFSIGNALED(waitstatus) || WIFSTOPPED(waitstatus)) {
+	if (WIFEXITED(waitstatus)) {
+	    int n = WEXITSTATUS(waitstatus);
+	    fprintf(stderr,
+		    ";;KMR [%05d] %s() done (%d) for %s(%s)\n",
+		    mr->rank, prefix, n, starter, argvstring);
+	} else if (WIFSIGNALED(waitstatus)) {
+	    char ee[240];
+	    int n = WTERMSIG(waitstatus);
+	    snprintf(ee, sizeof(ee),
+		     "%s() signaled=%d in %s(%s)\n",
+		     prefix, n, starter, argvstring);
+	    if (mr->map_ms_abort_on_signal) {
+		kmr_error(mr, ee);
+	    } else {
+		kmr_warning(mr, 1, ee);
+	    }
+	} else if (WIFSTOPPED(waitstatus)) {
+	    /* (never happens). */
+	    char ee[240];
+	    int n = WSTOPSIG(waitstatus);
+	    snprintf(ee, sizeof(ee),
+		     "%s() stopped=%d in %s(%s)\n",
+		     prefix, n, starter, argvstring);
+	    if (mr->map_ms_abort_on_signal) {
+		kmr_error(mr, ee);
+	    } else {
+		kmr_warning(mr, 1, ee);
+	    }
+	} else {
+	    /* (never happens). */
+	    char ee[240];
+	    snprintf(ee, sizeof(ee),
+		     "%s() bad return (?): %s(%s)\n",
+		     prefix, starter, argvstring);
+	    if (mr->map_ms_abort_on_signal) {
+		kmr_error(mr, ee);
+	    } else {
+		kmr_warning(mr, 1, ee);
+	    }
+	}
 	fflush(0);
     }
 
@@ -2261,15 +2383,50 @@ kmr_map_ms_fork_exec_command(const struct kmr_kv_box kv,
     assert(cc == MPI_SUCCESS);
 
     kmr_free(abuf, (size_t)kv.vlen);
+    kmr_free(argv, sizeof(char *) * (size_t)maxargc);
     return MPI_SUCCESS;
 }
 
-/** Maps in master-slave mode, specialized to run serial commands.  It
-    fork-execs commands specified by key-values, then calls a
-    map-function at finishes of the commands.  It takes the commands
-    in the same way as kmr_map_via_spawn().  The commands never be MPI
-    programs.  It is implemented with kmr_map_ms(); see the comments
-    on kmr_map_ms(). */
+/** Runs commands in kmr_map_ms_commands().  It has system(3C) and
+    fork-exec variants. */
+
+static int
+kmr_exec_command(const struct kmr_kv_box kv,
+		 const KMR_KVS *kvi, KMR_KVS *kvo, void *arg,
+		 const long index)
+{
+    KMR *mr = kvi->c.mr;
+    struct kmr_map_ms_commands_argument *xarg = arg;
+    struct kmr_spawn_option opt = xarg->opt;
+    int cc;
+
+    _Bool contains_separator;
+    if (opt.separator_space) {
+	contains_separator = 1;
+    } else {
+	contains_separator = 0;
+	for (int i = 0; i < (kv.vlen - 1); i++) {
+	    if (kv.v.p[i] == '\0') {
+		contains_separator = 1;
+		break;
+	    }
+	}
+    }
+
+    _Bool use_exec = (mr->map_ms_use_exec || contains_separator);
+    cc = kmr_exec_command_e(use_exec, kv, kvi, kvo, arg, index);
+    return cc;
+}
+
+/** Maps in the master-worker mode, specialized to run serial
+    commands.  It executes a command specified by a key-value, then
+    calls a map-function at finishes of the command.  It takes the
+    commands in the same way as kmr_map_via_spawn().  The commands
+    never be MPI programs.  It uses system(3C) or fork-exec, switching
+    to fork-exec either when the SEPARATOR_SPACE option is specified,
+    a command string includes null characters, or the MAP_MS_USE_EXEC
+    option to KMR is specified.  It is implemented with kmr_map_ms();
+    see the comments on kmr_map_ms(). */
 
 int
 kmr_map_ms_commands(KMR_KVS *kvi, KMR_KVS *kvo,
@@ -2282,7 +2439,43 @@ kmr_map_ms_commands(KMR_KVS *kvi, KMR_KVS *kvo,
 	.opt = sopt,
 	.fn = m
     };
-    cc = kmr_map_ms(kvi, kvo, &xarg, opt, kmr_map_ms_fork_exec_command);
+    cc = kmr_map_ms(kvi, kvo, &xarg, opt, kmr_exec_command);
+    return cc;
+}
+
+int kmr_check_exec__(KMR *mr);
+
+int
+kmr_check_exec__(KMR *mr)
+{
+    struct kmr_spawn_option opt = kmr_snoopt;
+    opt.separator_space = 0;
+    struct kmr_map_ms_commands_argument arg = {
+	.opt = opt,
+	.arg = 0,
+	.fn = kmr_add_identity_fn
+    };
+    long index = 0;
+
+    char key[] = "key0";
+    char val[] = "echo start a subprocess.; sleep 3;"
+	" echo a process done.";
+    const int klen = sizeof(key);
+    int vlen = sizeof(val);
+    assert(klen == 5);
+    struct kmr_kv_box kv = {
+	.klen = (int)klen,
+	.vlen = (int)vlen,
+	.k.p = key,
+	.v.p = val
+    };
+
+    KMR_KVS *kvi = kmr_create_kvs(mr, KMR_KV_CSTRING, KMR_KV_CSTRING);
+    kmr_add_kv_done(kvi);
+    KMR_KVS *kvo = kmr_create_kvs(mr, KMR_KV_CSTRING, KMR_KV_CSTRING);
+    int cc = kmr_exec_command(kv, kvi, kvo, &arg, index);
+    kmr_free_kvs(kvi);
+    kmr_free_kvs(kvo);
     return cc;
 }
 

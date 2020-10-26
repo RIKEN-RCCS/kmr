@@ -15,7 +15,7 @@ OBJS=
 all: kmrrun
 
 kmrrun: kmrrun.c
-	$(mpicc) $(KMRINC) kmrrun.c -o kmrrun $(LIBS) $(KMRLIB)
+	$(mpicc) $(KMRINC) kmrrun.c -o kmrrun $(KMRLIB) $(LIBS)
 
 install::
 	$(INSTALL) -d $(BINDIR)

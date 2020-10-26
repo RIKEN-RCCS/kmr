@@ -386,6 +386,7 @@ simple1(int nprocs, int rank)
     const long NN = MM * nprocs;
 
     KMR *mr = kmr_create_context(MPI_COMM_WORLD, MPI_INFO_NULL, 0);
+    assert(mr != 0);
 
     KMR_KVS *kvs0 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_INTEGER);
     kmr_map_on_rank_zero(kvs0, (void *)&NN, kmr_noopt, addkeys1);
@@ -1103,6 +1104,7 @@ simple6(int nprocs, int rank)
     const long NN = 10000;
 
     KMR *mr = kmr_create_context(MPI_COMM_WORLD, MPI_INFO_NULL, 0);
+    assert(mr != 0);
 
     KMR_KVS *kvs0 = kmr_create_kvs(mr, KMR_KV_INTEGER, KMR_KV_INTEGER);
     kmr_map_once(kvs0, (void *)&NN, kmr_noopt, 0, addkeys6);
@@ -1452,6 +1454,7 @@ simple8(int nprocs, int rank)
     const long MM = 100;
 
     KMR *mr = kmr_create_context(MPI_COMM_WORLD, MPI_INFO_NULL, 0);
+    assert(mr != 0);
 
     /* DO ONCE ON INTEGER KEYS AND ONCE ON STRING KEYS. */
 

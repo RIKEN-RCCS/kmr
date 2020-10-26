@@ -1,5 +1,7 @@
-#!/usr/bin/python
-# Copyright (C) 2012-2018 RIKEN R-CCS
+#!/usr/bin/env python3
+# -*-coding: utf-8;-*-
+
+## Copyright (C) 2012-2018 RIKEN R-CCS
 
 ## \file kmrgenscript.in.py KMR-Shell Job-Script Generator.
 
@@ -15,7 +17,7 @@ kmrhome = '@KMRHOME@'
 
 def checkexist (path) :
     if not os.path.exists(path) :
-        print 'Error: file or dir "%s" is not exist.' % path
+        print('Error: file or dir "%s" is not exist.' % path)
         sys.exit()
 
 ## Checks path is a directory.
@@ -25,17 +27,17 @@ def checkexist (path) :
 def checkdir (path, force) :
     if os.path.exists(path) :
         if not os.path.isdir(path) :
-            print 'Error: "%s" is not directory.' % path
+            print('Error: "%s" is not directory.' % path)
             sys.exit()
     else :
         if force :
             try :
                 os.mkdir(path)
             except IOError :
-                print 'Error: could not create "%s".' % path
+                print('Error: could not create "%s".' % path)
                 sys.exit()
         else :
-            print 'Error: directory "%s" is not exist. create it or use -f option.' % path
+            print('Error: directory "%s" is not exist. create it or use -f option.' % path)
             sys.exit()
 
 ## Generates job-script for K.
@@ -73,7 +75,7 @@ def k_scheduler(node, infile, outfile, indir, outdir, rsctime, mapper, reducer, 
         except IOError :
             pass
     if template == '' :
-       print 'Error: could not open job-script template.'
+       print('Error: could not open job-script template.')
        sys.exit()
 
     # Stage in section
@@ -126,10 +128,10 @@ def k_scheduler(node, infile, outfile, indir, outdir, rsctime, mapper, reducer, 
 
     # output script
     if scrfile is None :
-        print script
+        print(script)
     else :
         out = open(scrfile, "w")
-        print >> out, script
+        print(script, file=out)
         out.close()
 
 ## Selects job-scheduler.
@@ -258,7 +260,7 @@ if __name__ == "__main__" :
         sys.exit()
 
     if not options.mapper :
-        print "mapper not specified\n"
+        print("mapper not specified\n")
         sys.exit()
 
     checkexist(options.indir)
@@ -266,11 +268,11 @@ if __name__ == "__main__" :
 
     if options.multi :
         if options.indir == "./" :
-            print "-M option needs -d (input directory) option.\n"
+            print("-M option needs -d (input directory) option.\n")
             sys.exit()
         files = os.listdir(options.indir)
         if len(files) < options.node :
-            print 'Node number is greater than number of files in %s.\n' % options.indir
+            print('Node number is greater than number of files in %s.\n' % options.indir)
             sys.exit()
 
     selectscheduler(options.node, options.infile, options.outfile,

@@ -15,7 +15,7 @@
 /** \file kmrdp.cpp MPI-DP Implementation with KMR.  MPI-DP is a tool
     developed by Akiyama Lab., Tokyo Institute of Technology (titec),
     which provides an environment for running almost independent
-    (data-intensive, genome search) tasks using MPI, with master-slave
+    (data-intensive, genome search) tasks using MPI, with master-worker
     job scheduling.  This is a rewrite of MPI-DP version 1.0.3.  MEMO:
     RETRY is ignored.  \htmlinclude kmrdp-help.html */
 
@@ -103,7 +103,7 @@ typedef struct {
 } RankLog;
 
 /** A Tool to Run Tasks under MPI.  MPI-DP runs tasks which are almost
-    independent with master-slave scheduling.  It reads a "jobs-list"
+    independent with master-worker scheduling.  It reads a "jobs-list"
     table, starts MPI processes, and then calls an application entry
     point.  _ARGC and _ARGV are copies of ones passed to main.
     _APPARGV is the unhandled part of argv which is passed to the

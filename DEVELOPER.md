@@ -12,7 +12,7 @@ and the PEP 0008 coding standard for Python source code.
 When you modify autoconf related files (configure.ac, ax_openmp.m4 and
 ax_mpi.m4), run "make configure".
 
-    $ make configure
+        $ make configure
 
 ## Releasing a New Version
 
@@ -41,7 +41,7 @@ When you want to release a new version, follow the instructions below.
 
         src/kmr.h              (line 7)
         src/kmr-overview.html  (line 5)
-        python/kmr4py.py       (line 21)
+        python3/kmr4py.py      (line 21)
         ex/kmrdp-help.html     (line 7)
 
 5. Commit and push changes again.
@@ -55,4 +55,4 @@ When you want to release a new version, follow the instructions below.
 
         $ make htmldoc
 
-8. Publish the htmldoc on http://riken-rccs.github.io/kmr-manual/.
+8. Publish the htmldoc on http://riken-rccs.github.io/kmr/.

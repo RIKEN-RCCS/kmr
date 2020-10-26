@@ -1,5 +1,7 @@
-#!/usr/bin/python
-# Copyright (C) 2012-2018 RIKEN R-CCS
+#!/usr/bin/env python3
+# -*-coding: utf-8;-*-
+
+## Copyright (C) 2012-2018 RIKEN R-CCS
 
 ## \file kmrwrapper.py KMR-Shell File Spliter and Job-Script Generator.
 
@@ -121,14 +123,14 @@ if __name__ == "__main__":
 
     # check parameters.
 
-    if len(args) <> 1 :
+    if len(args) != 1 :
         parser.error("missing parameter")
         sys.exit()
 
     inputfile = args[0]
 
     if options.nodes > options.nums :
-        print 'Error: number of execute nodes must be less than or equal to number of file separation.'
+        print('Error: number of execute nodes must be less than or equal to number of file separation.')
         sys.exit()
 
     # If number of nodes < number of input files,
@@ -139,22 +141,22 @@ if __name__ == "__main__":
         multi = False
 
     if not os.path.exists(inputfile) :
-        print 'Error: inputfile %s is not exist.' % inputfile
+        print('Error: inputfile %s is not exist.' % inputfile)
         sys.exit()
 
     if os.path.exists(options.workdir) :
         if not os.path.isdir(options.workdir) :
-            print 'Error: "%s" is not directory.' % options.workdir
+            print('Error: "%s" is not directory.' % options.workdir)
             sys.exit()
     else:
         if options.force :
             try:
                 os.mkdir(options.workdir)
             except IOError:
-                print 'Error: could not create "%s".' % options.workdir
+                print('Error: could not create "%s".' % options.workdir)
                 sys.exit()
         else:
-            print 'Error: directory "%s" is not exist. create it or use -f option.' % options.workdir
+            print('Error: directory "%s" is not exist. create it or use -f option.' % options.workdir)
             sys.exit()
 
     splitfile(options.nums, options.sep, options.workdir, options.prefix, inputfile)

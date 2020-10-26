@@ -1,5 +1,6 @@
-#! /usr/bin/python
-#
+#!/usr/bin/env python3
+# -*-coding: utf-8;-*-
+
 # wc.mapper.py (2014-10-31)
 #
 # The combination of wc.mapper.py, wc.kvgen.sh and wc.reducer.py performs

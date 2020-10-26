@@ -1000,7 +1000,7 @@ kmr_ckpt_restore_prev_state_each_rank_all
 	    undel_kvs_id = e.kvi_id;
 	    break;
 	case KMR_CKPT_LOG_DELETE_FINISH:
-	    assert(e.kvi_id = undel_kvs_id);
+	    assert(e.kvi_id == undel_kvs_id);
 	    undel_kvs_id = 0;
 	    break;
 	case KMR_CKPT_LOG_SKIPPED:
@@ -2206,6 +2206,7 @@ kmr_ckpt_kv_record_init_data(KMR *mr, KMR_KVS *kvs)
 	}
 	kmr_ckpt_flush(mr, fp);
     } else {
+	fp = 0;
 	assert(0);
     }
     ckptctx->ckpt_data_fp = fp;

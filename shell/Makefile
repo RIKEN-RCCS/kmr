@@ -18,10 +18,10 @@ kmrshell: kmrshell.c
 	$(CC) $(CFLAGS) kmrshell.c -o kmrshell $(LIBS)
 
 kmrshuffler: kmrshuffler.c
-	$(mpicc) $(KMRINC) kmrshuffler.c -o kmrshuffler $(LIBS) $(KMRLIB)
+	$(mpicc) $(KMRINC) kmrshuffler.c -o kmrshuffler $(KMRLIB) $(LIBS)
 
 kmrshell_mpi: kmrshell_mpi.c
-	$(mpicc) $(KMRINC) kmrshell_mpi.c -o kmrshell_mpi $(LIBS) $(KMRLIB)
+	$(mpicc) $(KMRINC) kmrshell_mpi.c -o kmrshell_mpi $(KMRLIB) $(LIBS)
 
 install::
 	$(INSTALL) -d $(BINDIR)

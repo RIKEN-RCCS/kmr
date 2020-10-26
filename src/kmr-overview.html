@@ -1,8 +1,8 @@
-<!-- kmr-overview.html (2014-02-04) -*- Mode: HTML; Coding: utf-8; -*- -->
+<!-- kmr-overview.html (2014-02-04) -*- Coding: utf-8; Mode: HTML; -*- -->
 
 <p>Copyright (C) 2012-2018 RIKEN R-CCS</p>
 
-<p>(KMR Version: v1.9(20180827))</p>
+<p>(KMR Version: v1.9 (20180827))</p>
 
 <p>
 KMR comes with ABSOLUTELY NO WARRANTY.
@@ -19,7 +19,7 @@ Contents (in this page):
 <li><a href="#pythonapi">Python API</a>
 <li><a href="#sortingkeyvalues">Sorting Key-Values</a>
 <li><a href="#rankawarecommunication">Rank-Aware Communication</a>
-<li><a href="#masterslavemapper">Master-Slave Mapper</a>
+<li><a href="#masterworkermapper">Master-Worker Mapper</a>
 <li><a href="#fileaccesssupport">File Access Support</a>
 <li><a href="#checkpointrestart">Checkpoint/Restart</a>
 <li><a href="#kmrrun">Command Line Utility (KMRRUN)</a>
@@ -371,7 +371,8 @@ For the next step, browse documents starting with
 KMR also provides API for Python as a module 'kmr4py'.  It is
 installed in the same place as the KMR C library.  A Python MPI
 binding 'mpi4py' is required to use kmr4py.  Supported version of
-Python is 2.6.x or higher.  Currently, it does not support Python3.
+Python is 3 (tested with 3.5, and possibly works with 3.4 and later).
+Support for Python2 ceased.
 
 <p>
 To run a program that uses kmr4py, the environment variables,
@@ -383,7 +384,7 @@ the $KMRHOME/lib directory where KMR is installed.
 <pre class="fragment">
 export LD_LIBRARY_PATH=$KMRHOME/lib:$LD_LIBRARY_PATH
 export PYTHONPATH=$KMRHOME/lib:PYTHONPATH
-mpiexec -n 4 python YOUR_PROGRAM.py
+mpiexec -n 4 python3 YOUR_PROGRAM.py
 </pre>
 
 <p>
@@ -391,8 +392,9 @@ There are some example applications included in KMR package under
 'ex/' directory.
 
 <p>
-Also see the <a href="./python/index.html">Python API document</a>.
-
+Also see the <a href="./kmr4py.html">Python API document</a>
+or
+the <a href="./kmr4py_8py_source.html">kmr4py source</a>.
 
 <a name="sortingkeyvalues"></a>
 <h1>Sorting Key-Values</h1>
@@ -467,13 +469,13 @@ key-value pair, keeping the same key field.  kmr_unpairing() recovers
 key-value pairs, discarding old key field.  kmr_reverse() swaps the
 key and the value fields.
 
-<a name="masterslavemapper"></a>
-<h1>Master-Slave Mapper</h1>
+<a name="masterworkermapper"></a>
+<h1>Master-Worker Mapper</h1>
 
 <p>
-KMR supports a mapper with master-slave job scheduling.  The special
+KMR supports a mapper with master-worker job scheduling.  The special
 mapper kmr_map_ms distributes key-value pairs on the master (rank0) to
-slaves (ranks other than rank0), and collects the resulting key-value
+workers (ranks other than rank0), and collects the resulting key-value
 pairs again on the master.  Key-value data is only stored on the
 master in this case.
 
@@ -492,7 +494,7 @@ do {
 See <a href="kmr_8h.html#a9d52c3c69250bf19dd28d5e38809df79">descriptions in kmr.h</a>.
 
 <p>
-There is another master-slave job scheduling, which spawns and runs
+There is another master-worker job scheduling, which spawns and runs
 new MPI processes.
 
 <pre class="fragment">

@@ -1,8 +1,11 @@
-# Word Count (2015-06-13)
+#!/usr/bin/env python3
+# -*-coding: utf-8;-*-
+
+## Word Count (2015-06-13)
 
 ## This ranks the words by their occurrence count in the "../LICENSE"
 ## file.  It can be run under MPI as follows:
-##   $ mpiexec -n 4 python wordcountpy.py
+##   $ mpiexec -n 4 python3 wordcountpy.py
 
 from mpi4py import MPI
 import kmr4py
@@ -21,10 +24,11 @@ def read_words_from_a_file(kv, kvi, kvo, i, *_data):
                 kvo.add(w, 1)
     file_.close()
 
-def print_top_five((k, v), kvi, kvo, i, *_data):
+def print_top_five(kv, kvi, kvo, i, *_data):
     ## (NO FIELD VALUE IN KMR.MR BECAUSE IT IS A DUMMY).
+    (k, v) = kv
     if (kmr.rank == 0 and i < 5):
-        print "#%s=%d" % (v, int(0 - k))
+        print("#%s=%d" % (v, int(0 - k)))
 
 def sum_counts_for_a_word(kvvec, kvi, kvo, *_data):
     count = 0
@@ -33,7 +37,7 @@ def sum_counts_for_a_word(kvvec, kvi, kvo, *_data):
         count += v
     kvo.add(k0, -count)
 
-if (kmr.rank == 0): print "Ranking words..."
+if (kmr.rank == 0): print("Ranking words...")
 
 kvs0 = kmr.emptykvs.map_once(False, read_words_from_a_file, key="cstring")
 kvs1 = kvs0.shuffle()

@@ -1,6 +1,6 @@
 # KMR - Kobe Map-Reduce
 
-Copyright (C) 2012-2018 RIKEN R-CCS
+Copyright (C) 2012-2020 RIKEN R-CCS
 
 KMR comes with ABSOLUTELY NO WARRANTY.
 
@@ -15,7 +15,7 @@ and API usage.
 The "src" directory contains the source code.  The "cmd" directory
 contains the source code of the commands.  The "kmrrun" directory
 contains the source code for shell command pipelining (or
-"streaming").  The "python" directory contains the source code for the
+"streaming").  The "python3" directory contains the source code for the
 Pything binding.  The "shell" directory contains the source code of
 the old shell command pipelining, which was mostly replaced by the
 "kmrrun" command.  The "ex" directory contains a few examples.
@@ -30,13 +30,13 @@ KMR, but they are needed for running some examples.
 Building KMR requires a C compiler that supports the C99 standard and
 an MPI library that supports MPI 2.2.  However, the command line tool
 "kmrrun" requires Open MPI or Fujitsu MPI.  Python binding requires
-Python 2.6.x or higher and an mpi4py package (Python 3.x are
-unsupported).  KMR does not need any other uncommon libraries.  KMR is
-developed and tested mainly in the following environments.  Note that
-recent releases are only lightly tested.
+Python 3.4 and higher and an mpi4py package (KMR will not run in
+Python 2.x).  KMR does not need any other uncommon libraries.  KMR is
+maintained and tested in the following environments.  Note that recent
+KMR releases are only lightly tested.
 
-* CentOS 6.5 Linux x86_64, GCC 4.4.7, Open MPI 1.8.3
-* K Computer/FX10, Fujitsu Compiler, Fujitsu MPI (latest stable)
+* SunOS-5.11 (amd64), GCC-7.5.0, Python-3.5.9, YAMPI-2 (MPI)
+* Fugaku, with Fujitsu language environments
 
 KMR can be installed by just typing "configure", "make", and "make
 install".  To change the installation directory, specify the
@@ -46,9 +46,9 @@ install".  To change the installation directory, specify the
     $ make
     $ make install
 
-To build KMR documents, type "make htmldoc".  It depends on Doxygen,
-Epydoc and GNU Troff.  The documents are generated in the "./html"
-directory.
+To build KMR documents, type "make htmldoc".  It requres packages
+Doxygen, Python's pdoc, and GNU Troff.  The documents are generated in
+the "./html" directory.
 
     $ make htmldoc
 
@@ -59,26 +59,34 @@ KMR binaries.
 
 ## INSTALLATION (for kudpc @kyoto-u.ac.jp)
 
-Care should be taken in the Cray environment to use KMR Python API.
-KMR needs to be built with the same MPI library as the Python-MPI
-binding (mpi4py).  But, the default environment is not the one used to
-build the Python-MPI binding (for example, at the sites like
+Care should be taken in the Cray environment to use KMR with Python3.
+KMR needs to be built with the same MPI library as mpi4py (the
+Python-MPI binding).  But, the default environment is not the one used
+to build the mpi4py (for example, at the sites like
 kudpc.kyoto-u.ac.jp).  It needs to switch the compiler and the MPI
 library appropriately before running the configure script.
 
     $ module switch PrgEnv-cray PrgEnv-gnu
     $ ./confugire ......
 
+## INSTALLATION (for Fugaku)
+
+Care should be taken to use KMR with Python3.  It needs CFLAGS=-Nclang
+and CXXFLAGS=-Nclang in configuring KMR, to match the configuration of
+mpi4py.  Also, setting some environment variables is needed to use
+mpi4py.  See the documents of Fugaku.  It is recommended to start
+Python3 with environment variable XOS_MMM_L_HPAGE_TYPE=none.
+
 ## COPYRIGHTS
 
 The files in "src" directory include the materials copyrighted by
 Akiyama Lab., Tokyo Institute of Technology (titec) (code from the
 GHOST Project) and the materials copyrighted by The Regents of the
-University of California (code from NetBSD-5.1.2).  The files in "ex"
-directory include the materials copyrighted by Stanford University
-(code from Phoenix MapReduce Library), and the materials copyrighted
-by Sandia Corporation (code from MapReduce-MPI Library).  The files in
-"gensort-1.2.tar.gz" are copyrighted by Chris Nyberg
+University of California (qsort code from NetBSD-5.1.2).  The files in
+"ex" directory include the materials copyrighted by Stanford
+University (code from Phoenix MapReduce Library), and the materials
+copyrighted by Sandia Corporation (code from MapReduce-MPI Library).
+The files in "gensort-1.2.tar.gz" are copyrighted by Chris Nyberg
 (chris.nyberg@ordinal.com).  The files in "tpch_2_17_0.zip" are
 copyrighted by the Transaction Processing Performance Council (TPC).
 All others are copyrighted by RIKEN R-CCS, and all rights reserved

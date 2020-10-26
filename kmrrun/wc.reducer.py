@@ -1,5 +1,6 @@
-#! /usr/bin/python
-#
+#!/usr/bin/env python3
+# -*-coding: utf-8;-*-
+
 # wc.reducer.py (2014-10-31)
 #
 # The combination of wc.mapper.py, wc.kvgen.sh and wc.reducer.py performs
@@ -42,4 +43,4 @@ if __name__ == "__main__":
     rf.close()
 
     os.remove(argv[1])
-    print "%s %d" % (key, count)
+    print("%s %d" % (key, count))

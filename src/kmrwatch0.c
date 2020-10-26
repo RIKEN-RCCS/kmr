@@ -334,6 +334,7 @@ main(int argc, char **argv)
 			addr = &sa->in6.sin6_addr;
 			fm = "AF_INET6";
 		    } else {
+			addr = 0;
 			assert(0);
 		    }
 		    char peer[INET6_ADDRSTRLEN];

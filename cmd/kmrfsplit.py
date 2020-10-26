@@ -1,5 +1,7 @@
-#!/usr/bin/python
-# Copyright (C) 2012-2018 RIKEN R-CCS
+#!/usr/bin/env python3
+# -*-coding: utf-8;-*-
+
+## Copyright (C) 2012-2018 RIKEN R-CCS
 
 ## \file kmrfsplit.py KMR-Shell File Splitter.
 
@@ -20,13 +22,13 @@ def writefile(ipath, opath, startpos, endpos) :
     try:
         fin = open(ipath, "r")
     except IOError:
-       print 'Error: could not open "%s".' % ipath
+       print('Error: could not open "%s".' % ipath)
        sys.exit()
 
     try:
         fout = open(opath, "w")
     except IOError:
-       print 'Error: could not open "%s".' % opath
+       print('Error: could not open "%s".' % opath)
        sys.exit()
 
     fin.seek(startpos, 0)
@@ -65,7 +67,7 @@ def getcuttingpoint(ipath, sep, startpos, partsize) :
         try:
             f = open(ipath, "r")
         except IOError:
-            print 'Error: could not open "%s".' % ipath
+            print('Error: could not open "%s".' % ipath)
             sys.exit()
         f.seek(endpos, 0)
         # read size of buffer.
@@ -75,7 +77,7 @@ def getcuttingpoint(ipath, sep, startpos, partsize) :
         p = re.compile(sep)
         ret = p.search(buf)
         if ret is None:
-            print "Separator not found in proper position.\n"
+            print("Separator not found in proper position.\n")
             sys.exit()
         endpos += ret.end()
     return endpos
@@ -91,9 +93,9 @@ def getcuttingpoint(ipath, sep, startpos, partsize) :
 def splitfile(nums, sep, odir, opref, infile) :
     startpos = 0
     filesize = os.path.getsize(infile)
-    partsize = filesize / nums
+    partsize = filesize // nums
 
-    print "Splitting file: ",
+    print("Splitting file: ")
     for i in range(nums-1) :
         endpos = getcuttingpoint(infile, sep, startpos, partsize)
 
@@ -105,13 +107,13 @@ def splitfile(nums, sep, odir, opref, infile) :
         writefile(infile, opath, startpos, endpos)
         startpos = endpos
         sys.stdout.write('.')
-	sys.stdout.flush()
+        sys.stdout.flush()
 
     # output remain part of input file.
     suffix = "%06d" % (nums-1)
     opath = os.path.join(odir, (opref + suffix))
     writefile(infile, opath, startpos, filesize)
-    print "done."
+    print("done.")
 
 ## kmrfsplit main routine.
 #  It works on Python 2.4 or later.
@@ -163,29 +165,29 @@ if __name__ == "__main__":
     (options, args) = parser.parse_args()
 
     # parameter check.
-    if len(args) <> 1 :
+    if len(args) != 1 :
         parser.error("missing parameter")
         sys.exit()
 
     inputfile = args[0]
 
     if not os.path.exists(inputfile) :
-        print 'Error: inputfile %s is not exist.' % inputfile
+        print('Error: inputfile %s is not exist.' % inputfile)
         sys.exit()
 
     if os.path.exists(options.odir) :
         if not os.path.isdir(options.odir) :
-            print 'Error: "%s" is not directory.' % options.odir
+            print('Error: "%s" is not directory.' % options.odir)
             sys.exit()
     else:
         if options.force :
             try:
                 os.mkdir(options.odir)
             except IOError:
-                print 'Error: could not create "%s".' % options.odir
+                print('Error: could not create "%s".' % options.odir)
                 sys.exit()
         else:
-            print 'Error: directory "%s" is not exist. create it or use -f option.' % options.odir
+            print('Error: directory "%s" is not exist. create it or use -f option.' % options.odir)
             sys.exit()
 
     splitfile(options.nums, options.sep, options.odir, options.opref, inputfile)

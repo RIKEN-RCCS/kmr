@@ -215,6 +215,11 @@ struct kmr_code_line { const char *file; const char *func; int line; };
     (FILE_IO_DUMMY_STRIPING is for debugging internals, and assigns
     dummy striping information on not Lustre file-systems).
     (FILE_IO_ALWAYS_ALLTOALLV is for debugging internals).
+    MAP_MS_USE_EXEC forces KMR use fork-execing instead of system(3C)
+    to start a subprocess in kmr_map_ms_commands().  KMR also uses
+    fork-execing when command strings include null characters (not at
+    the end).  MAP_MS_ABORT_ON_SIGNAL makes KMR abort when a
+    subprocess is killed in kmr_map_ms_commands().
     SPAWN_DISCONNECT_EARLY (useless) lets the spawner free the
     inter-communicator immediately after spawning.
     SPAWN_DISCONNECT_BUT_FREE lets the spawner use
@@ -236,8 +241,8 @@ struct kmr_code_line { const char *file; const char *func; int line; };
     mapping/reducing.  PUSHOFF_FAST_NOTICE enables use of RDMA put for
     event notification in push-off key-value streams.  PUSHOFF_STAT
     enables collecting statistics of communication in push-off
-    key-value streams.  KMRVIZ_TRACE enables tracing kmr function calls
-    for KMRViz.  IDENTIFYING_NAME is just a note. */
+    key-value streams.  KMRVIZ_TRACE enables tracing kmr function
+    calls for KMRViz.  IDENTIFYING_NAME is just a note. */
 
 struct kmr_ctx {
     MPI_Comm comm;
@@ -271,6 +276,8 @@ struct kmr_ctx {
     int sort_threads_depth;
 
     long file_io_block_size;
+
+    int rlimit_nofile;
 
     char *kmr_installation_path;
     char *spawn_watch_program;
@@ -310,15 +317,14 @@ struct kmr_ctx {
     _Bool std_abort : 1;
     _Bool file_io_dummy_striping : 1;
     _Bool file_io_always_alltoallv : 1;
+    _Bool map_ms_use_exec : 1;
+    _Bool map_ms_abort_on_signal : 1;
     _Bool spawn_sync_at_startup : 1;
     _Bool spawn_watch_all : 1;
     _Bool spawn_disconnect_early : 1;
     _Bool spawn_disconnect_but_free : 1;
     _Bool spawn_pass_intercomm_in_argument : 1;
     _Bool keep_fds_at_fork : 1;
-    _Bool swf_exec_so;
-    _Bool swf_record_history;
-    _Bool swf_debug_master;
 
     _Bool mpi_thread_support : 1;
 
@@ -331,6 +337,10 @@ struct kmr_ctx {
     _Bool pushoff_hang_out : 1;
     _Bool pushoff_fast_notice : 1;
     _Bool pushoff_stat : 1;
+
+    _Bool swf_exec_so;
+    _Bool swf_record_history;
+    _Bool swf_debug_master;
 
     struct {
 	double times[4];
@@ -435,11 +445,13 @@ enum kmr_kvs_magic {
 
 /** State during kmr_map_ms().  It is kept in a key-value stream only
     during kmr_map_ms() on rank0.  (IT SHOULD BE INCLUDED IN THE STATE
-    OF kmr_save_kvs() AND kmr_restore_kvs(), BUT NOT YET).
-    Flexible-array member is avoided for C++. */
+    OF kmr_save_kvs() AND kmr_restore_kvs(), BUT NOT YET).  IDLES is
+    the count of ranks waiting for finish, KICKS is the count of jobs
+    started, and DONES is the count of jobs finished.  Flexible-array
+    member is avoided for C++. */
 
 struct kmr_map_ms_state {
-    int nodes;
+    int idles;
     int kicks;
     int dones;
     char states[1];
@@ -483,7 +495,7 @@ struct kmr_map_ms_state {
     occupied when the data fields are pointers.  FIRST_BLOCK points to
     the chain of blocks of data.
 
-    MS field holds a state during master-slave mapping.
+    MS field holds a state during master-worker mapping.
 
     A pair of transient fields CURRENT_BLOCK and ADDING_POINT points
     to the current insertion point. */

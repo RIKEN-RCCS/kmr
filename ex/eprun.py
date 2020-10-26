@@ -1,9 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+# -*-coding: utf-8;-*-
 
 # eprun.py - Invokes shell commands on ranks (except rank=0).  It
 # reads a file containing lines of shell commands (one per line) on
 # rank=0.  It runs mulitple commands on each node (one per core) with
-# option "-m".  USAGE: "mpiexec -n N python ./eprun.py
+# option "-m".  USAGE: "mpiexec -n N python3 ./eprun.py
 # ./file-of-commands"
 
 from mpi4py import MPI
@@ -65,11 +66,12 @@ def read_commands(arg):
     k00.add_kv_done()
     return k00
 
-def identitymap((k, v), kvi, kvo, i, *_data):
+def identitymap(kv, kvi, kvo, i, *_data):
+    (k, v) = kv
     kvo.add(k, v)
     return 0
 
-## MAIN
+## MAIN.
 
 (opts, args) = options.parse_args()
 
@@ -79,7 +81,7 @@ if (NPROCS == 1):
 
 if (len(args) != 1):
     if (RANK == 0):
-        sys.stderr.write("Usage: python eprun.py [options] input-file.\n")
+        sys.stderr.write("Usage: python3 eprun.py [options] input-file.\n")
     sys.exit(1)
 
 if (opts.trace):
@@ -98,7 +100,8 @@ kmr0.dismiss()
 
 sys.stdout.flush()
 sys.stderr.flush()
+
 #time.sleep(1)
 #if (RANK == 0):
-#    print "eprun OK"
+#    print("eprun OK")
 #sys.stdout.flush()

@@ -17,7 +17,8 @@ SORT_BRIEF_DOCS=YES
 SORT_MEMBER_DOCS=NO
 STRIP_CODE_COMMENTS=NO
 EXTRACT_STATIC=YES
-#OPTIMIZE_OUTPUT_JAVA=YES
+OPTIMIZE_OUTPUT_JAVA=YES
+PYTHON_DOCSTRING=NO
 #EXTENSION_MAPPING=in=Python
 
 PREDEFINED=__K
@@ -43,6 +44,7 @@ INPUT+=shell/kmrshuffler.c
 INPUT+=kmrrun/kmrrun.c
 INPUT+=cmd/kmrfsplit.py cmd/kmrgenscript.in.py cmd/kmrwrapper.py
 INPUT+=cmd/kmrckptdump.c cmd/kmrrungenscript.in.py
+INPUT+=python3/kmr4py.py
 INPUT+=ex/kmeans-kmr.c ex/kmeans-mrmpi.cpp ex/wordcount.c
 INPUT+=ex/phoenix-kmeans.c ex/phoenix-matrix-multiply.c
 INPUT+=ex/mrmpi-wordfreq.c ex/mrmpi-crmat.c

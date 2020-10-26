@@ -240,6 +240,8 @@ kmr_create_context(const MPI_Comm comm, const MPI_Info conf,
 
     mr->file_io_block_size = (1024 * 1024);
 
+    mr->rlimit_nofile = -1;
+
     mr->pushoff_block_size = PUSHOFF_SIZE;
     mr->pushoff_poll_rate = 0;
 
@@ -287,6 +289,8 @@ kmr_create_context(const MPI_Comm comm, const MPI_Info conf,
     mr->std_abort = 0;
     mr->file_io_dummy_striping = 1;
     mr->file_io_always_alltoallv = 0;
+    mr->map_ms_use_exec = 0;
+    mr->map_ms_abort_on_signal = 0;
     mr->spawn_sync_at_startup = 0;
     mr->spawn_watch_all = 0;
     mr->spawn_disconnect_early = 0;

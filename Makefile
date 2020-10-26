@@ -5,36 +5,37 @@
 INSTALL=install
 
 all:
-	cd src; make all
-	cd shell; make all
-	cd kmrrun; make all
-	cd cmd; make all
+	cd src && make all
+	cd shell && make all
+	cd kmrrun && make all
+	cd cmd && make all
 
 install:
-	cd src; make install
-	cd shell; make install
-	cd kmrrun; make install
-	cd cmd; make install
-	cd python; make install
-	cd man; make install
+	cd src && make install
+	cd shell && make install
+	cd kmrrun && make install
+	cd cmd && make install
+	cd python3 && make install
+	cd man && make install
 
 install-htmldoc: install htmldoc
-	cd src; make install-htmldoc
+	cd src && make install-htmldoc
 
 configure: configure.ac ax_openmp.m4 ax_mpi.m4
 	cat ax_openmp.m4 ax_mpi.m4 > aclocal.m4
 	autoconf
 
 update-version::
-	cd src; make update-version
-	cd python; make update-version
-	cd ex; make update-version
+	cd src && make update-version
+	cd python3 && make update-version
+	cd ex && make update-version
 
 htmldoc::
 	rm -fr ./html
 	doxygen doxyfile
-	epydoc --config epydoc python/kmr4py.py
 	cp -p ./kmr.jpg ./html/
+	cd python3 && make htmldoc
+	[ -f python3/index.html ] && cp -p python3/index.html html/kmr4py.html
 	groff -man -Thtml man/kmrshell.1 > html/kmrshell_81.html
 	groff -man -Thtml man/kmrshell_mpi.1 > html/kmrshell_mpi_81.html
 	groff -man -Thtml man/kmrshuffler.1 > html/kmrshuffler_81.html
@@ -47,20 +48,20 @@ htmldoc::
 	groff -man -Thtml man/kmrwatch0.1 > html/kmrwatch0_81.html
 
 distclean:: clean
-	cd src; make distclean
-	cd shell; make distclean
-	cd kmrrun; make distclean
-	cd cmd; make distclean
-	cd ex; make distclean
+	cd src && make distclean
+	cd shell && make distclean
+	cd kmrrun && make distclean
+	cd cmd && make distclean
+	cd ex && make distclean
 	rm -f config.status config.log aclocal.m4
 	rm -rf autom4te.cache
 	rm -f config.make config.h
 
 clean::
 	rm -f doxygen_entrydb_*.tmp doxygen_objdb_*.tmp
-	cd src; make clean
-	cd shell; make clean
-	cd kmrrun; make clean
-	cd cmd; make clean
-	cd python; make clean
-	cd ex; make clean
+	cd src && make clean
+	cd shell && make clean
+	cd kmrrun && make clean
+	cd cmd && make clean
+	cd python3 && make clean
+	cd ex && make clean

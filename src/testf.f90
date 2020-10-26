@@ -89,7 +89,7 @@ contains
     n = kmr_intstr(kv%k, k, kv%klen)
     n = kmr_intstr(kv%v, v, kv%vlen)
     rank = kmr_get_rank(kvi)
-    print "(A,A,A,A,A,A,I0)", "Start master/slave task...", &
+    print "(A,A,A,A,A,A,I0)", "Start master/worker task...", &
          " key=", k(1:kv%klen-1), &
          " value=", v(1:kv%vlen-1), " rank=", rank
     zz = kmr_add_kv(kvo, kv)

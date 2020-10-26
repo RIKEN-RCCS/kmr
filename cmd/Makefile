@@ -15,7 +15,7 @@ OBJS=
 all: kmrckptdump kmrgenscript.py kmrrungenscript.py
 
 kmrckptdump: kmrckptdump.c
-	$(mpicc) $(KMRINC) kmrckptdump.c -o kmrckptdump $(LIBS) $(KMRLIB)
+	$(mpicc) $(KMRINC) kmrckptdump.c -o kmrckptdump $(KMRLIB) $(LIBS)
 
 kmrgenscript.py: kmrgenscript.in.py
 	sed -e "s,@KMRHOME@,$(prefix)," < kmrgenscript.in.py > kmrgenscript.py
