@@ -67,7 +67,7 @@ libforkexec.so::
 update-version::
 	cp kmrdp-help.html _kmrdp-help.html
 	sed -e \
-	"s/\(KMR Version: v\)[0-9\.]*([0-9]*)/\1$(KMRVER)($(KMRVERDATE))/" \
+	"s/\(KMR Version: v\)[0-9\.]* ([0-9]*)/\1$(KMRVER) ($(KMRVERDATE))/" \
 	< _kmrdp-help.html > kmrdp-help.html
 	rm -f _kmrdp-help.html
 

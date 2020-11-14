@@ -85,11 +85,11 @@ install-htmldoc::
 
 update-version::
 	cp kmr.h _kmr.h
-	sed -e "s/KMR_H  [0-9]*/KMR_H  $(KMRVERDATE)/" < _kmr.h > kmr.h
+	sed -e "s/KMR_H [0-9]*/KMR_H $(KMRVERDATE)/" < _kmr.h > kmr.h
 	rm -f _kmr.h
 	cp kmr-overview.html _kmr-overview.html
 	sed -e \
-	"s/\(KMR Version: v\)[0-9\.]*([0-9]*)/\1$(KMRVER)($(KMRVERDATE))/" \
+	"s/\(KMR Version: v\)[0-9\.]* ([0-9]*)/\1$(KMRVER) ($(KMRVERDATE))/" \
 	< _kmr-overview.html > kmr-overview.html
 	rm -f _kmr-overview.html
 

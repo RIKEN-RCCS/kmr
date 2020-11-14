@@ -2,6 +2,12 @@
 
 The list is sketchy.
 
+## 1.10 (2020-11-16)
+
+- 1.10 is a minor update
+- Update Python code to Python3
+- Add a support of Fugaku in configure, drop K/FX10/FX100
+
 ## 1.9 (2018-08-27)
 
 - 1.9 is a minor update

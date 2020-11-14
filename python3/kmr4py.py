@@ -21,8 +21,8 @@ import traceback
 import sys
 import mpi4py
 
-__version__ = "20180827"
-kmrversion = "1.9"
+__version__ = "20201116"
+kmrversion = "1.10"
 
 kmrso = None
 
