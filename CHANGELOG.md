@@ -2,11 +2,18 @@
 
 The list is sketchy.
 
+## 1.10 (2021-06-22)
+
+- Nothing changed to KMR, but new utility programs are added in the
+  "tool" directory
+- Change the branch name "master" to "main"
+- Flexdice was moved from "ex" to "tool"
+
 ## 1.10 (2020-11-16)
 
 - 1.10 is a minor update
 - Update Python code to Python3
-- Add a support of Fugaku in configure, drop K/FX10/FX100
+- Add a support of Fugaku in configure, drop a K/FX10/FX100 support
 
 ## 1.9 (2018-08-27)
 

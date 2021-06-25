@@ -77,6 +77,12 @@ mpi4py.  Also, setting some environment variables is needed to use
 mpi4py.  See the documents of Fugaku.  It is recommended to start
 Python3 with environment variable XOS_MMM_L_HPAGE_TYPE=none.
 
+## EXPLORE FILES
+
+* [CHANGELOG.md](CHANGELOG.md) 
+* Examples: [ex](ex)
+* Tools: [tool](tool)
+
 ## COPYRIGHTS
 
 The files in "src" directory include the materials copyrighted by

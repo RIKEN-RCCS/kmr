@@ -54,9 +54,6 @@ pi::
 	@echo 'PI is an MPI example; not a KMR example.'
 	$(mpicc) $(INCL) -g pi.c -o pi
 
-flexdice:
-	gcc -fopenmp -m64 -std=gnu99 -Wall -Wextra -pedantic -Wno-long-long -Wno-unused-parameter -Wmissing-prototypes -Wshadow -g flexdice.c flexdicemain.c -lm
-
 check-exec-in-mpi:
 	$(mpicc) -g check-exec-in-mpi.c
 

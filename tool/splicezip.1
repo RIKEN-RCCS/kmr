@@ -1,0 +1,46 @@
+.\" (* Run nroff -u0 -Tlp -man *)
+.TH splicezip 1 "2021-06-22" "--" "User Commands"
+.SH NAME
+splicezip \- Concatenate zip files to a single file
+.SH SYNOPSIS
+.LP
+.nf
+\fBsplicezip\fR out.zip in0.zip in1.zip ...
+.fi
+.SH DESCRIPTION
+.sp
+\fBsplicezip\fR simply concatenates given input "pk" zip files and
+then appends a directory record collected from them at the end.  It
+does not remove the old directories and some gaps exist in the output
+file.
+.sp
+It is recommended to run "zipinfo -v", "unzip -t", or "zip -F" to
+check the file is properly created.
+.sp
+.nf
+$ splicezip out.zip in0.zip in1.zip
+.fi
+.sp
+This example concatenates "in0.zip" and "in1.zip" and outputs "out.zip".
+.LP
+.SH OPTIONS
+.sp
+.LP
+The following options are supported by \fBsplicezip\fR:
+.sp
+.ne 2
+.na
+\fB\fB-v\fR\fR \fB\fB-q\fR\fR
+.ad
+.RS 6n
+-v for verbose, -q for quiet.
+.RE
+
+.SH SEE ALSO
+.sp
+.LP
+See the comments in the source code for details:
+.nf
+.sp
+https://github.com/RIKEN-RCCS/kmr/tool
+.fi

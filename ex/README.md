@@ -30,6 +30,12 @@
 
 ## FILES (NOT KMR)
 
+### User benefits
+
+* [pi.c](pi.c): a simple Pi calculation.
+* **"Flexdice" was moved to the "tool" directory** (The moved files
+  are: flexdice.c, flexdice.h, and flexdicemain.c).
+
 ### Platform testing (platform oddities)
 
 * [check-exec-in-mpi.c](check-exec-in-mpi.c): test program for
@@ -39,10 +45,3 @@
 * [check-exec-in-mpi4py.py](check-exec-in-mpi4py.py): test program for
   fork-execing subprocesses.
 * [forkexec.c](forkexec.c): test subprogram used in check-exec-in-mpi4py.py.
-
-### User's benefit
-
-* [pi.c](pi.c): a simple Pi calculation.
-* flexdice.c:
-* flexdice.h:
-* flexdicemain.c:
