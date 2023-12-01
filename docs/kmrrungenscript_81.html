@@ -1,0 +1,212 @@
+<!-- Creator     : groff version 1.22.4 -->
+<!-- CreationDate: Sat Nov 14 23:52:16 2020 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title></title>
+</head>
+<body>
+
+<hr>
+
+
+<p style="margin-top: 1em">KMR 1</p>
+
+<p style="margin-top: 1em">User Commands
+kmrrungenscript.py(1)</p>
+
+
+<p style="margin-left:8%; margin-top: 1em"><b><small>NAME</small></b>
+<br>
+kmrrungenscript.py &minus; generates a job-script for
+kmrrun</p>
+
+
+<p style="margin-left:8%; margin-top: 1em"><b><small>SYNOPSIS</small>
+<br>
+kmrrungenscript.py</b> [-q queue] [-t rsctime] [-e node] [-s
+shape] <br>
+[-p proc] [-d dir] [-n task_proc] <br>
+-m mapper [-k kvgenerator] [-r reducer] <br>
+[-C] [-R ckptdir] [-S sched] [-w file]</p>
+
+
+<p style="margin-left:8%; margin-top: 1em"><b><small>DESCRIPTION</small></b>
+<br>
+kmrrungenscript.py generates a job-script that executes
+kmrrun once for a specified job scheduler. Currently, it
+supports &quot;Parallelnavi&quot; on K computer and SLURM on
+FOCUS supercomputer as job schedulers.</p>
+
+
+<p style="margin-left:8%; margin-top: 1em"><b><small>OPTIONS</small></b>
+<br>
+The following options are supported:</p>
+
+<p style="margin-left:8%; margin-top: 1em">-q queue,
+--queue=queue</p>
+
+<p style="margin-left:14%; margin-top: 1em">Specifies a
+queue to submit the generated job-script.</p>
+
+<p style="margin-left:8%; margin-top: 1em">-t rsctime,
+--resource-time=rsctime</p>
+
+<p style="margin-left:14%; margin-top: 1em">Specifies time
+limit in the job resources. This is given by
+&quot;00:00:00&quot; format. Default is
+&quot;00:10:00&quot;.</p>
+
+<p style="margin-left:8%; margin-top: 1em">-e node,
+--number-of-exec-node=node</p>
+
+<p style="margin-left:14%; margin-top: 1em">Specifies the
+number of nodes (processes) to execute. Default is 12.</p>
+
+<p style="margin-left:8%; margin-top: 1em">-s shape,
+--shape=shape</p>
+
+<p style="margin-left:14%; margin-top: 1em">Specifies the
+MPI process shape. Valid only on K scheduler. Default is
+1.</p>
+
+<p style="margin-left:8%; margin-top: 1em">-p procs,
+--proc=procs</p>
+
+<p style="margin-left:14%; margin-top: 1em">Specifies the
+number of MPI processes. Valid only on K scheduler. Default
+is 8.</p>
+
+<p style="margin-left:8%; margin-top: 1em">-d indir,
+--inputdir=indir</p>
+
+<p style="margin-left:14%; margin-top: 1em">Specifies the
+input directory. When used on K computer, this directory
+should be one located in K global storage that is staged-in.
+Default is &quot;./input&quot;.</p>
+
+<p style="margin-left:8%; margin-top: 1em">-n task_proc,
+--task-proc=task_proc</p>
+
+<p style="margin-left:14%; margin-top: 1em">Specifies the
+number of processes to run each mapper and reducer. Default
+is 1.</p>
+
+<p style="margin-left:8%; margin-top: 1em">-m mapper,
+--mapper=mapper</p>
+
+<p style="margin-left:14%; margin-top: 1em">Specifies
+mapper program and its arguments. A mapper program can be a
+serial or an MPI program.</p>
+
+<p style="margin-left:8%; margin-top: 1em">-k kvgenerator,
+--kvgen=kvgenerator</p>
+
+<p style="margin-left:14%; margin-top: 1em">Specifies
+key-value generator program and its arguments. A key-value
+generator program should be a serial program.</p>
+
+<p style="margin-left:8%; margin-top: 1em">-r reducer,
+--reducer=reducer</p>
+
+<p style="margin-left:14%; margin-top: 1em">Specifies
+reducer program and its arguments. A reducer program can be
+a serial or an MPI program.</p>
+
+<p style="margin-left:8%; margin-top: 1em">-C, -ckpt</p>
+
+<p style="margin-left:14%; margin-top: 1em">Enables
+checkpoint/restart.</p>
+
+<p style="margin-left:8%; margin-top: 1em">-R ckptdir,
+--restart-filename=ckptdir</p>
+
+<p style="margin-left:14%; margin-top: 1em">Specifies
+prefix of directories where checkpoint files are located.
+This option should be given when restarting on a system that
+requires staging. Valid only on K scheduler.</p>
+
+<p style="margin-left:8%; margin-top: 1em">-S sched,
+--scheduler=sched</p>
+
+<p style="margin-left:14%; margin-top: 1em">Specifies a job
+scheduler. Specify Scheduler &rsquo;K&rsquo; or
+&rsquo;FOCUS&rsquo;. &rsquo;K&rsquo; supports K
+computer/FX10 and &rsquo;FOCUS&rsquo; supports Focus
+supercomputer. Default is &rsquo;K&rsquo;.</p>
+
+<p style="margin-left:8%; margin-top: 1em">-w scrfile,
+--write-scriptfile=scrfile</p>
+
+<p style="margin-left:14%; margin-top: 1em">Specifies a
+script output file. Default is STDOUT.</p>
+
+
+<p style="margin-left:8%; margin-top: 1em"><b><small>EXAMPLES</small></b>
+<br>
+For example, the following script is generated.</p>
+
+<p style="margin-left:15%; margin-top: 1em">$
+kmrrungenscript.py -q small -e 10 -s 2 -p 2 -d input \ <br>
+-m pi.mapper -k pi.kvgen.sh -r pi.reducer -C -R
+ckptdir_12345</p>
+
+<p style="margin-left:5%; margin-top: 1em">It will generate
+the following job script.</p>
+
+<p style="margin-left:12%; margin-top: 1em">#!/bin/bash -x
+<br>
+# <br>
+#PJM --rsc-list &quot;rscgrp=small&quot; <br>
+#PJM --rsc-list &quot;elapse=00:10:00&quot; <br>
+#PJM --rsc-list &quot;node=10&quot; <br>
+#PJM --mpi &quot;shape=2&quot; <br>
+#PJM --mpi &quot;proc=2&quot; <br>
+#PJM --rsc-list &quot;proc-core=unlimited&quot; <br>
+#PJM --stg-transfiles &quot;all&quot; <br>
+#PJM --stgin &quot;./kmrrun ./kmrrun&quot; <br>
+#PJM --stgin &quot;./pi.mapper ./pi.mapper&quot; <br>
+#PJM --stgin &quot;./pi.kvgen.sh ./pi.kvgen.sh&quot; <br>
+#PJM --stgin &quot;./pi.reducer ./pi.reducer&quot; <br>
+#PJM --stgin &quot;./input/* ./input/&quot; <br>
+#PJM --stgin &quot;./ckptdir_12345.00000/*
+./ckptdir00000/&quot; <br>
+#PJM --stgin &quot;./ckptdir_12345.00001/*
+./ckptdir00001/&quot; <br>
+#PJM --stgin &quot;./ckptdir_12345.00002/*
+./ckptdir00002/&quot; <br>
+#PJM --stgin &quot;./ckptdir_12345.00003/*
+./ckptdir00003/&quot; <br>
+# <br>
+# !!WRITE STGOUT HERE!! <br>
+# <br>
+#PJM --stgout &quot;./ckptdir00000/*
+./ckptdir_%j.00000/&quot; <br>
+#PJM --stgout &quot;./ckptdir00001/*
+./ckptdir_%j.00001/&quot; <br>
+# !!PJM --stgout &quot;./core* ./&quot; <br>
+#PJM -S</p>
+
+<p style="margin-left:12%; margin-top: 1em">.
+/work/system/Env_base</p>
+
+<p style="margin-left:12%; margin-top: 1em">mpiexec -n 2
+./kmrrun -n 1 -m &quot;./pi.mapper&quot; -k
+&quot;./pi.kvgen.sh&quot; \ <br>
+-r &quot;./pi.reducer&quot; --ckpt ./input</p>
+
+<p style="margin-left:12%; margin-top: 1em">KMR Last
+change: 2014-06-03 1</p>
+<hr>
+</body>
+</html>

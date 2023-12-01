@@ -1,0 +1,93 @@
+<!-- Creator     : groff version 1.22.4 -->
+<!-- CreationDate: Sat Nov 14 23:52:15 2020 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title></title>
+</head>
+<body>
+
+<hr>
+
+
+<p style="margin-top: 1em">KMR 1</p>
+
+<p style="margin-top: 1em">User Commands
+kmrfsplit.py(1)</p>
+
+
+<p style="margin-left:8%; margin-top: 1em"><b><small>NAME</small></b>
+<br>
+kmrfsplit.py &minus; split a file</p>
+
+
+<p style="margin-left:8%; margin-top: 1em"><b><small>SYNOPSIS</small>
+<br>
+kmrfsplit.py</b> [-n num] [-s pattern] [-d outdir] [-p
+prefix] [-f] file</p>
+
+
+<p style="margin-left:8%; margin-top: 1em"><b><small>DESCRIPTION</small></b>
+<br>
+kmrfsplit.py splits a file into a number of files (-n) with
+roughly equal sizes. It assumes an input file consists of
+many records started by a string matching to a given
+pattern. When a pattern is not found in a certain range in
+the input file (around the split point), an error will be
+reported.</p>
+
+<p style="margin-left:8%; margin-top: 1em">When outdir (-d)
+is specified, output files are saved under the directory. By
+default, output files have names &quot;partX&quot; and saved
+in the current directory, where X is a six-digit sequence
+number starting from 0 with some leading zeros.</p>
+
+
+<p style="margin-left:8%; margin-top: 1em"><b><small>OPTIONS</small></b>
+<br>
+The following options are supported:</p>
+
+<p style="margin-left:8%; margin-top: 1em">-n num</p>
+
+<p style="margin-left:14%; margin-top: 1em">Specifies the
+number to split. Default is 1.</p>
+
+<p style="margin-left:8%; margin-top: 1em">-s pattern</p>
+
+<p style="margin-left:14%; margin-top: 1em">Specifies a
+pattern string of a record separator. A line matching to
+this pattern starts a new record. It accepts regular
+expressions. Default is &quot;\n&quot;.</p>
+
+<p style="margin-left:8%; margin-top: 1em">-d outdir</p>
+
+<p style="margin-left:14%; margin-top: 1em">Specifies an
+output directory. Output files are saved under it. Default
+is the currrent directory.</p>
+
+<p style="margin-left:8%; margin-top: 1em">-p prefix</p>
+
+<p style="margin-left:14%; margin-top: 1em">Specifies a
+prefix to output file names. File names are suffixed by a
+number. Default is &quot;part&quot;.</p>
+
+<p style="margin-left:8%; margin-top: 1em">-f</p>
+
+<p style="margin-left:14%; margin-top: 1em">Forces to
+create an output directory if it does not exist.</p>
+
+<p style="margin-left:14%; margin-top: 1em">KMR Last
+change: 2014-02-04 1</p>
+<hr>
+</body>
+</html>

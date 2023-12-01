@@ -1,0 +1,68 @@
+<!-- Creator     : groff version 1.22.4 -->
+<!-- CreationDate: Sat Nov 14 23:52:15 2020 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title></title>
+</head>
+<body>
+
+<hr>
+
+
+<p style="margin-top: 1em">KMR 1</p>
+
+<p style="margin-top: 1em">User Commands kmrshuffler(1)</p>
+
+
+<p style="margin-left:8%; margin-top: 1em"><b><small>NAME</small></b>
+<br>
+kmrshuffler &minus; shuffler for map-reduce by shell command
+pipeline</p>
+
+
+<p style="margin-left:8%; margin-top: 1em"><b><small>SYNOPSIS</small>
+<br>
+kmrshuffler</b></p>
+
+
+<p style="margin-left:8%; margin-top: 1em"><b><small>DESCRIPTION</small></b>
+<br>
+kmrshuffler shuffles key-value pairs for map-reduce by
+piplining shell commands. It works on stdin and stdout, with
+one line for one key-value pair. It reads lines of key-value
+pairs from stdin, shuffles the pairs, and writes lines of
+key-value pairs to stdout. The fields of a key-value pair
+are separated by a whitespace. Lines with the same keys
+constitutes consecutive lines in the output for reduction.
+See kmrshell for piplining. Shuffler is written with
+KMR.</p>
+
+
+<p style="margin-left:8%; margin-top: 1em"><b><small>OPTIONS</small></b>
+<br>
+The following options are supported:</p>
+
+<p style="margin-left:8%; margin-top: 1em">None</p>
+
+
+<p style="margin-left:8%; margin-top: 1em"><b><small>BUGS</small></b>
+<br>
+It is a simple application. Lines are limited to 32K bytes
+and it has no escaping of whitespaces in keys.</p>
+
+<p style="margin-left:8%; margin-top: 1em">KMR Last change:
+2014-02-04 1</p>
+<hr>
+</body>
+</html>

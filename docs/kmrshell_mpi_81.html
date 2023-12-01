@@ -1,0 +1,97 @@
+<!-- Creator     : groff version 1.22.4 -->
+<!-- CreationDate: Sat Nov 14 23:52:14 2020 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title></title>
+</head>
+<body>
+
+<hr>
+
+
+<p style="margin-top: 1em">KMR 1</p>
+
+<p style="margin-top: 1em">User Commands
+kmrshell_mpi(1)</p>
+
+
+<p style="margin-left:8%; margin-top: 1em"><b><small>NAME</small></b>
+<br>
+kmrshell_mpi &minus; map-reduce by shell command
+pipeline</p>
+
+
+<p style="margin-left:8%; margin-top: 1em"><b><small>SYNOPSIS</small>
+<br>
+kmrshell_mpi</b> -n m_num[:r_num] -m mapper [-k kvgenerator]
+[-r reducer] inputfile</p>
+
+
+<p style="margin-left:8%; margin-top: 1em"><b><small>DESCRIPTION</small></b>
+<br>
+kmrshell starts map-reduce shell processes (for
+&quot;streaming&quot;). It runs MPI program as mapper and
+reducer. The output files of the mapper are parsed by a
+key-value generator program (specified by &rsquo;-k&rsquo;
+option) to generate key-value pairs and then they are
+shuffled and written to files on each rank with
+&rsquo;key&rsquo;-named as a text file whose line represents
+a key-value separated by a space. The file is passed to the
+reducer as the last parameter.</p>
+
+
+<p style="margin-left:8%; margin-top: 1em"><b><small>OPTIONS</small></b>
+<br>
+The following options are supported:</p>
+
+<p style="margin-left:8%; margin-top: 1em">-n
+m_num[:r_num]</p>
+
+<p style="margin-left:14%; margin-top: 1em">......</p>
+
+<p style="margin-left:8%; margin-top: 1em">-m mapper</p>
+
+<p style="margin-left:14%; margin-top: 1em">Specifies a
+mapper program. The program can have arguments, where they
+are separated by a whitespace.</p>
+
+<p style="margin-left:14%; margin-top: 1em">Mapper
+specification: A mapper reads data from STDIN and outputs
+key-value data to STDOUT. Output data is a sequence of a
+line &quot;key value\n&quot;, where the fields are separated
+by a whitespace.</p>
+
+<p style="margin-left:8%; margin-top: 1em">-k
+kvgenerator</p>
+
+<p style="margin-left:14%; margin-top: 1em">......</p>
+
+<p style="margin-left:8%; margin-top: 1em">-r reducer</p>
+
+<p style="margin-left:14%; margin-top: 1em">Specifies a
+reducer program. The program can have arguments, where they
+are separated by a whitespace.</p>
+
+<p style="margin-left:14%; margin-top: 1em">Reducer
+Specification: A reducer reads key-value data from STDIN and
+outputs the result to STDOUT. Input data is a sequence of a
+line &quot;key value\n&quot;, where the fields are separated
+by a whitespace. Lines with the same keys constitutes
+consecutive lines.</p>
+
+<p style="margin-left:14%; margin-top: 1em">KMR Last
+change: 2014-02-04 1</p>
+<hr>
+</body>
+</html>
