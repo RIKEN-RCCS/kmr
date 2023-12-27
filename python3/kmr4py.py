@@ -3,7 +3,7 @@
 
 """Python Binding for KMR Map-Reduce Library.  This provides
 straightforward wrappers to the C routines.  See more about KMR at
-"http://mt.r-ccs.riken.jp/kmr".  All key-value data is stored in C
+"https://github.com/RIKEN-RCCS/kmr".  All key-value data is stored in C
 structures after encoding/decoding Python objects to byte arrays in C.
 The documentation in Python is minimum, so please refer to the
 documentation in C.  It works with Python3 (possibly 3.4 and later),

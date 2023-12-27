@@ -10,7 +10,7 @@
 # explicitly set to skip adding "-g", because Fujitsu compilers
 # generate slow code with "-g".
 
-AC_INIT([KMR], [1], [],	[], [http://mt.r-ccs.riken.jp/kmr])
+AC_INIT([KMR], [1], [],	[], [https://github.com/RIKEN-RCCS/kmr])
 AC_PREREQ([2.69])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([config.make])

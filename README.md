@@ -2,41 +2,32 @@
 
 Copyright (C) 2012-2020 RIKEN R-CCS
 
-KMR comes with ABSOLUTELY NO WARRANTY.
+## Overview
 
-This is KMR, a high-performance map-reduce library.  It simplifies
-coding for parallel processing in C or Fortran with MPI (the Message
-Passing Interface).  See "http://mt.r-ccs.riken.jp/kmr" for the
-information.  See "http://riken-rccs.github.io/kmr" for an overview
-and API usage.
+KMR is a high-performance map-reduce library in C/C++, Fortran, and
+Python.  It simplifies data-processing by hiding the low-level details
+of using MPI (the Message Passing Interface).  See
+"http://riken-rccs.github.io/kmr" for API usage.
 
-## FILES
+KMR provides a set of map-reduce operations in MPI (Message Passing
+Interface), especially with a hope to be useful in Fortran.  It is
+designed to work in-memory by exploiting the large amount of memory
+available on supercomputers.  Data exchanges in KMR are, thus,
+performed by message passing instead of remote file operations that
+are the norm in popular map-reduce systems.
 
-The "src" directory contains the source code.  The "cmd" directory
-contains the source code of the commands.  The "kmrrun" directory
-contains the source code for shell command pipelining (or
-"streaming").  The "python3" directory contains the source code for the
-Pything binding.  The "shell" directory contains the source code of
-the old shell command pipelining, which was mostly replaced by the
-"kmrrun" command.  The "ex" directory contains a few examples.
-
-The file "gensort-1.2.tar.gz" is a 3rd-party software of the data
-generator of TeraSort.  The file "tpch_2_17_0.zip" is also a 3rd-party
-software of the data generator of TPC-H.  These files are not part of
-KMR, but they are needed for running some examples.
+KMR includes functions found in fancy old data-parallel languages such
+as Connection-Machine Lisp.  In the hindsight, the API design for
+Fortran hindered the usefulness of such fancy functions.
 
 ## INSTALLATION
 
-Building KMR requires a C compiler that supports the C99 standard and
-an MPI library that supports MPI 2.2.  However, the command line tool
-"kmrrun" requires Open MPI or Fujitsu MPI.  Python binding requires
-Python 3.4 and higher and an mpi4py package (KMR will not run in
-Python 2.x).  KMR does not need any other uncommon libraries.  KMR is
-maintained and tested in the following environments.  Note that recent
-KMR releases are only lightly tested.
-
-* SunOS-5.11 (amd64), GCC-7.5.0, Python-3.5.9, YAMPI-2 (MPI)
-* Fugaku, with Fujitsu language environments
+Building KMR requires a C compiler and an MPI library.  The Python
+binding requires Python 3.4 and higher and the mpi4py package.  KMR
+does not need any other uncommon libraries.  However, a few routines
+have a restriction on the choice of MPI library (that is related to
+the behaviour of spawning processes).  Note that recent KMR releases
+are only lightly tested.
 
 KMR can be installed by just typing "configure", "make", and "make
 install".  To change the installation directory, specify the
@@ -77,13 +68,28 @@ mpi4py.  Also, setting some environment variables is needed to use
 mpi4py.  See the documents of Fugaku.  It is recommended to start
 Python3 with environment variable XOS_MMM_L_HPAGE_TYPE=none.
 
+## FILES
+
+The "src" directory contains the source code.  The "cmd" directory
+contains the source code of the commands.  The "kmrrun" directory
+contains the source code for shell command pipelining (or
+"streaming").  The "python3" directory contains the source code for the
+Pything binding.  The "shell" directory contains the source code of
+the old shell command pipelining, which was mostly replaced by the
+"kmrrun" command.  The "ex" directory contains a few examples.
+
+The file "gensort-1.2.tar.gz" is a 3rd-party software of the data
+generator of TeraSort.  The file "tpch_2_17_0.zip" is also a 3rd-party
+software of the data generator of TPC-H.  These files are not part of
+KMR, but they are needed for running some examples.
+
 ## EXPLORE FILES
 
-* [CHANGELOG.md](CHANGELOG.md) 
+* [CHANGELOG.md](CHANGELOG.md)
 * Examples: [ex](ex)
 * Tools: [tool](tool)
 
-## COPYRIGHTS
+## COPYRIGHTS other than RIKEN R-CCS
 
 The files in "src" directory include the materials copyrighted by
 Akiyama Lab., Tokyo Institute of Technology (titec) (code from the
@@ -95,10 +101,9 @@ copyrighted by Sandia Corporation (code from MapReduce-MPI Library).
 The files in "gensort-1.2.tar.gz" are copyrighted by Chris Nyberg
 (chris.nyberg@ordinal.com).  The files in "tpch_2_17_0.zip" are
 copyrighted by the Transaction Processing Performance Council (TPC).
-All others are copyrighted by RIKEN R-CCS, and all rights reserved
-except for the grants by the license.
 
-## LICENSE TERMS
+## ACKNOWLEDGEMENT
 
-KMR is free software licensed under the BSD 2-Clause License.  See
-the file LICENSE for more details.
+KMR is copyrighted by RIKEN R-CCS and distributed under the BSD
+2-Clause License.  Part of the results is obtained by using Fugaku at
+RIKEN R-CCS.
