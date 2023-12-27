@@ -1,4 +1,8 @@
 var searchData=
 [
-  ['usage',['usage',['../kmrfsplit_8py.html#ab40fbcf627429fc22ccd95e02af9af7a',1,'kmrfsplit.usage()'],['../kmrgenscript_8in_8py.html#aa3d6c99f9266ddd60ab2cd3e5f5a4fa4',1,'kmrgenscript.usage()'],['../kmrwrapper_8py.html#ab3d080a806cd41e474dff4c665cb01bc',1,'kmrwrapper.usage()'],['../kmrrungenscript_8in_8py.html#a38a64799145ba0f62c1fd91779f6d418',1,'kmrrungenscript.usage()']]]
+  ['warn_5fstageout',['warn_stageout',['../kmrrungenscript_8in_8py.html#adac8ebe27e069ebf8fbfb689b91763ab',1,'kmrrungenscript']]],
+  ['wc_2emapper_2ec',['wc.mapper.c',['../wc_8mapper_8c.html',1,'']]],
+  ['wc_2ereducer_2ec',['wc.reducer.c',['../wc_8reducer_8c.html',1,'']]],
+  ['write_5freport',['write_report',['../classMPIDP.html#a7a3d96ebb388c70bdceb8d0a520416d3',1,'MPIDP::write_report()'],['../kmrdp_8cpp.html#a9917b66bab5a5baa7e8c5c4b3cf3f198',1,'write_report():&#160;kmrdp.cpp']]],
+  ['writefile',['writefile',['../kmrfsplit_8py.html#a66f10d7f2b7db9e364f52c25ae4c662e',1,'kmrfsplit']]]
 ];

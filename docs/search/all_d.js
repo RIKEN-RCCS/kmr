@@ -1,12 +1,20 @@
 var searchData=
 [
-  ['parse_5fargs',['parse_args',['../kmrshell_8c.html#aca98df829b1b40417fc5effaca4958c4',1,'kmrshell.c']]],
-  ['pi_2emapper_2ec',['pi.mapper.c',['../pi_8mapper_8c.html',1,'']]],
-  ['pi_2ereducer_2ec',['pi.reducer.c',['../pi_8reducer_8c.html',1,'']]],
-  ['pipe_5fin',['PIPE_IN',['../kmrshell_8c.html#abc5c98fcc1211af2b80116dd6e0a035da5fdc549489c6a256cf851c9d020f892b',1,'kmrshell.c']]],
-  ['pipe_5fout',['PIPE_OUT',['../kmrshell_8c.html#abc5c98fcc1211af2b80116dd6e0a035da103151f22470f9c6502a28b96a5a0c2d',1,'kmrshell.c']]],
-  ['pipeops',['pipeops',['../kmrshell_8c.html#aa228b18c4467202d8523c86de1acaee6',1,'kmrshell.c']]],
-  ['product',['PRODUCT',['../structPRODUCT.html',1,'']]],
-  ['put_5fconf',['put_conf',['../classMPIDP.html#adbc021ddd6e3e46c5df39b51965e76a4',1,'MPIDP']]],
-  ['put_5ftask_5flist',['put_task_list',['../classMPIDP.html#aeb035f5649f3f5d037643b4f4fb4968d',1,'MPIDP']]]
+  ['ranklog',['RankLog',['../structRankLog.html',1,'']]],
+  ['read_5ffile_5fby_5fsegments',['read_file_by_segments',['../classkmr4py_1_1KVS.html#ab800365c4a6c440afe02823b77e5370f',1,'kmr4py::KVS']]],
+  ['read_5ffiles_5freassemble',['read_files_reassemble',['../classkmr4py_1_1KVS.html#a4f33b8d3040d2e15dbe8a3d4ec0b7659',1,'kmr4py::KVS']]],
+  ['read_5fjobs_5flist',['read_jobs_list',['../classMPIDP.html#aaad3913339d46d83a06cbd4e2330e668',1,'MPIDP']]],
+  ['reapchild',['reapchild',['../kmrshell_8c.html#af98529fa05afa3fdcc62bb001319c265',1,'kmrshell.c']]],
+  ['record',['RECORD',['../structRECORD.html',1,'']]],
+  ['reduce',['reduce',['../classkmr4py_1_1KVS.html#a329516d157807e4433c2ddd6d4dda8fe',1,'kmr4py::KVS']]],
+  ['reduce_5fas_5fone',['reduce_as_one',['../classkmr4py_1_1KVS.html#af0ae4e25fc698adbc353c9b99ead2a08',1,'kmr4py::KVS']]],
+  ['reduce_5ffor_5fsome',['reduce_for_some',['../classkmr4py_1_1KVS.html#a78da83b4906eba98b4ed5e26f2bb778b',1,'kmr4py::KVS']]],
+  ['replace_5fpattern',['replace_pattern',['../kmrdp_8cpp.html#a52514a346a09d94b29309901786884b1',1,'kmrdp.cpp']]],
+  ['replacechar',['ReplaceChar',['../wc_8mapper_8c.html#a859952b73d08026bc9e39eebc07c037a',1,'wc.mapper.c']]],
+  ['replicate',['replicate',['../classkmr4py_1_1KVS.html#acb5496ad08dcb256d2592c2f3bde2401',1,'kmr4py::KVS']]],
+  ['reply_5fto_5fspawner',['reply_to_spawner',['../classkmr4py_1_1KMR.html#af55c3ab80d1e67f5a65916ab7ab26f10',1,'kmr4py::KMR']]],
+  ['restore',['restore',['../classkmr4py_1_1KVS.html#a97e979bf35fe83da15fceba7e1428978',1,'kmr4py::KVS']]],
+  ['reverse',['reverse',['../classkmr4py_1_1KVS.html#a5d4447ae7363294874367deac285d7c0',1,'kmr4py::KVS']]],
+  ['rmat',['RMAT',['../structRMAT.html',1,'']]],
+  ['run',['RUN',['../structRUN.html',1,'']]]
 ];

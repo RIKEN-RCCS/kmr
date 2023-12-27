@@ -1,5 +1,7 @@
 var searchData=
 [
-  ['object',['OBJECT',['../structOBJECT.html',1,'']]],
-  ['objectq',['OBJECTQ',['../structOBJECTQ.html',1,'']]]
+  ['ranklog',['RankLog',['../structRankLog.html',1,'']]],
+  ['record',['RECORD',['../structRECORD.html',1,'']]],
+  ['rmat',['RMAT',['../structRMAT.html',1,'']]],
+  ['run',['RUN',['../structRUN.html',1,'']]]
 ];

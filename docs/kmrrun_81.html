@@ -1,5 +1,5 @@
-<!-- Creator     : groff version 1.22.4 -->
-<!-- CreationDate: Sat Nov 14 23:52:15 2020 -->
+<!-- Creator     : groff version 1.22.3 -->
+<!-- CreationDate: Wed Dec 27 16:40:26 2023 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -13,53 +13,69 @@
        table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
        h1      { text-align: center }
 </style>
-<title></title>
+<title>kmrrun</title>
+
 </head>
 <body>
+
+<h1 align="center">kmrrun</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#OPTIONS">OPTIONS</a><br>
 
 <hr>
 
 
-<p style="margin-top: 1em">KMR 1</p>
+<h2>NAME
+<a name="NAME"></a>
+</h2>
 
-<p style="margin-top: 1em">User Commands kmrrun(1)</p>
+
+<p style="margin-left:11%; margin-top: 1em">kmrrun &minus;
+MapReduce command line tool</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
 
 
-<p style="margin-left:8%; margin-top: 1em"><b><small>NAME</small></b>
+<p style="margin-left:11%; margin-top: 1em"><b>kmrrun</b>
+-n m_num[:r_num] -m mapper [-k kvgenerator] [-r reducer]
 <br>
-kmrrun &minus; MapReduce command line tool</p>
-
-
-<p style="margin-left:8%; margin-top: 1em"><b><small>SYNOPSIS</small>
-<br>
-kmrrun</b> -n m_num[:r_num] -m mapper [-k kvgenerator] [-r
-reducer] <br>
 [--ckpt] input</p>
 
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
 
-<p style="margin-left:8%; margin-top: 1em"><b><small>DESCRIPTION</small></b>
-<br>
-kmrrun starts a MapReduce process whose mapper and reducer
-are user programs. It can run serial/MPI program as mapper
-and reducer. By using kmrrun, users can easily execute a
+
+<p style="margin-left:11%; margin-top: 1em">kmrrun starts a
+MapReduce process whose mapper and reducer are user
+programs. It can run serial/MPI program as mapper and
+reducer. By using kmrrun, users can easily execute a
 MapReduce task and also embarrassingly parallel tasks.</p>
 
-<p style="margin-left:8%; margin-top: 1em">Users have to
+<p style="margin-left:11%; margin-top: 1em">Users have to
 prepare three programs to run MapReduce using kmrrun:
 mapper, reducer and key-value pair generator programs. The
 key-value pair generator program is used to parse output
 files of mapper and then generate key-value pairs passed to
 reducer.</p>
 
+<h2>OPTIONS
+<a name="OPTIONS"></a>
+</h2>
 
-<p style="margin-left:8%; margin-top: 1em"><b><small>OPTIONS</small></b>
-<br>
-The following options are supported:</p>
 
-<p style="margin-left:8%; margin-top: 1em">-n
+<p style="margin-left:11%; margin-top: 1em">The following
+options are supported:</p>
+
+<p style="margin-left:11%; margin-top: 1em">-n
 m_num[:r_num]</p>
 
-<p style="margin-left:14%; margin-top: 1em">Specifies the
+<p style="margin-left:17%; margin-top: 1em">Specifies the
 number of processes to run mapper and reducer. If
 &rsquo;r_num&rsquo; is omitted, the reducer is run with the
 same number of processes as the mapper. When the number is 1
@@ -67,16 +83,16 @@ the mapper/reducer program is assumed to be a serial
 program, and when the number is bigger than 1 the program is
 assumed to be an MPI program.</p>
 
-<p style="margin-left:14%; margin-top: 1em">Default is 1
+<p style="margin-left:17%; margin-top: 1em">Default is 1
 for both m_num and r_num.</p>
 
-<p style="margin-left:8%; margin-top: 1em">-m mapper</p>
+<p style="margin-left:11%; margin-top: 1em">-m mapper</p>
 
-<p style="margin-left:14%; margin-top: 1em">Specifies a
+<p style="margin-left:17%; margin-top: 1em">Specifies a
 mapper program. The program can have arguments, where they
 are separated by a whitespace.</p>
 
-<p style="margin-left:14%; margin-top: 1em">Mapper
+<p style="margin-left:17%; margin-top: 1em">Mapper
 specification: A mapper can be a serial program or an MPI
 program. It receives name of the input file as the last
 parameter. If the output of mapper needs to be passed to
@@ -85,14 +101,14 @@ distinguished by input file name to the mapper. For example,
 if the input file to the mapper is &quot;000&quot;, the name
 of the output is &quot;000.dat&quot;.</p>
 
-<p style="margin-left:8%; margin-top: 1em">-k
+<p style="margin-left:11%; margin-top: 1em">-k
 kvgenerator</p>
 
-<p style="margin-left:14%; margin-top: 1em">Specifies a
+<p style="margin-left:17%; margin-top: 1em">Specifies a
 key-value pair generator program. The program can have
 arguments, where they are separated by a whitespace.</p>
 
-<p style="margin-left:14%; margin-top: 1em">KV generator
+<p style="margin-left:17%; margin-top: 1em">KV generator
 specification: A key-value pair generator program should be
 a serial program and should read the output files of a
 mapper. It will receive a input file name to the mapper
@@ -105,26 +121,23 @@ key-value to STDOUT. Output data is a sequence of a line
 &quot;key value\n&quot;, where the fields are separated by a
 whitespace.</p>
 
-<p style="margin-left:8%; margin-top: 1em">-r reducer</p>
+<p style="margin-left:11%; margin-top: 1em">-r reducer</p>
 
-<p style="margin-left:14%; margin-top: 1em">Specifies a
+<p style="margin-left:17%; margin-top: 1em">Specifies a
 reducer program. The program can have arguments, where they
 are separated by a whitespace.</p>
 
-<p style="margin-left:14%; margin-top: 1em">Reducer
+<p style="margin-left:17%; margin-top: 1em">Reducer
 Specification: A reducer can be a serial program or an MPI
 program. It receives a file as input as the last parameter.
 Name of the input file is &quot;key&quot; and its content is
 a sequence of a line &quot;key value\n&quot;, where the
 fields are separated by a whitespace.</p>
 
-<p style="margin-left:8%; margin-top: 1em">--ckpt</p>
+<p style="margin-left:11%; margin-top: 1em">--ckpt</p>
 
-<p style="margin-left:14%; margin-top: 1em">Enables
+<p style="margin-left:17%; margin-top: 1em">Enables
 checkpoint/restart.</p>
-
-<p style="margin-left:14%; margin-top: 1em">KMR Last
-change: 2014-06-02 1</p>
 <hr>
 </body>
 </html>

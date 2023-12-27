@@ -1,5 +1,5 @@
-<!-- Creator     : groff version 1.22.4 -->
-<!-- CreationDate: Sat Nov 14 23:52:14 2020 -->
+<!-- Creator     : groff version 1.22.3 -->
+<!-- CreationDate: Wed Dec 27 16:40:26 2023 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -13,71 +13,85 @@
        table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
        h1      { text-align: center }
 </style>
-<title></title>
+<title>kmrshell</title>
+
 </head>
 <body>
+
+<h1 align="center">kmrshell</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#OPTIONS">OPTIONS</a><br>
 
 <hr>
 
 
-<p style="margin-top: 1em">KMR 1</p>
-
-<p style="margin-top: 1em">User Commands kmrshell(1)</p>
-
-
-<p style="margin-left:8%; margin-top: 1em"><b><small>NAME</small></b>
-<br>
-kmrshell &minus; map-reduce by shell command pipeline</p>
+<h2>NAME
+<a name="NAME"></a>
+</h2>
 
 
-<p style="margin-left:8%; margin-top: 1em"><b><small>SYNOPSIS</small>
-<br>
-kmrshell</b> -m mapper -r reducer file</p>
+<p style="margin-left:11%; margin-top: 1em">kmrshell
+&minus; map-reduce by shell command pipeline</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
 
 
-<p style="margin-left:8%; margin-top: 1em"><b><small>DESCRIPTION</small></b>
-<br>
-kmrshell performs map-reduce by pipelining shell commands,
-also called &quot;streaming&quot; in Hadoop. It forks and
-execs processes of a mapper, a shuffler, and a reducer, and
-they are joined through pipes. kmrshell reads a file and
-passes the contents to a mapper. When a directory name is
-given instead of a file, kmrshell reads all regular files
-under the directory and passes them to a mapper (not
-recursive). Shuffler is written with KMR.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>kmrshell</b>
+-m mapper -r reducer file</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
 
 
-<p style="margin-left:8%; margin-top: 1em"><b><small>OPTIONS</small></b>
-<br>
-The following options are supported:</p>
+<p style="margin-left:11%; margin-top: 1em">kmrshell
+performs map-reduce by pipelining shell commands, also
+called &quot;streaming&quot; in Hadoop. It forks and execs
+processes of a mapper, a shuffler, and a reducer, and they
+are joined through pipes. kmrshell reads a file and passes
+the contents to a mapper. When a directory name is given
+instead of a file, kmrshell reads all regular files under
+the directory and passes them to a mapper (not recursive).
+Shuffler is written with KMR.</p>
 
-<p style="margin-left:8%; margin-top: 1em">-m mapper</p>
+<h2>OPTIONS
+<a name="OPTIONS"></a>
+</h2>
 
-<p style="margin-left:14%; margin-top: 1em">Specifies a
+
+<p style="margin-left:11%; margin-top: 1em">The following
+options are supported:</p>
+
+<p style="margin-left:11%; margin-top: 1em">-m mapper</p>
+
+<p style="margin-left:17%; margin-top: 1em">Specifies a
 mapper program. The program can have arguments, where they
 are separated by a whitespace.</p>
 
-<p style="margin-left:14%; margin-top: 1em">Mapper
+<p style="margin-left:17%; margin-top: 1em">Mapper
 specification: A mapper reads data from STDIN and outputs
 key-value data to STDOUT. Output data is a sequence of a
 line &quot;key value\n&quot;, where the fields are separated
 by a whitespace.</p>
 
-<p style="margin-left:8%; margin-top: 1em">-r reducer</p>
+<p style="margin-left:11%; margin-top: 1em">-r reducer</p>
 
-<p style="margin-left:14%; margin-top: 1em">Specifies a
+<p style="margin-left:17%; margin-top: 1em">Specifies a
 reducer program. The program can have arguments, where they
 are separated by a whitespace.</p>
 
-<p style="margin-left:14%; margin-top: 1em">Reducer
+<p style="margin-left:17%; margin-top: 1em">Reducer
 Specification: A reducer reads key-value data from STDIN and
 outputs the result to STDOUT. Input data is a sequence of a
 line &quot;key value\n&quot;, where the fields are separated
 by a whitespace. Lines with the same keys constitutes
 consecutive lines.</p>
-
-<p style="margin-left:14%; margin-top: 1em">KMR Last
-change: 2014-02-04 1</p>
 <hr>
 </body>
 </html>

@@ -1,5 +1,5 @@
-<!-- Creator     : groff version 1.22.4 -->
-<!-- CreationDate: Sat Nov 14 23:52:16 2020 -->
+<!-- Creator     : groff version 1.22.3 -->
+<!-- CreationDate: Wed Dec 27 16:40:26 2023 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -13,105 +13,118 @@
        table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
        h1      { text-align: center }
 </style>
-<title></title>
+<title>kmrwrapper.py</title>
+
 </head>
 <body>
+
+<h1 align="center">kmrwrapper.py</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#OPTIONS">OPTIONS</a><br>
 
 <hr>
 
 
-<p style="margin-top: 1em">KMR 1</p>
-
-<p style="margin-top: 1em">User Commands
-kmrwrapper.py(1)</p>
-
-
-<p style="margin-left:8%; margin-top: 1em"><b><small>NAME</small></b>
-<br>
-kmrwrapper.py &minus; combines scripts of file split and
-job-script generation</p>
+<h2>NAME
+<a name="NAME"></a>
+</h2>
 
 
-<p style="margin-left:8%; margin-top: 1em"><b><small>SYNOPSIS</small>
-<br>
-kmrwrapper.py</b> [-n num] [-e nodes] [-s pattern] [-p
-prefix] [-o outfile] [-d dir] [-O outdir] [-t rsctime] [-S
-sched] [-w file] [-f] -m mapper -r reducer file</p>
+<p style="margin-left:11%; margin-top: 1em">kmrwrapper.py
+&minus; combines scripts of file split and job-script
+generation</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
 
 
-<p style="margin-left:8%; margin-top: 1em"><b><small>DESCRIPTION</small></b>
-<br>
-kmrwrapper.py splits a file and generates a job-script. It
-wraps programs of &quot;kmrfsplit.py&quot; and
+
+<p style="margin-left:11%; margin-top: 1em"><b>kmrwrapper.py</b>
+[-n num] [-e nodes] [-s pattern] [-p prefix] [-o outfile]
+[-d dir] [-O outdir] [-t rsctime] [-S sched] [-w file] [-f]
+-m mapper -r reducer file</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">kmrwrapper.py
+splits a file and generates a job-script. It wraps programs
+of &quot;kmrfsplit.py&quot; and
 &quot;kmrgenscript.py&quot;.</p>
 
+<h2>OPTIONS
+<a name="OPTIONS"></a>
+</h2>
 
-<p style="margin-left:8%; margin-top: 1em"><b><small>OPTIONS</small></b>
-<br>
-The following options are supported:</p>
 
-<p style="margin-left:8%; margin-top: 1em">-n num</p>
+<p style="margin-left:11%; margin-top: 1em">The following
+options are supported:</p>
 
-<p style="margin-left:14%; margin-top: 1em">Specifies the
+<p style="margin-left:11%; margin-top: 1em">-n num</p>
+
+<p style="margin-left:17%; margin-top: 1em">Specifies the
 number of split. Default is 1.</p>
 
-<p style="margin-left:8%; margin-top: 1em">-e nodes</p>
+<p style="margin-left:11%; margin-top: 1em">-e nodes</p>
 
-<p style="margin-left:14%; margin-top: 1em">Specifies the
+<p style="margin-left:17%; margin-top: 1em">Specifies the
 number of processes to execute the job. Default is 1.</p>
 
-<p style="margin-left:8%; margin-top: 1em">-s pattern</p>
+<p style="margin-left:11%; margin-top: 1em">-s pattern</p>
 
-<p style="margin-left:14%; margin-top: 1em">Specifies a
+<p style="margin-left:17%; margin-top: 1em">Specifies a
 pattern string to split an input file. It accepts a regular
 expression. Default is &quot;\n&quot;.</p>
 
-<p style="margin-left:8%; margin-top: 1em">-p prefix</p>
+<p style="margin-left:11%; margin-top: 1em">-p prefix</p>
 
-<p style="margin-left:14%; margin-top: 1em">Specifies a
+<p style="margin-left:17%; margin-top: 1em">Specifies a
 prefix of input file names. Default is &quot;part&quot;.</p>
 
-<p style="margin-left:8%; margin-top: 1em">-o outfile</p>
+<p style="margin-left:11%; margin-top: 1em">-o outfile</p>
 
-<p style="margin-left:14%; margin-top: 1em">Specifies a
+<p style="margin-left:17%; margin-top: 1em">Specifies a
 prefix of output file names. Default is
 &quot;output&quot;.</p>
 
-<p style="margin-left:8%; margin-top: 1em">-d indir</p>
+<p style="margin-left:11%; margin-top: 1em">-d indir</p>
 
-<p style="margin-left:14%; margin-top: 1em">Specifies an
+<p style="margin-left:17%; margin-top: 1em">Specifies an
 input directory. Default is &quot;./work&quot;.</p>
 
-<p style="margin-left:8%; margin-top: 1em">-O outdir</p>
+<p style="margin-left:11%; margin-top: 1em">-O outdir</p>
 
-<p style="margin-left:14%; margin-top: 1em">Specifies an
+<p style="margin-left:17%; margin-top: 1em">Specifies an
 output directory. It specifies the directory to hold the job
 results. Default is &quot;./outdir&quot;.</p>
 
-<p style="margin-left:8%; margin-top: 1em">-t rsctime</p>
+<p style="margin-left:11%; margin-top: 1em">-t rsctime</p>
 
-<p style="margin-left:14%; margin-top: 1em">Specifies time
+<p style="margin-left:17%; margin-top: 1em">Specifies time
 limit in the job resources. This is given by
 &quot;00:00:00&quot; format. Default is
 &quot;00:10:00&quot;.</p>
 
-<p style="margin-left:8%; margin-top: 1em">-S sched</p>
+<p style="margin-left:11%; margin-top: 1em">-S sched</p>
 
-<p style="margin-left:14%; margin-top: 1em">Specifies a
+<p style="margin-left:17%; margin-top: 1em">Specifies a
 scheduler. Only &quot;K&quot; is supported.</p>
 
-<p style="margin-left:8%; margin-top: 1em">-w scrfile</p>
+<p style="margin-left:11%; margin-top: 1em">-w scrfile</p>
 
-<p style="margin-left:14%; margin-top: 1em">Specifies a
+<p style="margin-left:17%; margin-top: 1em">Specifies a
 script output file. Default is STDOUT.</p>
 
-<p style="margin-left:8%; margin-top: 1em">-f</p>
+<p style="margin-left:11%; margin-top: 1em">-f</p>
 
-<p style="margin-left:14%; margin-top: 1em">Forces to
+<p style="margin-left:17%; margin-top: 1em">Forces to
 create an output directory if it does not exist.</p>
-
-<p style="margin-left:14%; margin-top: 1em">KMR Last
-change: 2014-02-04 1</p>
 <hr>
 </body>
 </html>

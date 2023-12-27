@@ -1,5 +1,5 @@
-<!-- Creator     : groff version 1.22.4 -->
-<!-- CreationDate: Sat Nov 14 23:52:15 2020 -->
+<!-- Creator     : groff version 1.22.3 -->
+<!-- CreationDate: Wed Dec 27 16:40:26 2023 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -13,110 +13,132 @@
        table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
        h1      { text-align: center }
 </style>
-<title></title>
+<title>kmrgenscript.py</title>
+
 </head>
 <body>
+
+<h1 align="center">kmrgenscript.py</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#OPTIONS">OPTIONS</a><br>
+<a href="#EXAMPLES">EXAMPLES</a><br>
 
 <hr>
 
 
-<p style="margin-top: 1em">KMR 1</p>
-
-<p style="margin-top: 1em">User Commands
-kmrgenscript.py(1)</p>
-
-
-<p style="margin-left:8%; margin-top: 1em"><b><small>NAME</small></b>
-<br>
-kmrgenscript.py &minus; generates a job-script</p>
+<h2>NAME
+<a name="NAME"></a>
+</h2>
 
 
-<p style="margin-left:8%; margin-top: 1em"><b><small>SYNOPSIS</small>
-<br>
-kmrgenscript.py</b> [-e node] [-p prefix] [-o outfile] [-d
-dir] [-O outdir] [-t rsctime] [-S sched] [-w file] [-M] [-f]
--m mapper -r reducer</p>
+
+<p style="margin-left:11%; margin-top: 1em">kmrgenscript.py
+&minus; generates a job-script</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
 
 
-<p style="margin-left:8%; margin-top: 1em"><b><small>DESCRIPTION</small></b>
-<br>
-kmrgenscript.py generates a job-script for job schedulers.
-It reads a template of a job-script
-&quot;kmrgenscript.template&quot; either from the current
-directory, &quot;lib&quot; directory next to &quot;bin&quot;
-where this script is found, or installation directory,
-searching in this order. Currently, it only supports
-&quot;Parallelnavi&quot; on K as a job scheduler.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>kmrgenscript.py</b>
+[-e node] [-p prefix] [-o outfile] [-d dir] [-O outdir] [-t
+rsctime] [-S sched] [-w file] [-M] [-f] -m mapper -r
+reducer</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
 
 
-<p style="margin-left:8%; margin-top: 1em"><b><small>OPTIONS</small></b>
-<br>
-The following options are supported:</p>
 
-<p style="margin-left:8%; margin-top: 1em">-e node</p>
+<p style="margin-left:11%; margin-top: 1em">kmrgenscript.py
+generates a job-script for job schedulers. It reads a
+template of a job-script &quot;kmrgenscript.template&quot;
+either from the current directory, &quot;lib&quot; directory
+next to &quot;bin&quot; where this script is found, or
+installation directory, searching in this order. Currently,
+it only supports &quot;Parallelnavi&quot; on K as a job
+scheduler.</p>
 
-<p style="margin-left:14%; margin-top: 1em">Specifies the
+<h2>OPTIONS
+<a name="OPTIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+options are supported:</p>
+
+<p style="margin-left:11%; margin-top: 1em">-e node</p>
+
+<p style="margin-left:17%; margin-top: 1em">Specifies the
 number of nodes (processes) to execute. Default is 1.</p>
 
-<p style="margin-left:8%; margin-top: 1em">-p prefix</p>
+<p style="margin-left:11%; margin-top: 1em">-p prefix</p>
 
-<p style="margin-left:14%; margin-top: 1em">Specifies a
+<p style="margin-left:17%; margin-top: 1em">Specifies a
 prefix to the input file names. Default is
 &quot;part&quot;.</p>
 
-<p style="margin-left:8%; margin-top: 1em">-o outfile</p>
+<p style="margin-left:11%; margin-top: 1em">-o outfile</p>
 
-<p style="margin-left:14%; margin-top: 1em">Specifies a
+<p style="margin-left:17%; margin-top: 1em">Specifies a
 prefix to the output file names. Default is
 &quot;output&quot;.</p>
 
-<p style="margin-left:8%; margin-top: 1em">-d indir</p>
+<p style="margin-left:11%; margin-top: 1em">-d indir</p>
 
-<p style="margin-left:14%; margin-top: 1em">Specifies the
+<p style="margin-left:17%; margin-top: 1em">Specifies the
 input directory. Default is the current directory.</p>
 
-<p style="margin-left:8%; margin-top: 1em">-O outdir</p>
+<p style="margin-left:11%; margin-top: 1em">-O outdir</p>
 
-<p style="margin-left:14%; margin-top: 1em">Specifies the
+<p style="margin-left:17%; margin-top: 1em">Specifies the
 output directory. The output directory holds the result
 files. Default is the current directory.</p>
 
-<p style="margin-left:8%; margin-top: 1em">-t rsctime</p>
+<p style="margin-left:11%; margin-top: 1em">-t rsctime</p>
 
-<p style="margin-left:14%; margin-top: 1em">Specifies time
+<p style="margin-left:17%; margin-top: 1em">Specifies time
 limit in the job resources. This is given by
 &quot;00:00:00&quot; format.</p>
 
-<p style="margin-left:8%; margin-top: 1em">-S sched</p>
+<p style="margin-left:11%; margin-top: 1em">-S sched</p>
 
-<p style="margin-left:14%; margin-top: 1em">Specifies a job
+<p style="margin-left:17%; margin-top: 1em">Specifies a job
 scheduler. Only &quot;K&quot; for Parallelnavi on K is
 supported.</p>
 
-<p style="margin-left:8%; margin-top: 1em">-w scrfile</p>
+<p style="margin-left:11%; margin-top: 1em">-w scrfile</p>
 
-<p style="margin-left:14%; margin-top: 1em">Specifies a
+<p style="margin-left:17%; margin-top: 1em">Specifies a
 script output file. Default is STDOUT.</p>
 
-<p style="margin-left:8%; margin-top: 1em">-M</p>
+<p style="margin-left:11%; margin-top: 1em">-M</p>
 
-<p style="margin-left:14%; margin-top: 1em">Specifies
+<p style="margin-left:17%; margin-top: 1em">Specifies
 multiple input files are given to a mapper. In case of the
 number of input files is greater than the number of
 processes, it assigns multiple files to one process. For
 using this option, -d option is required.</p>
 
-<p style="margin-left:8%; margin-top: 1em">-f</p>
+<p style="margin-left:11%; margin-top: 1em">-f</p>
 
-<p style="margin-left:14%; margin-top: 1em">Forces to
+<p style="margin-left:17%; margin-top: 1em">Forces to
 create an output directory if it does not exist.</p>
 
+<h2>EXAMPLES
+<a name="EXAMPLES"></a>
+</h2>
 
-<p style="margin-left:8%; margin-top: 1em"><b><small>EXAMPLES</small></b>
-<br>
-For example, the following script is generated.</p>
 
-<p style="margin-left:15%; margin-top: 1em">#!/bin/bash -x
+<p style="margin-left:11%; margin-top: 1em">For example,
+the following script is generated.</p>
+
+<p style="margin-left:22%; margin-top: 1em">#!/bin/bash -x
 <br>
 # <br>
 #PJM --rsc-list &quot;node=2&quot; <br>
@@ -135,9 +157,6 @@ For example, the following script is generated.</p>
 . /work/system/Env_base <br>
 mpiexec -n 2 -of-proc output ./kmrshell ./mapper ./reducer
 ./input</p>
-
-<p style="margin-left:15%; margin-top: 1em">KMR Last
-change: 2014-02-04 1</p>
 <hr>
 </body>
 </html>
