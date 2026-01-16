@@ -76,7 +76,7 @@ contains the source code for shell command pipelining (or
 "streaming").  The "python3" directory contains the source code for the
 Pything binding.  The "shell" directory contains the source code of
 the old shell command pipelining, which was mostly replaced by the
-"kmrrun" command.  The "ex" directory contains a few examples.
+"kmrrun" command.  The "example" directory contains a few examples.
 
 The file "gensort-1.2.tar.gz" is a 3rd-party software of the data
 generator of TeraSort.  The file "tpch_2_17_0.zip" is also a 3rd-party
@@ -86,7 +86,7 @@ KMR, but they are needed for running some examples.
 ## EXPLORE FILES
 
 * [CHANGELOG.md](CHANGELOG.md)
-* Examples: [ex](ex)
+* Examples: [example](example)
 * Tools: [tool](tool)
 
 ## COPYRIGHTS other than RIKEN R-CCS
